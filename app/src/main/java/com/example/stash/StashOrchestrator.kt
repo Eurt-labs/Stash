@@ -108,47 +108,57 @@ class StashOrchestrator(private val context: Context) {
      * @return List of tracks that were enqueued for download
      * @throws IllegalArgumentException if the link is not supported
      */
-    suspend fun processLink(
-        link: String,
-        outputDir: String? = null,
-        quality: DownloadQuality = DownloadQuality.AUDIO_320,
-        format: DownloadFormat = DownloadFormat.MP3
-    ): List<TrackInfo> {
-        // ── Step 1: Parse the link ──
+    /**
+     * Fetches and returns track metadata from the link without initiating a download.
+     */
+    suspend fun fetchMetadata(link: String): List<TrackInfo> {
         val parsedLink = LinkParser.parse(link)
             ?: throw IllegalArgumentException("Unsupported link: $link")
+        Log.d(TAG, "Fetching metadata for: ${parsedLink.platform} / ${parsedLink.contentType}")
+        return fetchTracks(parsedLink)
+    }
 
-        Log.d(TAG, "Parsed: ${parsedLink.platform} / ${parsedLink.contentType} / ${parsedLink.id}")
+    /**
+     * Enqueues tracks for download, saving them to the secure cache directory first.
+     */
+    fun enqueueTracks(
+        tracks: List<TrackInfo>,
+        quality: DownloadQuality = DownloadQuality.AUDIO_320,
+        format: DownloadFormat = DownloadFormat.MP3
+    ) {
+        if (tracks.isEmpty()) return
 
-        val targetDir = outputDir ?: fileManager.getDefaultDownloadDir()
-
-        // ── Step 2: Start foreground service ──
         startDownloadService()
 
-        // ── Step 3: Extract metadata (no auth needed for either platform) ──
-        val tracks = fetchTracks(parsedLink)
+        val cacheDir = File(context.cacheDir, "downloads").apply {
+            if (!exists()) mkdirs()
+        }.absolutePath
 
-        if (tracks.isEmpty()) {
-            Log.w(TAG, "No tracks found for link: $link")
-            return emptyList()
-        }
-
-        Log.d(TAG, "Found ${tracks.size} track(s)")
-
-        // ── Step 4: Create and enqueue download requests ──
         val requests = tracks.map { track ->
             DownloadRequest(
                 url = track.youtubeUrl ?: track.sourceUrl,
                 trackInfo = track,
-                outputDir = targetDir,
+                outputDir = cacheDir,
                 quality = quality,
                 format = format
             )
         }
 
         queueManager.enqueueAll(requests)
-        Log.d(TAG, "Enqueued ${requests.size} download(s)")
+        Log.d(TAG, "Enqueued ${requests.size} download(s) to cache directory")
+    }
 
+    /**
+     * Processes a Spotify or YouTube link and starts downloading.
+     */
+    suspend fun processLink(
+        link: String,
+        outputDir: String? = null,
+        quality: DownloadQuality = DownloadQuality.AUDIO_320,
+        format: DownloadFormat = DownloadFormat.MP3
+    ): List<TrackInfo> {
+        val tracks = fetchMetadata(link)
+        enqueueTracks(tracks, quality, format)
         return tracks
     }
 
