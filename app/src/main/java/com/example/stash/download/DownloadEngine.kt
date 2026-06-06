@@ -191,10 +191,18 @@ class DownloadEngine(private val context: Context) {
             .redirectErrorStream(true)
             .start()
 
+        // CRITICAL FIX: We MUST continuously consume the output stream! 
+        // If we don't, FFmpeg fills up the tiny OS buffer with logs and deadlocks forever.
+        val outputLog = StringBuilder()
+        process.inputStream.bufferedReader().useLines { lines ->
+            lines.forEach { line ->
+                outputLog.append(line).append("\n")
+            }
+        }
+
         val exitCode = process.waitFor()
         if (exitCode != 0) {
-            val errorOutput = process.inputStream.bufferedReader().readText()
-            Log.e(TAG, "FFmpeg conversion failed (exit $exitCode): $errorOutput")
+            Log.e(TAG, "FFmpeg conversion failed (exit $exitCode): $outputLog")
             throw DownloadException("Audio conversion failed with code $exitCode")
         }
 
