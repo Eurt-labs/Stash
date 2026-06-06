@@ -86,16 +86,12 @@ class DownloadEngine(private val context: Context) {
         ytdlRequest.addOption("--prefer-free-formats")
 
         try {
-            // Run download with a 3-minute timeout per song.
-            // If it hangs (ffmpeg, network, etc.), it fails gracefully and moves on.
-            val result = kotlinx.coroutines.withTimeoutOrNull(180_000L) {
-                YoutubeDL.getInstance().execute(
-                    ytdlRequest
-                ) { progress, etaInSeconds, line ->
-                    val speed = parseSpeed(line)
-                    onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
-                }
-            } ?: throw DownloadException("Download timed out after 3 minutes")
+            val result = YoutubeDL.getInstance().execute(
+                ytdlRequest
+            ) { progress, etaInSeconds, line ->
+                val speed = parseSpeed(line)
+                onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
+            }
 
             Log.d(TAG, "Download complete. Output: ${result.out}")
 
