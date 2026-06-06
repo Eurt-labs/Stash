@@ -255,19 +255,9 @@ class DownloadQueueManager(
                 downloadSemaphore.release()
             }
 
-            // ── Step 3: Convert ──
+            // ── Step 3: Convert (Bypassed for speed and quality) ──
             updateItemState(batchId, request.id, DownloadState.CONVERTING)
-            convertSemaphore.acquire()
-            val convertedFilePath: String
-            try {
-                convertedFilePath = if (!request.format.isVideo) {
-                    downloadEngine.convertAudio(rawFilePath, request.format, request.quality)
-                } else {
-                    rawFilePath
-                }
-            } finally {
-                convertSemaphore.release()
-            }
+            val convertedFilePath = rawFilePath // We use the raw M4A directly!
 
             // ── Step 4: Tag ──
             updateItemState(batchId, request.id, DownloadState.TAGGING)
