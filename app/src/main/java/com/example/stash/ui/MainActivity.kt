@@ -30,6 +30,10 @@ import com.example.stash.parser.LinkParser
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import androidx.drawerlayout.widget.DrawerLayout
+import android.widget.ImageButton
+import com.google.android.material.card.MaterialCardView
+import androidx.core.view.GravityCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -65,6 +69,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectFolderButton: MaterialButton
     private lateinit var platformSpinner: Spinner
     private lateinit var linkInputLayout: TextInputLayout
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var menuButton: ImageButton
+    private lateinit var cardSpotify: MaterialCardView
+    private lateinit var cardYoutube: MaterialCardView
+    private lateinit var cardYtMusic: MaterialCardView
+    private lateinit var cardInstagram: MaterialCardView
+    private lateinit var drawerSpotifyFormat: Spinner
+    private lateinit var drawerSpotifyQuality: Spinner
+    private lateinit var drawerYoutubeFormat: Spinner
+    private lateinit var drawerYoutubeQuality: Spinner
+    private lateinit var drawerInstagramFormat: Spinner
     private val platforms = arrayOf("Auto Detect", "Spotify", "YouTube", "YouTube Music", "Instagram")
 
     private val NOTIFICATION_PERMISSION_CODE = 101
@@ -77,6 +92,7 @@ class MainActivity : AppCompatActivity() {
 
         bindViews()
         setupPlatformSpinner()
+        setupDrawerSettings()
         setupRecyclerView()
         setupClickListeners()
         observeDownloads()
@@ -137,6 +153,17 @@ class MainActivity : AppCompatActivity() {
         selectFolderButton = findViewById(R.id.selectFolderButton)
         platformSpinner = findViewById(R.id.platformSpinner)
         linkInputLayout = findViewById(R.id.linkInputLayout)
+        drawerLayout = findViewById(R.id.drawerLayout)
+        menuButton = findViewById(R.id.menuButton)
+        cardSpotify = findViewById(R.id.cardSpotify)
+        cardYoutube = findViewById(R.id.cardYoutube)
+        cardYtMusic = findViewById(R.id.cardYtMusic)
+        cardInstagram = findViewById(R.id.cardInstagram)
+        drawerSpotifyFormat = findViewById(R.id.drawerSpotifyFormat)
+        drawerSpotifyQuality = findViewById(R.id.drawerSpotifyQuality)
+        drawerYoutubeFormat = findViewById(R.id.drawerYoutubeFormat)
+        drawerYoutubeQuality = findViewById(R.id.drawerYoutubeQuality)
+        drawerInstagramFormat = findViewById(R.id.drawerInstagramFormat)
     }
 
     private fun setupPlatformSpinner() {
@@ -185,6 +212,95 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun setupDrawerSettings() {
+        val prefs = getSharedPreferences("stash_prefs", MODE_PRIVATE)
+
+        // 1. Spotify Format Spinner
+        val spotifyFormats = DownloadFormat.entries.filter { !it.isVideo }.map { it.label }
+        val spotifyFormatAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, spotifyFormats)
+        spotifyFormatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        drawerSpotifyFormat.adapter = spotifyFormatAdapter
+        val savedSpotifyFormat = prefs.getString("pref_spotify_format", DownloadFormat.MP3.name)
+        val spotifyFormatIndex = DownloadFormat.entries.filter { !it.isVideo }.indexOfFirst { it.name == savedSpotifyFormat }
+        if (spotifyFormatIndex >= 0) drawerSpotifyFormat.setSelection(spotifyFormatIndex)
+
+        drawerSpotifyFormat.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: android.widget.AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val format = DownloadFormat.entries.filter { !it.isVideo }[position]
+                prefs.edit().putString("pref_spotify_format", format.name).apply()
+            }
+            override fun onNothingSelected(p0: android.widget.AdapterView<*>?) {}
+        }
+
+        // 2. Spotify Quality Spinner
+        val spotifyQualities = DownloadQuality.entries.map { it.label }
+        val spotifyQualityAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, spotifyQualities)
+        spotifyQualityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        drawerSpotifyQuality.adapter = spotifyQualityAdapter
+        val savedSpotifyQuality = prefs.getString("pref_spotify_quality", DownloadQuality.AUDIO_320.name)
+        val spotifyQualityIndex = DownloadQuality.entries.indexOfFirst { it.name == savedSpotifyQuality }
+        if (spotifyQualityIndex >= 0) drawerSpotifyQuality.setSelection(spotifyQualityIndex)
+
+        drawerSpotifyQuality.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: android.widget.AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val quality = DownloadQuality.entries[position]
+                prefs.edit().putString("pref_spotify_quality", quality.name).apply()
+            }
+            override fun onNothingSelected(p0: android.widget.AdapterView<*>?) {}
+        }
+
+        // 3. YouTube Format Spinner
+        val youtubeFormats = DownloadFormat.entries.map { it.label }
+        val youtubeFormatAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, youtubeFormats)
+        youtubeFormatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        drawerYoutubeFormat.adapter = youtubeFormatAdapter
+        val savedYoutubeFormat = prefs.getString("pref_youtube_format", DownloadFormat.MP3.name)
+        val youtubeFormatIndex = DownloadFormat.entries.indexOfFirst { it.name == savedYoutubeFormat }
+        if (youtubeFormatIndex >= 0) drawerYoutubeFormat.setSelection(youtubeFormatIndex)
+
+        drawerYoutubeFormat.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: android.widget.AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val format = DownloadFormat.entries[position]
+                prefs.edit().putString("pref_youtube_format", format.name).apply()
+            }
+            override fun onNothingSelected(p0: android.widget.AdapterView<*>?) {}
+        }
+
+        // 4. YouTube Quality Spinner
+        val youtubeQualities = DownloadQuality.entries.map { it.label }
+        val youtubeQualityAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, youtubeQualities)
+        youtubeQualityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        drawerYoutubeQuality.adapter = youtubeQualityAdapter
+        val savedYoutubeQuality = prefs.getString("pref_youtube_quality", DownloadQuality.AUDIO_320.name)
+        val youtubeQualityIndex = DownloadQuality.entries.indexOfFirst { it.name == savedYoutubeQuality }
+        if (youtubeQualityIndex >= 0) drawerYoutubeQuality.setSelection(youtubeQualityIndex)
+
+        drawerYoutubeQuality.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: android.widget.AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val quality = DownloadQuality.entries[position]
+                prefs.edit().putString("pref_youtube_quality", quality.name).apply()
+            }
+            override fun onNothingSelected(p0: android.widget.AdapterView<*>?) {}
+        }
+
+        // 5. Instagram Format Spinner
+        val instagramFormats = DownloadFormat.entries.map { it.label }
+        val instagramFormatAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, instagramFormats)
+        instagramFormatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        drawerInstagramFormat.adapter = instagramFormatAdapter
+        val savedInstagramFormat = prefs.getString("pref_instagram_format", DownloadFormat.VIDEO_BEST.name)
+        val instagramFormatIndex = DownloadFormat.entries.indexOfFirst { it.name == savedInstagramFormat }
+        if (instagramFormatIndex >= 0) drawerInstagramFormat.setSelection(instagramFormatIndex)
+
+        drawerInstagramFormat.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: android.widget.AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+                val format = DownloadFormat.entries[position]
+                prefs.edit().putString("pref_instagram_format", format.name).apply()
+            }
+            override fun onNothingSelected(p0: android.widget.AdapterView<*>?) {}
+        }
+    }
+
     private fun setupRecyclerView() {
         adapter = DownloadAdapter()
         adapter.setOnItemClickListener { item ->
@@ -227,6 +343,26 @@ class MainActivity : AppCompatActivity() {
 
         clearButton.setOnClickListener {
             orchestrator.queueManager.clearFinished()
+        }
+
+        menuButton.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.END)
+        }
+
+        cardSpotify.setOnClickListener {
+            platformSpinner.setSelection(1) // Spotify
+        }
+
+        cardYoutube.setOnClickListener {
+            platformSpinner.setSelection(2) // YouTube
+        }
+
+        cardYtMusic.setOnClickListener {
+            platformSpinner.setSelection(3) // YouTube Music
+        }
+
+        cardInstagram.setOnClickListener {
+            platformSpinner.setSelection(4) // Instagram
         }
     }
 
@@ -413,6 +549,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val prefs = getSharedPreferences("stash_prefs", MODE_PRIVATE)
+        val defaultFormatName = when (firstTrack.source) {
+            com.example.stash.model.Platform.SPOTIFY -> prefs.getString("pref_spotify_format", DownloadFormat.MP3.name)
+            com.example.stash.model.Platform.YOUTUBE -> prefs.getString("pref_youtube_format", DownloadFormat.MP3.name)
+            com.example.stash.model.Platform.YOUTUBE_MUSIC -> prefs.getString("pref_youtube_format", DownloadFormat.MP3.name)
+            com.example.stash.model.Platform.INSTAGRAM -> prefs.getString("pref_instagram_format", DownloadFormat.VIDEO_BEST.name)
+        }
+        val defaultQualityName = when (firstTrack.source) {
+            com.example.stash.model.Platform.SPOTIFY -> prefs.getString("pref_spotify_quality", DownloadQuality.AUDIO_320.name)
+            com.example.stash.model.Platform.YOUTUBE -> prefs.getString("pref_youtube_quality", DownloadQuality.AUDIO_320.name)
+            com.example.stash.model.Platform.YOUTUBE_MUSIC -> prefs.getString("pref_youtube_quality", DownloadQuality.AUDIO_320.name)
+            com.example.stash.model.Platform.INSTAGRAM -> prefs.getString("pref_youtube_quality", DownloadQuality.AUDIO_320.name)
+        }
+
         // Setup Quality Spinner
         val qualityAdapter = ArrayAdapter(
             this,
@@ -421,7 +571,8 @@ class MainActivity : AppCompatActivity() {
         )
         qualityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         previewQualitySpinner.adapter = qualityAdapter
-        previewQualitySpinner.setSelection(DownloadQuality.entries.indexOf(DownloadQuality.AUDIO_320))
+        val qualityIndex = DownloadQuality.entries.indexOfFirst { it.name == defaultQualityName }.coerceAtLeast(0)
+        previewQualitySpinner.setSelection(qualityIndex)
 
         // Setup Format Spinner
         val formatAdapter = ArrayAdapter(
@@ -431,7 +582,8 @@ class MainActivity : AppCompatActivity() {
         )
         formatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         previewFormatSpinner.adapter = formatAdapter
-        previewFormatSpinner.setSelection(0) // MP3 default
+        val formatIndex = DownloadFormat.entries.indexOfFirst { it.name == defaultFormatName }.coerceAtLeast(0)
+        previewFormatSpinner.setSelection(formatIndex)
 
         cancelButton.setOnClickListener {
             dialog.dismiss()
