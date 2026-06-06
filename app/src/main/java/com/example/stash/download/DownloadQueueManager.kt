@@ -2,6 +2,7 @@ package com.example.stash.download
 
 import android.content.Context
 import android.util.Log
+import com.example.stash.storage.FileManager
 import com.example.stash.tagger.MetadataTagger
 import com.example.stash.youtube.YouTubeSearchMatcher
 import kotlinx.coroutines.*
@@ -37,6 +38,7 @@ class DownloadQueueManager(
     private val downloadEngine = DownloadEngine(context)
     private val youtubeSearchMatcher = YouTubeSearchMatcher(context)
     private val metadataTagger = MetadataTagger()
+    private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val semaphore = Semaphore(maxConcurrentDownloads)
@@ -191,15 +193,19 @@ class DownloadQueueManager(
                 metadataTagger.tagFile(filePath, request.trackInfo)
             } catch (e: Exception) {
                 Log.w(TAG, "Metadata tagging failed (non-fatal): ${e.message}")
-                // Tagging failure is non-fatal — the file is still usable
             }
 
-            // ── Step 4: Complete ──
+            // ── Step 4: Move to final destination (SAF or default folder) ──
+            val finalPath = withContext(Dispatchers.IO) {
+                fileManager.moveToFinalDestination(filePath, request.trackInfo, request.format.extension)
+            }
+
+            // ── Step 5: Complete ──
             updateItem(
                 getItem(request.id)?.copy(
                     state = DownloadState.COMPLETE,
                     progress = 1f,
-                    filePath = filePath
+                    filePath = finalPath
                 ) ?: return
             )
 
