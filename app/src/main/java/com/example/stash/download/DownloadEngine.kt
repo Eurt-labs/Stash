@@ -55,14 +55,19 @@ class DownloadEngine {
                 .redirectErrorStream(true)
                 .start()
 
-            val lines = InputStreamReader(process.inputStream).readLines()
-            
-            // In a real app we'd parse progress asynchronously from the stream,
-            // but for simplicity we'll just read lines and invoke onProgress.
-            for (line in lines) {
-                if (line.contains("[download]")) {
-                    val speed = parseSpeed(line)
-                    onProgress?.invoke(0f, 0L, speed)
+            // Read output stream line-by-line as it comes in
+            process.inputStream.bufferedReader().useLines { lines ->
+                lines.forEach { line ->
+                    println("yt-dlp: $line") // For debug logging
+                    if (line.contains("[download]")) {
+                        val percent = parsePercent(line)
+                        val speed = parseSpeed(line)
+                        if (percent != null) {
+                            onProgress?.invoke(percent, 0L, speed)
+                        } else {
+                            onProgress?.invoke(0f, 0L, speed)
+                        }
+                    }
                 }
             }
 
@@ -200,6 +205,18 @@ class DownloadEngine {
             return speed
         }
         return ""
+    }
+
+    private fun parsePercent(line: String): Float? {
+        // Line typically looks like: [download]  12.3% of 5.67MiB at 1.23MiB/s ETA 00:04
+        val percentIndex = line.indexOf("%")
+        if (percentIndex != -1) {
+            val start = line.lastIndexOf(' ', percentIndex)
+            if (start != -1) {
+                return line.substring(start + 1, percentIndex).trim().toFloatOrNull()
+            }
+        }
+        return null
     }
 }
 
