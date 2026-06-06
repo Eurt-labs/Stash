@@ -29,7 +29,7 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val semaphore = Semaphore(3) // Concurrency limit of 3 to prevent severe CPU/RAM throttling on mobile devices
+    private val semaphore = Semaphore(2) // Concurrency limit of 2 to prevent severe CPU/RAM throttling on mobile devices
 
     // ── Observable state ──
     private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())
@@ -247,8 +247,12 @@ class DownloadQueueManager(
             updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
 
             val updatedRequest = request.copy(url = downloadUrl)
-            val filePath = downloadEngine.download(updatedRequest) { percent, eta, speed ->
-                updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
+            val filePath = downloadEngine.download(updatedRequest) { percent, eta, speed, isConverting ->
+                if (isConverting) {
+                    updateItemState(batchId, request.id, DownloadState.CONVERTING)
+                } else {
+                    updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
+                }
             }
 
             // ── Step 3: Tag ──
