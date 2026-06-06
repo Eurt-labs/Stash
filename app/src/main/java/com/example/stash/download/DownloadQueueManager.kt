@@ -29,7 +29,7 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val downloadSemaphore = Semaphore(3) // Up to 3 concurrent network downloads
+    private val downloadSemaphore = Semaphore(1) // 1 concurrent download (prevents heating)
     private val convertSemaphore = Semaphore(1)  // Strict limit of 1 conversion to prevent CPU starvation
 
     // ── Observable state ──

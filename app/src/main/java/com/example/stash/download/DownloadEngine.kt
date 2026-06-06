@@ -253,6 +253,8 @@ class DownloadEngine(private val context: Context) {
             // We do NOT use -x or --audio-format here because we manually convert it afterwards
             // This decouples the network download from the CPU-heavy conversion phase.
             ytdlRequest.addOption("-f", "bestaudio/best")
+            // Add thread limits for any minor container fixing yt-dlp does internally
+            ytdlRequest.addOption("--postprocessor-args", "ffmpeg:-threads 1")
             // Make sure yt-dlp doesn't overwrite container if not needed, but keep extension safe
         }
     }
