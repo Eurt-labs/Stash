@@ -82,8 +82,10 @@ class BatchDetailActivity : AppCompatActivity() {
             finish()
         }
         stopBatchButton.setOnClickListener {
-            StashApplication.orchestrator.cancelAll()
-            Toast.makeText(this, "Batch stopped", Toast.LENGTH_SHORT).show()
+            batchId?.let { id ->
+                StashApplication.orchestrator.cancelBatch(id)
+                Toast.makeText(this, "Batch stopped", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

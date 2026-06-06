@@ -201,6 +201,11 @@ class StashOrchestrator(private val context: Context) {
     fun cancelDownload(id: String) = queueManager.cancel(id)
 
     /**
+     * Cancels all downloads within a specific batch only.
+     */
+    fun cancelBatch(batchId: String) = queueManager.cancelBatch(batchId)
+
+    /**
      * Cancels all downloads.
      */
     fun cancelAll() = queueManager.cancelAll()
