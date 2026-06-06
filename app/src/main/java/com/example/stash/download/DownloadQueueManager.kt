@@ -29,7 +29,7 @@ import kotlinx.coroutines.sync.Semaphore
  */
 class DownloadQueueManager(
     private val context: Context,
-    private val maxConcurrentDownloads: Int = 3
+    private val maxConcurrentDownloads: Int = 1
 ) {
     companion object {
         private const val TAG = "DownloadQueue"
