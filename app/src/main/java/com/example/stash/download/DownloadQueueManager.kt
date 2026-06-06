@@ -12,24 +12,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Semaphore
 
 /**
- * Manages a concurrent download queue with progress tracking.
- *
- * Features:
- * - Parallel downloads with configurable concurrency limit (default: 3)
- * - Per-item state tracking: QUEUED → SEARCHING → DOWNLOADING → CONVERTING → TAGGING → COMPLETE
- * - Observable state via [StateFlow] for UI binding
- * - Pause, resume, cancel, and retry per item or all items
- *
- * Usage:
- * ```
- * val queueManager = DownloadQueueManager(context)
- * queueManager.enqueue(request)
- * queueManager.downloadItems.collect { items -> updateUI(items) }
- * ```
+ * Manages a batch-based download queue with sequential batch processing
+ * and concurrent item processing (up to 7 parallel downloads per active batch).
  */
 class DownloadQueueManager(
-    private val context: Context,
-    private val maxConcurrentDownloads: Int = 1
+    private val context: Context
 ) {
     companion object {
         private const val TAG = "DownloadQueue"
@@ -41,125 +28,159 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val semaphore = Semaphore(maxConcurrentDownloads)
+    private val semaphore = Semaphore(7) // Concurrency limit of 7 within a batch
 
     // ── Observable state ──
-    private val _downloadItems = MutableStateFlow<Map<String, DownloadItem>>(emptyMap())
-    val downloadItems: StateFlow<Map<String, DownloadItem>> = _downloadItems.asStateFlow()
+    private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())
+    val batches: StateFlow<Map<String, DownloadBatch>> = _batches.asStateFlow()
 
-    // Track active download jobs for cancellation
-    private val activeJobs = mutableMapOf<String, Job>()
+    // Track active jobs for cancellation
+    private val activeJobs = java.util.Collections.synchronizedMap(mutableMapOf<String, Job>())
+    
+    // Store request objects by track ID
+    private val requestMap = java.util.Collections.synchronizedMap(mutableMapOf<String, DownloadRequest>())
 
-    // Throttled pending queue to cap active + queued items in the map at MAX_ACTIVE_QUEUE (7)
-    private val pendingRequests = java.util.Collections.synchronizedList(mutableListOf<DownloadRequest>())
-    private val MAX_ACTIVE_QUEUE = 7
+    // Pending queue of batch IDs
+    private val pendingBatchIds = java.util.Collections.synchronizedList(mutableListOf<String>())
+    
+    // Active batch ID
+    private var activeBatchId: String? = null
 
-    private fun getActiveQueueCount(): Int {
-        return _downloadItems.value.values.count {
-            it.state == DownloadState.QUEUED ||
-            it.state == DownloadState.SEARCHING ||
-            it.state == DownloadState.DOWNLOADING ||
-            it.state == DownloadState.CONVERTING ||
-            it.state == DownloadState.TAGGING
+    private fun checkNextBatch() {
+        synchronized(pendingBatchIds) {
+            if (activeBatchId != null) return // Already running a batch
+            if (pendingBatchIds.isEmpty()) return // No batches waiting
+            
+            val nextBatchId = pendingBatchIds.removeAt(0)
+            activeBatchId = nextBatchId
+            startBatchExecution(nextBatchId)
         }
     }
 
-    private fun checkPendingQueue() {
-        synchronized(pendingRequests) {
-            while (pendingRequests.isNotEmpty() && getActiveQueueCount() < MAX_ACTIVE_QUEUE) {
-                val nextRequest = pendingRequests.removeAt(0)
-                startDownloadTask(nextRequest)
+    private fun startBatchExecution(batchId: String) {
+        val batch = _batches.value[batchId] ?: return
+        
+        Log.d(TAG, "Starting execution of batch '$batchId' (${batch.name}) with ${batch.totalTracks} tracks")
+        
+        // Mark all items in the batch as QUEUED (or preserve their current state)
+        val updatedItems = batch.items.map { item ->
+            if (item.state == DownloadState.QUEUED) item else item.copy(state = DownloadState.QUEUED)
+        }
+        updateBatchItems(batchId, updatedItems)
+
+        // Launch execution for each track in the batch
+        batch.items.forEach { item ->
+            val request = requestMap[item.id]
+            if (request != null) {
+                val job = scope.launch {
+                    semaphore.acquire()
+                    try {
+                        processDownload(request, batchId)
+                    } finally {
+                        semaphore.release()
+                        activeJobs.remove(request.id)
+                        checkBatchCompletion(batchId)
+                    }
+                }
+                activeJobs[item.id] = job
+            } else {
+                Log.w(TAG, "No request found for track ${item.id}")
             }
         }
     }
 
-    private fun startDownloadTask(request: DownloadRequest) {
-        val item = DownloadItem(
-            id = request.id,
-            trackInfo = request.trackInfo,
-            state = DownloadState.QUEUED
+    private fun checkBatchCompletion(batchId: String) {
+        val batch = _batches.value[batchId] ?: return
+        
+        // A batch is complete when all its tracks are COMPLETE, FAILED, or CANCELLED
+        val isFinished = batch.items.all {
+            it.state == DownloadState.COMPLETE ||
+            it.state == DownloadState.FAILED ||
+            it.state == DownloadState.CANCELLED
+        }
+        
+        if (isFinished) {
+            Log.d(TAG, "Batch '$batchId' (${batch.name}) execution completed")
+            synchronized(pendingBatchIds) {
+                if (activeBatchId == batchId) {
+                    activeBatchId = null
+                }
+            }
+            // Trigger check for the next batch
+            checkNextBatch()
+        }
+    }
+
+    /**
+     * Enqueues a batch of download requests.
+     */
+    fun enqueueBatch(batchName: String, requests: List<DownloadRequest>) {
+        val batchId = java.util.UUID.randomUUID().toString()
+        val items = requests.map { request ->
+            DownloadItem(
+                id = request.id,
+                trackInfo = request.trackInfo,
+                state = DownloadState.QUEUED
+            )
+        }
+        val batch = DownloadBatch(
+            id = batchId,
+            name = batchName,
+            items = items
         )
-        updateItem(item)
 
-        val job = scope.launch {
-            semaphore.acquire()
-            try {
-                processDownload(request)
-            } finally {
-                semaphore.release()
-                activeJobs.remove(request.id)
-                checkPendingQueue()
-            }
+        requests.forEach { requestMap[it.id] = it }
+        _batches.value = _batches.value.toMutableMap().apply {
+            put(batchId, batch)
         }
-        activeJobs[request.id] = job
+        pendingBatchIds.add(batchId)
+        
+        checkNextBatch()
     }
 
     /**
-     * Enqueues a single download request.
-     * The download will start automatically when a slot is available.
+     * Cancels a specific download item.
      */
-    fun enqueue(request: DownloadRequest) {
-        enqueueAll(listOf(request))
-    }
-
-    /**
-     * Enqueues multiple download requests at once.
-     */
-    fun enqueueAll(requests: List<DownloadRequest>) {
-        synchronized(pendingRequests) {
-            pendingRequests.addAll(requests)
+    fun cancel(trackId: String) {
+        // Find which batch contains this track
+        val batchEntry = _batches.value.entries.find { entry ->
+            entry.value.items.any { it.id == trackId }
         }
-        checkPendingQueue()
-    }
-
-    /**
-     * Cancels a specific download.
-     */
-    fun cancel(id: String) {
-        synchronized(pendingRequests) {
-            pendingRequests.removeAll { it.id == id }
+        if (batchEntry != null) {
+            val batchId = batchEntry.key
+            activeJobs[trackId]?.cancel()
+            updateItemState(batchId, trackId, DownloadState.CANCELLED)
+            checkBatchCompletion(batchId)
         }
-        activeJobs[id]?.cancel()
-        updateItemState(id, DownloadState.CANCELLED)
-        checkPendingQueue()
     }
 
     /**
-     * Cancels all active and queued downloads.
+     * Cancels all batches and active downloads.
      */
     fun cancelAll() {
-        synchronized(pendingRequests) {
-            pendingRequests.clear()
-        }
+        pendingBatchIds.clear()
         activeJobs.values.forEach { it.cancel() }
         activeJobs.clear()
-        _downloadItems.value = _downloadItems.value.mapValues { (_, item) ->
-            if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
-                item.copy(state = DownloadState.CANCELLED)
-            } else {
-                item
+        
+        _batches.value = _batches.value.mapValues { (_, batch) ->
+            val updatedItems = batch.items.map { item ->
+                if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
+                    item.copy(state = DownloadState.CANCELLED)
+                } else {
+                    item
+                }
             }
+            batch.copy(items = updatedItems)
         }
+        activeBatchId = null
     }
 
     /**
-     * Retries a failed or cancelled download.
-     */
-    fun retry(request: DownloadRequest) {
-        cancel(request.id) // Cancel any existing attempt
-        enqueue(request)
-    }
-
-    /**
-     * Clears completed, failed, and cancelled items from the queue.
+     * Clears finished (completed/failed/cancelled) batches.
      */
     fun clearFinished() {
-        _downloadItems.value = _downloadItems.value.filter { (_, item) ->
-            item.state == DownloadState.QUEUED ||
-            item.state == DownloadState.SEARCHING ||
-            item.state == DownloadState.DOWNLOADING ||
-            item.state == DownloadState.CONVERTING ||
-            item.state == DownloadState.TAGGING
+        _batches.value = _batches.value.filter { (_, batch) ->
+            batch.state == DownloadState.QUEUED || batch.state == DownloadState.DOWNLOADING
         }
     }
 
@@ -167,42 +188,44 @@ class DownloadQueueManager(
      * Returns the count of active (non-finished) downloads.
      */
     fun activeCount(): Int {
-        return _downloadItems.value.count { (_, item) ->
-            item.state == DownloadState.DOWNLOADING ||
-            item.state == DownloadState.SEARCHING ||
-            item.state == DownloadState.CONVERTING ||
-            item.state == DownloadState.TAGGING
+        return _batches.value.values.sumOf { batch ->
+            batch.items.count {
+                it.state == DownloadState.DOWNLOADING ||
+                it.state == DownloadState.SEARCHING ||
+                it.state == DownloadState.CONVERTING ||
+                it.state == DownloadState.TAGGING
+            }
         }
     }
 
     /**
-     * Returns the count of queued downloads waiting for a slot.
+     * Returns the count of queued downloads.
      */
     fun queuedCount(): Int {
-        return _downloadItems.value.count { it.value.state == DownloadState.QUEUED }
+        return _batches.value.values.sumOf { batch ->
+            batch.items.count { it.state == DownloadState.QUEUED }
+        }
     }
 
     /**
-     * Cancels all downloads and cleans up resources.
+     * Shuts down the manager.
      */
     fun shutdown() {
         cancelAll()
         scope.cancel()
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Internal download processing pipeline
-    // ──────────────────────────────────────────────────────────────
+    // ── Internal download processing pipeline ──
 
-    private suspend fun processDownload(request: DownloadRequest) {
+    private suspend fun processDownload(request: DownloadRequest, batchId: String) {
         try {
             var downloadUrl = request.url
 
-            // ── Step 1: If this is a Spotify track, search YouTube for a match ──
+            // ── Step 1: Search ──
             if (request.trackInfo.youtubeUrl == null &&
                 request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
             ) {
-                updateItemState(request.id, DownloadState.SEARCHING)
+                updateItemState(batchId, request.id, DownloadState.SEARCHING)
                 val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
                     ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
                 downloadUrl = matchedUrl
@@ -211,21 +234,24 @@ class DownloadQueueManager(
             }
 
             // ── Step 2: Download ──
-            updateItemState(request.id, DownloadState.DOWNLOADING)
+            updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
 
             val updatedRequest = request.copy(url = downloadUrl)
             val filePath = downloadEngine.download(updatedRequest) { percent, eta, speed ->
-                updateItem(
-                    getItem(request.id)?.copy(
-                        progress = percent / 100f,
-                        eta = eta,
-                        speed = speed.ifBlank { null }
-                    ) ?: return@download
-                )
+                getItem(batchId, request.id)?.let { item ->
+                    updateItem(
+                        batchId,
+                        item.copy(
+                            progress = percent / 100f,
+                            eta = eta,
+                            speed = speed.ifBlank { null }
+                        )
+                    )
+                }
             }
 
-            // ── Step 3: Tag metadata ──
-            updateItemState(request.id, DownloadState.TAGGING)
+            // ── Step 3: Tag ──
+            updateItemState(batchId, request.id, DownloadState.TAGGING)
 
             try {
                 metadataTagger.tagFile(filePath, request.trackInfo)
@@ -233,52 +259,67 @@ class DownloadQueueManager(
                 Log.w(TAG, "Metadata tagging failed (non-fatal): ${e.message}")
             }
 
-            // ── Step 4: Move to final destination (SAF or default folder) ──
+            // ── Step 4: Move ──
             val finalPath = withContext(Dispatchers.IO) {
                 fileManager.moveToFinalDestination(filePath, request.trackInfo, request.format.extension)
             }
 
             // ── Step 5: Complete ──
-            updateItem(
-                getItem(request.id)?.copy(
-                    state = DownloadState.COMPLETE,
-                    progress = 1f,
-                    filePath = finalPath
-                ) ?: return
-            )
+            getItem(batchId, request.id)?.let { item ->
+                updateItem(
+                    batchId,
+                    item.copy(
+                        state = DownloadState.COMPLETE,
+                        progress = 1f,
+                        filePath = finalPath
+                    )
+                )
+            }
 
             Log.d(TAG, "Download complete: $filePath")
 
         } catch (e: CancellationException) {
-            updateItemState(request.id, DownloadState.CANCELLED)
-            throw e // Re-throw to let coroutine cleanup happen
+            updateItemState(batchId, request.id, DownloadState.CANCELLED)
+            throw e
 
         } catch (e: Exception) {
             Log.e(TAG, "Download failed: ${request.trackInfo.displayName}", e)
-            updateItem(
-                getItem(request.id)?.copy(
-                    state = DownloadState.FAILED,
-                    error = e.message ?: "Unknown error"
-                ) ?: return
-            )
+            getItem(batchId, request.id)?.let { item ->
+                updateItem(
+                    batchId,
+                    item.copy(
+                        state = DownloadState.FAILED,
+                        error = e.message ?: "Unknown error"
+                    )
+                )
+            }
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // State management helpers
-    // ──────────────────────────────────────────────────────────────
+    // ── State management helpers ──
 
-    private fun updateItem(item: DownloadItem) {
-        _downloadItems.value = _downloadItems.value.toMutableMap().apply {
-            put(item.id, item)
+    private fun getItem(batchId: String, trackId: String): DownloadItem? {
+        return _batches.value[batchId]?.items?.find { it.id == trackId }
+    }
+
+    private fun updateItem(batchId: String, item: DownloadItem) {
+        val batch = _batches.value[batchId] ?: return
+        val updatedItems = batch.items.map {
+            if (it.id == item.id) item else it
+        }
+        updateBatchItems(batchId, updatedItems)
+    }
+
+    private fun updateItemState(batchId: String, trackId: String, state: DownloadState) {
+        getItem(batchId, trackId)?.let { item ->
+            updateItem(batchId, item.copy(state = state))
         }
     }
 
-    private fun updateItemState(id: String, state: DownloadState) {
-        getItem(id)?.let { item ->
-            updateItem(item.copy(state = state))
+    private fun updateBatchItems(batchId: String, items: List<DownloadItem>) {
+        val batch = _batches.value[batchId] ?: return
+        _batches.value = _batches.value.toMutableMap().apply {
+            put(batchId, batch.copy(items = items))
         }
     }
-
-    private fun getItem(id: String): DownloadItem? = _downloadItems.value[id]
 }

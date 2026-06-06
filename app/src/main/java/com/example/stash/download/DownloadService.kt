@@ -87,17 +87,19 @@ class DownloadService : Service() {
      */
     private fun observeDownloadState() {
         serviceScope.launch {
-            queueManager?.downloadItems?.collectLatest { items ->
-                if (items.isEmpty()) return@collectLatest
+            queueManager?.batches?.collectLatest { batches ->
+                if (batches.isEmpty()) return@collectLatest
 
-                val activeCount = items.values.count {
+                val allItems = batches.values.flatMap { it.items }
+
+                val activeCount = allItems.count {
                     it.state == DownloadState.DOWNLOADING ||
                     it.state == DownloadState.SEARCHING ||
                     it.state == DownloadState.CONVERTING ||
                     it.state == DownloadState.TAGGING
                 }
-                val queuedCount = items.values.count { it.state == DownloadState.QUEUED }
-                val completedCount = items.values.count { it.state == DownloadState.COMPLETE }
+                val queuedCount = allItems.count { it.state == DownloadState.QUEUED }
+                val completedCount = allItems.count { it.state == DownloadState.COMPLETE }
 
                 // Update summary notification
                 val notification = notificationManager.createSummaryNotification(
@@ -105,14 +107,18 @@ class DownloadService : Service() {
                     queuedCount = queuedCount,
                     completedCount = completedCount
                 )
-                notificationManager.let {
-                    val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-                    nm.notify(DownloadNotificationManager.SUMMARY_NOTIFICATION_ID, notification)
-                }
+                val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+                nm.notify(DownloadNotificationManager.SUMMARY_NOTIFICATION_ID, notification)
 
                 // Update individual notifications
-                items.values.forEach { item ->
-                    notificationManager.showProgressNotification(item)
+                allItems.forEach { item ->
+                    if (item.state == DownloadState.DOWNLOADING ||
+                        item.state == DownloadState.SEARCHING ||
+                        item.state == DownloadState.CONVERTING ||
+                        item.state == DownloadState.TAGGING
+                    ) {
+                        notificationManager.showProgressNotification(item)
+                    }
                 }
 
                 // Auto-stop when everything is done

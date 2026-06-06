@@ -90,3 +90,57 @@ sealed class DownloadResult {
         val speed: String
     ) : DownloadResult()
 }
+
+/**
+ * Represents a batch of downloads (e.g. a single track or a playlist of tracks pasted by the user).
+ */
+data class DownloadBatch(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val name: String,
+    val items: List<DownloadItem> = emptyList(),
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    // Computed properties for progress and overall state
+    val totalTracks: Int get() = items.size
+    
+    val completedTracks: Int get() = items.count { it.state == DownloadState.COMPLETE }
+    val failedTracks: Int get() = items.count { it.state == DownloadState.FAILED }
+    val cancelledTracks: Int get() = items.count { it.state == DownloadState.CANCELLED }
+    
+    val progress: Float get() {
+        if (items.isEmpty()) return 0f
+        val sumProgress = items.sumOf { 
+            when (it.state) {
+                DownloadState.COMPLETE -> 1.0
+                DownloadState.FAILED, DownloadState.CANCELLED -> 0.0
+                else -> it.progress.toDouble()
+            }
+        }
+        return (sumProgress / items.size).toFloat()
+    }
+    
+    val state: DownloadState get() {
+        if (items.isEmpty()) return DownloadState.QUEUED
+        
+        // If all items are complete, the batch is complete
+        val states = items.map { it.state }
+        if (states.all { it == DownloadState.COMPLETE }) return DownloadState.COMPLETE
+        if (states.all { it == DownloadState.CANCELLED }) return DownloadState.CANCELLED
+        
+        // If any item is actively downloading, converting, tagging, or searching, then the batch is downloading
+        if (states.any { 
+            it == DownloadState.DOWNLOADING || 
+            it == DownloadState.SEARCHING || 
+            it == DownloadState.CONVERTING || 
+            it == DownloadState.TAGGING 
+        }) return DownloadState.DOWNLOADING
+        
+        // If any item is queued and we haven't finished everything
+        if (states.any { it == DownloadState.QUEUED }) return DownloadState.QUEUED
+        
+        // If everything failed or was cancelled
+        if (states.all { it == DownloadState.FAILED || it == DownloadState.CANCELLED }) return DownloadState.FAILED
+        
+        return DownloadState.FAILED
+    }
+}

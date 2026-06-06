@@ -31,6 +31,9 @@ class StashApplication : Application() {
         @Volatile
         var isYtDlpInitialized = false
             private set
+
+        lateinit var orchestrator: StashOrchestrator
+            private set
     }
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -38,6 +41,7 @@ class StashApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        orchestrator = StashOrchestrator(this)
         initializeYoutubeDL()
     }
 

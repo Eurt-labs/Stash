@@ -93,10 +93,10 @@ class StashOrchestrator(private val context: Context) {
     }
 
     /**
-     * Exposes the download queue state for UI observation.
+     * Exposes the download queue state (batches) for UI observation.
      */
-    val downloadItems: StateFlow<Map<String, DownloadItem>>
-        get() = queueManager.downloadItems
+    val downloadBatches: StateFlow<Map<String, DownloadBatch>>
+        get() = queueManager.batches
 
     /**
      * Processes a Spotify or YouTube link and starts downloading.
@@ -124,6 +124,7 @@ class StashOrchestrator(private val context: Context) {
      */
     fun enqueueTracks(
         tracks: List<TrackInfo>,
+        batchName: String,
         quality: DownloadQuality = DownloadQuality.AUDIO_320,
         format: DownloadFormat = DownloadFormat.MP3
     ) {
@@ -145,8 +146,8 @@ class StashOrchestrator(private val context: Context) {
             )
         }
 
-        queueManager.enqueueAll(requests)
-        Log.d(TAG, "Enqueued ${requests.size} download(s) to cache directory")
+        queueManager.enqueueBatch(batchName, requests)
+        Log.d(TAG, "Enqueued batch '$batchName' with ${requests.size} download(s) to cache directory")
     }
 
     /**
@@ -159,7 +160,12 @@ class StashOrchestrator(private val context: Context) {
         format: DownloadFormat = DownloadFormat.MP3
     ): List<TrackInfo> {
         val tracks = fetchMetadata(link)
-        enqueueTracks(tracks, quality, format)
+        val batchName = if (tracks.size == 1) {
+            tracks[0].title
+        } else {
+            tracks[0].album ?: "Stash Playlist"
+        }
+        enqueueTracks(tracks, batchName, quality, format)
         return tracks
     }
 
