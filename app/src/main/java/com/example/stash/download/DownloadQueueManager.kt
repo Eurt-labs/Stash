@@ -1,7 +1,5 @@
 package com.example.stash.download
 
-import android.content.Context
-import android.util.Log
 import com.example.stash.storage.FileManager
 import com.example.stash.tagger.MetadataTagger
 import com.example.stash.youtube.YouTubeSearchMatcher
@@ -16,21 +14,19 @@ import kotlinx.coroutines.sync.Semaphore
  * Manages a batch-based download queue with sequential batch processing
  * and concurrent item processing (up to 7 parallel downloads per active batch).
  */
-class DownloadQueueManager(
-    private val context: Context
-) {
+class DownloadQueueManager {
     companion object {
         private const val TAG = "DownloadQueue"
     }
 
-    private val downloadEngine = DownloadEngine(context)
-    private val youtubeSearchMatcher = YouTubeSearchMatcher(context)
+    private val downloadEngine = DownloadEngine()
+    private val youtubeSearchMatcher = YouTubeSearchMatcher()
     private val metadataTagger = MetadataTagger()
-    private val fileManager = FileManager(context)
+    private val fileManager = FileManager()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val downloadSemaphore = Semaphore(3) // 3 concurrent network downloads (safe — heating was from FFmpeg deadlock)
-    private val convertSemaphore = Semaphore(1)  // Strict 1 conversion at a time (CPU-heavy, prevents heating)
+    private val downloadSemaphore = Semaphore(3) // 3 concurrent network downloads
+    private val convertSemaphore = Semaphore(1)  // Strict 1 conversion at a time
 
     // ── Observable state ──
     private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())
@@ -62,7 +58,7 @@ class DownloadQueueManager(
     private fun startBatchExecution(batchId: String) {
         val batch = _batches.value[batchId] ?: return
         
-        Log.d(TAG, "Starting execution of batch '$batchId' (${batch.name}) with ${batch.totalTracks} tracks")
+        println("Starting execution of batch '$batchId' (${batch.name}) with ${batch.totalTracks} tracks")
         
         // Mark all items in the batch as QUEUED (or preserve their current state)
         _batches.update { currentBatches ->
@@ -87,7 +83,7 @@ class DownloadQueueManager(
                 }
                 activeJobs[item.id] = job
             } else {
-                Log.w(TAG, "No request found for track ${item.id}")
+                System.err.println("No request found for track ${item.id}")
             }
         }
     }
@@ -103,7 +99,7 @@ class DownloadQueueManager(
         }
         
         if (isFinished) {
-            Log.d(TAG, "Batch '$batchId' (${batch.name}) execution completed")
+            println("Batch '$batchId' (${batch.name}) execution completed")
             synchronized(pendingBatchIds) {
                 if (activeBatchId == batchId) {
                     activeBatchId = null
@@ -193,7 +189,7 @@ class DownloadQueueManager(
         }
         checkNextBatch()
         
-        Log.d(TAG, "Batch '$batchId' cancelled")
+        println("Batch '$batchId' cancelled")
     }
 
     /**
@@ -302,7 +298,7 @@ class DownloadQueueManager(
             try {
                 metadataTagger.tagFile(convertedFilePath, request.trackInfo)
             } catch (e: Exception) {
-                Log.w(TAG, "Metadata tagging failed (non-fatal): ${e.message}")
+                System.err.println("Metadata tagging failed (non-fatal): ${e.message}")
             }
 
             // ── Step 5: Move ──
@@ -313,14 +309,15 @@ class DownloadQueueManager(
             // ── Step 6: Complete ──
             completeItem(batchId, request.id, finalPath)
 
-            Log.d(TAG, "Download complete: $finalPath")
+            println("Download complete: $finalPath")
 
         } catch (e: CancellationException) {
             updateItemState(batchId, request.id, DownloadState.CANCELLED)
             throw e
 
         } catch (e: Exception) {
-            Log.e(TAG, "Download failed: ${request.trackInfo.displayName}", e)
+            System.err.println("Download failed: ${request.trackInfo.displayName}")
+            e.printStackTrace()
             failItem(batchId, request.id, e.message ?: "Unknown error")
         }
     }
