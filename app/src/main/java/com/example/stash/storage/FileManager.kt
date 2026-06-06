@@ -95,12 +95,12 @@ class FileManager(private val context: Context) {
         artist: String,
         album: String?,
         durationMs: Long
-    ) {
+    ): Uri? {
         try {
             val file = File(filePath)
             if (!file.exists()) {
                 Log.w(TAG, "Cannot register non-existent file: $filePath")
-                return
+                return null
             }
 
             val mimeType = when (file.extension.lowercase()) {
@@ -140,12 +140,13 @@ class FileManager(private val context: Context) {
                 }
             }
 
-            context.contentResolver.insert(contentUri, values)
-            Log.d(TAG, "Registered in MediaStore: ${file.name}")
+            val insertedUri = context.contentResolver.insert(contentUri, values)
+            Log.d(TAG, "Registered in MediaStore: ${file.name} -> $insertedUri")
+            return insertedUri
 
         } catch (e: Exception) {
             Log.w(TAG, "MediaStore registration failed (non-fatal): ${e.message}")
-            // Non-fatal — the file is still on disk and usable
+            return null
         }
     }
 
@@ -212,7 +213,7 @@ class FileManager(private val context: Context) {
                 // Register in MediaStore
                 registerUriInMediaStore(targetDocFile.uri, targetDocFile.name ?: "$baseName.$extension", trackInfo, extension)
 
-                return docDir.name?.let { "$it/${targetDocFile.name}" } ?: targetDocFile.name ?: "Custom Folder"
+                return targetDocFile.uri.toString()
 
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save to custom directory, falling back to default", e)
@@ -226,7 +227,7 @@ class FileManager(private val context: Context) {
         cacheFile.renameTo(uniqueFile)
         
         // Register in MediaStore
-        registerInMediaStore(
+        val mediaUri = registerInMediaStore(
             filePath = uniqueFile.absolutePath,
             title = trackInfo.title,
             artist = trackInfo.artists.joinToString(", "),
@@ -234,7 +235,7 @@ class FileManager(private val context: Context) {
             durationMs = trackInfo.durationMs
         )
 
-        return uniqueFile.absolutePath
+        return mediaUri?.toString() ?: Uri.fromFile(uniqueFile).toString()
     }
 
     private fun getMimeType(extension: String): String {

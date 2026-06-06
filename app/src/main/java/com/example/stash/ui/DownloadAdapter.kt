@@ -32,8 +32,18 @@ class DownloadAdapter : ListAdapter<DownloadItem, DownloadAdapter.ViewHolder>(Di
         return ViewHolder(view)
     }
 
+    private var onItemClickListener: ((DownloadItem) -> Unit)? = null
+
+    fun setOnItemClickListener(listener: (DownloadItem) -> Unit) {
+        onItemClickListener = listener
+    }
+
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
+
+        holder.itemView.setOnClickListener {
+            onItemClickListener?.invoke(item)
+        }
 
         holder.trackTitle.text = item.trackInfo.title
         holder.trackArtist.text = item.trackInfo.artists.joinToString(", ")

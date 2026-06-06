@@ -86,45 +86,60 @@ class YouTubeSearchMatcher(private val context: Context) {
     }
 
     /**
-     * Uses yt-dlp's ytsearch to find YouTube videos matching the query.
+     * Uses yt-dlp's ytsearch/ytmsearch to find YouTube videos matching the query.
      */
     private fun searchYouTube(query: String): List<YouTubeCandidate> {
-        val request = YoutubeDLRequest("ytsearch$SEARCH_RESULT_COUNT:$query")
+        // Try searching YouTube Music first
+        var candidates = executeSearch("ytmsearch$SEARCH_RESULT_COUNT:$query")
+        if (candidates.isEmpty()) {
+            Log.d(TAG, "No YouTube Music results found, falling back to standard YouTube search")
+            candidates = executeSearch("ytsearch$SEARCH_RESULT_COUNT:$query")
+        }
+        return candidates
+    }
+
+    private fun executeSearch(searchQuery: String): List<YouTubeCandidate> {
+        val request = YoutubeDLRequest(searchQuery)
         request.addOption("--dump-json")
         request.addOption("--flat-playlist")
         request.addOption("--no-download")
         request.addOption("--no-warnings")
 
-        val response = YoutubeDL.getInstance().execute(request)
-        val output = response.out ?: return emptyList()
+        return try {
+            val response = YoutubeDL.getInstance().execute(request)
+            val output = response.out ?: return emptyList()
 
-        // yt-dlp outputs one JSON object per line for each result
-        return output.lines()
-            .filter { it.isNotBlank() }
-            .mapNotNull { line ->
-                try {
-                    val json = gson.fromJson(line, JsonObject::class.java)
-                    val rawId = json.get("id")?.asString ?: ""
-                    val resolvedUrl = if (rawId.isNotEmpty()) {
-                        "https://www.youtube.com/watch?v=$rawId"
-                    } else {
-                        val rawUrl = json.get("url")?.asString
-                            ?: json.get("webpage_url")?.asString
-                            ?: ""
-                        if (rawUrl.startsWith("http")) rawUrl else "https://www.youtube.com/watch?v=$rawUrl"
+            // yt-dlp outputs one JSON object per line for each result
+            output.lines()
+                .filter { it.isNotBlank() }
+                .mapNotNull { line ->
+                    try {
+                        val json = gson.fromJson(line, JsonObject::class.java)
+                        val rawId = json.get("id")?.asString ?: ""
+                        val resolvedUrl = if (rawId.isNotEmpty()) {
+                            "https://www.youtube.com/watch?v=$rawId"
+                        } else {
+                            val rawUrl = json.get("url")?.asString
+                                ?: json.get("webpage_url")?.asString
+                                ?: ""
+                            if (rawUrl.startsWith("http")) rawUrl else "https://www.youtube.com/watch?v=$rawUrl"
+                        }
+                        YouTubeCandidate(
+                            url = resolvedUrl,
+                            title = json.get("title")?.asString ?: "",
+                            durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L,
+                            channel = json.get("channel")?.asString
+                                ?: json.get("uploader")?.asString ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to parse search result line", e)
+                        null
                     }
-                    YouTubeCandidate(
-                        url = resolvedUrl,
-                        title = json.get("title")?.asString ?: "",
-                        durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L,
-                        channel = json.get("channel")?.asString
-                            ?: json.get("uploader")?.asString ?: ""
-                    )
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse search result line", e)
-                    null
                 }
-            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Search failed for: $searchQuery", e)
+            emptyList()
+        }
     }
 
     /**
