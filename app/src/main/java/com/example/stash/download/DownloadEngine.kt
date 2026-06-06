@@ -71,8 +71,10 @@ class DownloadEngine(private val context: Context) {
         ytdlRequest.addOption("--socket-timeout", "30")
         ytdlRequest.addOption("--retries", "3")
         
-        // CRITICAL SPEED FIX: Bypass YouTube server throttling by downloading 4 stream chunks simultaneously
-        ytdlRequest.addOption("-N", "4")
+        // CRITICAL SPEED FIX: Bypass YouTube server throttling by downloading 8 stream chunks simultaneously
+        ytdlRequest.addOption("-N", "8")
+        // Increase buffer size for better network throughput
+        ytdlRequest.addOption("--buffer-size", "16K")
 
         try {
             val response = YoutubeDL.getInstance().execute(

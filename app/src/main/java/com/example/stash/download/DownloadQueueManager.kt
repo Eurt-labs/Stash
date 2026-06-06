@@ -29,8 +29,8 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val downloadSemaphore = Semaphore(1) // 1 concurrent download (prevents heating)
-    private val convertSemaphore = Semaphore(1)  // Strict limit of 1 conversion to prevent CPU starvation
+    private val downloadSemaphore = Semaphore(3) // 3 concurrent network downloads (safe — heating was from FFmpeg deadlock)
+    private val convertSemaphore = Semaphore(1)  // Strict 1 conversion at a time (CPU-heavy, prevents heating)
 
     // ── Observable state ──
     private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())
@@ -230,19 +230,14 @@ class DownloadQueueManager(
         try {
             var downloadUrl = request.url
 
-            // ── Step 1: Search ──
+            // ── Step 1: Search (no semaphore needed — lightweight HTTP lookup) ──
             if (request.trackInfo.youtubeUrl == null &&
                 request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
             ) {
-                downloadSemaphore.acquire()
-                try {
-                    updateItemState(batchId, request.id, DownloadState.SEARCHING)
-                    val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
-                        ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
-                    downloadUrl = matchedUrl
-                } finally {
-                    downloadSemaphore.release()
-                }
+                updateItemState(batchId, request.id, DownloadState.SEARCHING)
+                val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
+                    ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
+                downloadUrl = matchedUrl
             } else if (request.trackInfo.youtubeUrl != null) {
                 downloadUrl = request.trackInfo.youtubeUrl
             }
