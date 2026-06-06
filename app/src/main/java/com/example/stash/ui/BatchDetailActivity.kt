@@ -109,23 +109,12 @@ class BatchDetailActivity : AppCompatActivity() {
 
     private fun openDownloadedFile(filePath: String) {
         try {
-            val file = File(filePath)
-            if (!file.exists()) {
-                Toast.makeText(this, "File does not exist: $filePath", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            val uri = FileProvider.getUriForFile(
-                this,
-                "${packageName}.provider",
-                file
-            )
-
-            val mime = contentResolver.getType(uri) 
-                ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
-                ?: "*/*"
-
+            val uri = Uri.parse(filePath)
             val intent = Intent(Intent.ACTION_VIEW).apply {
+                val mime = contentResolver.getType(uri) ?: when {
+                    filePath.endsWith(".mp4", ignoreCase = true) || filePath.endsWith(".webm", ignoreCase = true) -> "video/*"
+                    else -> "audio/*"
+                }
                 setDataAndType(uri, mime)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

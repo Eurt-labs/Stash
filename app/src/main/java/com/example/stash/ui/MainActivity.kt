@@ -22,6 +22,7 @@ import com.example.stash.StashApplication
 import com.example.stash.StashOrchestrator
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import com.example.stash.download.DownloadBatch
 import com.example.stash.download.DownloadFormat
 import com.example.stash.download.DownloadQuality
 import com.example.stash.download.DownloadState
@@ -54,7 +55,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
 
     private lateinit var orchestrator: StashOrchestrator
-    private lateinit var adapter: DownloadAdapter
+    private lateinit var adapter: BatchAdapter
 
     // Views
     private lateinit var linkInput: TextInputEditText
@@ -71,10 +72,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var linkInputLayout: TextInputLayout
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var menuButton: ImageButton
-    private lateinit var cardSpotify: MaterialCardView
-    private lateinit var cardYoutube: MaterialCardView
-    private lateinit var cardYtMusic: MaterialCardView
-    private lateinit var cardInstagram: MaterialCardView
     private lateinit var drawerSpotifyFormat: Spinner
     private lateinit var drawerSpotifyQuality: Spinner
     private lateinit var drawerYoutubeFormat: Spinner
@@ -88,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        orchestrator = StashOrchestrator(this)
+        orchestrator = StashApplication.orchestrator
 
         bindViews()
         setupPlatformSpinner()
@@ -107,7 +104,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        orchestrator.shutdown()
         super.onDestroy()
     }
 
@@ -155,10 +151,6 @@ class MainActivity : AppCompatActivity() {
         linkInputLayout = findViewById(R.id.linkInputLayout)
         drawerLayout = findViewById(R.id.drawerLayout)
         menuButton = findViewById(R.id.menuButton)
-        cardSpotify = findViewById(R.id.cardSpotify)
-        cardYoutube = findViewById(R.id.cardYoutube)
-        cardYtMusic = findViewById(R.id.cardYtMusic)
-        cardInstagram = findViewById(R.id.cardInstagram)
         drawerSpotifyFormat = findViewById(R.id.drawerSpotifyFormat)
         drawerSpotifyQuality = findViewById(R.id.drawerSpotifyQuality)
         drawerYoutubeFormat = findViewById(R.id.drawerYoutubeFormat)
@@ -302,31 +294,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = DownloadAdapter()
-        adapter.setOnItemClickListener { item ->
-            if (item.state == DownloadState.COMPLETE) {
-                val path = item.filePath
-                if (!path.isNullOrBlank()) {
-                    try {
-                        val uri = Uri.parse(path)
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            val resolvedMimeType = contentResolver.getType(uri) ?: when {
-                                path.endsWith(".mp4", ignoreCase = true) || path.endsWith(".webm", ignoreCase = true) -> "video/*"
-                                else -> "audio/*"
-                            }
-                            setDataAndType(uri, resolvedMimeType)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else if (item.state == DownloadState.FAILED) {
-                Toast.makeText(this, "Download failed: ${item.error}", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Download in progress...", Toast.LENGTH_SHORT).show()
+        adapter = BatchAdapter()
+        adapter.setOnItemClickListener { batch ->
+            val intent = Intent(this, BatchDetailActivity::class.java).apply {
+                putExtra("BATCH_ID", batch.id)
             }
+            startActivity(intent)
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -347,22 +320,6 @@ class MainActivity : AppCompatActivity() {
 
         menuButton.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.END)
-        }
-
-        cardSpotify.setOnClickListener {
-            platformSpinner.setSelection(1) // Spotify
-        }
-
-        cardYoutube.setOnClickListener {
-            platformSpinner.setSelection(2) // YouTube
-        }
-
-        cardYtMusic.setOnClickListener {
-            platformSpinner.setSelection(3) // YouTube Music
-        }
-
-        cardInstagram.setOnClickListener {
-            platformSpinner.setSelection(4) // Instagram
         }
     }
 
@@ -594,7 +551,12 @@ class MainActivity : AppCompatActivity() {
             val format = DownloadFormat.entries[previewFormatSpinner.selectedItemPosition]
             
             // Enqueue downloads!
-            orchestrator.enqueueTracks(tracks, quality, format)
+            val batchName = if (tracks.size == 1) {
+                tracks[0].title
+            } else {
+                tracks[0].album ?: "Stash Playlist"
+            }
+            orchestrator.enqueueTracks(tracks, batchName, quality, format)
             
             // Clear input and notify user
             linkInput.text?.clear()
@@ -611,8 +573,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeDownloads() {
         lifecycleScope.launch {
-            orchestrator.downloadItems.collectLatest { items ->
-                val itemList = items.values.toList().reversed() // Newest first
+            orchestrator.downloadBatches.collectLatest { batches ->
+                val itemList = batches.values.toList().sortedByDescending { it.timestamp }
 
                 adapter.submitList(itemList)
 
@@ -621,13 +583,10 @@ class MainActivity : AppCompatActivity() {
                 recyclerView.visibility = if (itemList.isEmpty()) View.GONE else View.VISIBLE
 
                 // Update downloads section header
-                val activeCount = items.values.count { 
-                    it.state == DownloadState.DOWNLOADING || 
-                    it.state == DownloadState.SEARCHING ||
-                    it.state == DownloadState.CONVERTING ||
-                    it.state == DownloadState.TAGGING
+                val activeCount = batches.values.count { 
+                    it.state == DownloadState.DOWNLOADING
                 }
-                val queuedCount = items.values.count { it.state == DownloadState.QUEUED }
+                val queuedCount = batches.values.count { it.state == DownloadState.QUEUED }
                 
                 downloadsHeader.text = buildString {
                     append("Downloads")
