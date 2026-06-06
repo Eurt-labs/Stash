@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Stash</string>
+    <string name="paste_link_hint">Paste Spotify or YouTube link here…</string>
+    <string name="download_button">Download</string>
+    <string name="quality_label">Quality</string>
+    <string name="format_label">Format</string>
+    <string name="no_downloads">No downloads yet.\nPaste a link above to get started.</string>
+    <string name="downloading">Downloading…</string>
+    <string name="searching_youtube">Searching YouTube…</string>
+    <string name="converting">Converting…</string>
+    <string name="tagging_metadata">Adding metadata…</string>
+    <string name="complete">Complete</string>
+    <string name="failed">Failed</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="queued">Queued</string>
+    <string name="cancel_all">Cancel All</string>
+    <string name="clear_finished">Clear Finished</string>
+    <string name="unsupported_link">Unsupported link. Paste a Spotify or YouTube URL.</string>
+    <string name="download_started">Download started!</string>
+    <string name="error_no_link">Please paste a link first</string>
+</resources>

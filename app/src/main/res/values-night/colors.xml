@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Semantic Theme Colors (Dark Mode) -->
+    <color name="app_background">#FF0B0F19</color> <!-- Deep Midnight Navy -->
+    <color name="app_surface">#FF1E2640</color> <!-- Dark Surface -->
+    <color name="app_surface_elevated">#FF2A3454</color>
+    <color name="app_surface_card">#FF1E2640</color>
+    
+    <!-- Accent Colors: Vibrant Cyan & Mint -->
+    <color name="accent_primary">#FF14B8A6</color> <!-- Vibrant Teal/Mint -->
+    <color name="accent_primary_light">#FF2DD4BF</color>
+    <color name="accent_primary_dark">#FF0D9488</color>
+    
+    <!-- Status & Alerts -->
+    <color name="accent_success">#FF34D399</color>
+    <color name="accent_error">#FFF87171</color>
+    <color name="accent_warning">#FBBF24</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#FFF9FAFB</color> <!-- Off-white -->
+    <color name="text_secondary">#FF9CA3AF</color> <!-- Gray 400 -->
+    <color name="text_hint">#FF6B7280</color> <!-- Gray 500 -->
+    
+    <!-- Maintain old names for safety -->
+    <color name="background_dark">#FF0B0F19</color>
+    <color name="surface_dark">#FF1E2640</color>
+    <color name="surface_elevated">#FF2A3454</color>
+    <color name="surface_card">#FF1E2640</color>
+</resources>
