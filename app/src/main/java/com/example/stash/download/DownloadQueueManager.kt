@@ -291,7 +291,7 @@ class DownloadQueueManager(
             // ── Step 6: Complete ──
             completeItem(batchId, request.id, finalPath)
 
-            Log.d(TAG, "Download complete: $filePath")
+            Log.d(TAG, "Download complete: $finalPath")
 
         } catch (e: CancellationException) {
             updateItemState(batchId, request.id, DownloadState.CANCELLED)
