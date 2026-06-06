@@ -29,7 +29,7 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val semaphore = Semaphore(7) // Concurrency limit of 7 within a batch
+    private val semaphore = Semaphore(3) // Concurrency limit of 3 to prevent severe CPU/RAM throttling on mobile devices
 
     // ── Observable state ──
     private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())

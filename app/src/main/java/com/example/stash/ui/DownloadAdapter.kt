@@ -71,9 +71,14 @@ class DownloadAdapter : ListAdapter<DownloadItem, DownloadAdapter.ViewHolder>(Di
             DownloadState.DOWNLOADING -> {
                 holder.statusBadge.text = "DOWNLOADING"
                 holder.statusBadge.setTextColor(color(holder, R.color.accent_primary))
-                holder.progressBar.isIndeterminate = false
-                holder.progressBar.progress = progressPercent
-                holder.progressText.text = "$progressPercent%"
+                if (progressPercent < 0) {
+                    holder.progressBar.isIndeterminate = true
+                    holder.progressText.text = "Starting…"
+                } else {
+                    holder.progressBar.isIndeterminate = false
+                    holder.progressBar.progress = progressPercent
+                    holder.progressText.text = "$progressPercent%"
+                }
                 holder.speedText.text = item.speed ?: ""
             }
             DownloadState.CONVERTING -> {
