@@ -57,6 +57,11 @@ class StashApplication : Application() {
             FFmpeg.getInstance().init(this)
             Log.d(TAG, "YoutubeDL and FFmpeg initialized successfully")
 
+            // CRITICAL FIX: Force execute permissions on the ffmpeg binary.
+            // Without this, yt-dlp hangs forever at 100% because it can't call
+            // ffmpeg for DASH stream concatenation (error=13 Permission denied).
+            fixFFmpegPermissions()
+
             isYtDlpInitialized = true
 
             // Auto-update yt-dlp in the background to keep up with YouTube changes
@@ -72,6 +77,34 @@ class StashApplication : Application() {
         } catch (e: YoutubeDLException) {
             Log.e(TAG, "Failed to initialize YoutubeDL", e)
             isYtDlpInitialized = false
+        }
+    }
+
+    /**
+     * Walks the app's internal directories to find the bundled ffmpeg binary
+     * and ensures it has execute (+x) permissions. On some Android devices/versions,
+     * the binary loses its execute bit after extraction, causing yt-dlp to hang.
+     */
+    private fun fixFFmpegPermissions() {
+        val searchDirs = listOfNotNull(
+            noBackupFilesDir,
+            java.io.File(applicationInfo.nativeLibraryDir)
+        )
+        
+        for (dir in searchDirs) {
+            if (!dir.exists()) continue
+            dir.walkTopDown().forEach { file ->
+                if (file.name.contains("ffmpeg", ignoreCase = true) ||
+                    file.name.contains("ffprobe", ignoreCase = true)
+                ) {
+                    if (!file.canExecute()) {
+                        val success = file.setExecutable(true, false)
+                        Log.d(TAG, "Set execute permission on ${file.absolutePath}: $success")
+                    } else {
+                        Log.d(TAG, "FFmpeg binary already executable: ${file.absolutePath}")
+                    }
+                }
+            }
         }
     }
 }

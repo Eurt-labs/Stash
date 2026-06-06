@@ -160,6 +160,43 @@ class DownloadQueueManager(
     }
 
     /**
+     * Cancels all tracks within a specific batch only.
+     * Does NOT affect other batches or app state.
+     */
+    fun cancelBatch(batchId: String) {
+        val batch = _batches.value[batchId] ?: return
+        
+        // Cancel all active jobs for this batch
+        batch.items.forEach { item ->
+            activeJobs[item.id]?.cancel()
+            activeJobs.remove(item.id)
+        }
+        
+        // Mark non-finished items as cancelled
+        _batches.update { currentBatches ->
+            val currentBatch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = currentBatch.items.map { item ->
+                if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
+                    item.copy(state = DownloadState.CANCELLED)
+                } else {
+                    item
+                }
+            }
+            currentBatches.toMutableMap().apply { put(batchId, currentBatch.copy(items = updatedItems)) }
+        }
+        
+        // If this was the active batch, move on to the next one
+        synchronized(pendingBatchIds) {
+            if (activeBatchId == batchId) {
+                activeBatchId = null
+            }
+        }
+        checkNextBatch()
+        
+        Log.d(TAG, "Batch '$batchId' cancelled")
+    }
+
+    /**
      * Cancels all batches and active downloads.
      */
     fun cancelAll() {
