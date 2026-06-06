@@ -65,23 +65,20 @@ class DownloadEngine(private val context: Context) {
         // Configure format/quality based on request
         configureFormat(ytdlRequest, request)
 
-        // ── Resilience ──
+        // ── Bulletproof minimal flags (no experimental options) ──
         ytdlRequest.addOption("--no-check-certificates")
         ytdlRequest.addOption("--no-warnings")
         ytdlRequest.addOption("--socket-timeout", "30")
         ytdlRequest.addOption("--retries", "5")
         ytdlRequest.addOption("--fragment-retries", "5")
-        ytdlRequest.addOption("--ignore-errors")  // Skip failed tracks, don't stall the batch
+        ytdlRequest.addOption("--ignore-errors")
         
-        // ── Speed: Fragment parallelism ──
-        // Splits each song's DASH stream into 4 parallel chunk downloads
-        ytdlRequest.addOption("--concurrent-fragments", "4")
+        // CRITICAL: Prevent yt-dlp from calling FFmpeg internally for "fixup"
+        // This was causing the 100% stall + "Permission denied" error on this device
+        ytdlRequest.addOption("--fixup", "never")
         
-        // ── Speed: Larger HTTP chunks = fewer round-trips ──
-        ytdlRequest.addOption("--http-chunk-size", "10M")
-        
-        // ── Speed: Force IPv4 (mobile IPv6 DNS stalls) ──
-        ytdlRequest.addOption("--force-ipv4")
+        // Don't create .part files — cleaner and avoids Android filesystem issues
+        ytdlRequest.addOption("--no-part")
 
         try {
             val response = YoutubeDL.getInstance().execute(
