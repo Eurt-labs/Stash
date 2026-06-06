@@ -69,17 +69,22 @@ class SpotifyWebScraper {
             """<meta\s+name="description"\s+content="([^"]+)"/?""",
             RegexOption.IGNORE_CASE
         )
+        fun extractJsonById(html: String, id: String): String? {
+            val startTag = "<script id=\"$id\" type=\"application/json\">"
+            val startIdx = html.indexOf(startTag)
+            if (startIdx == -1) return null
+            val jsonStart = startIdx + startTag.length
+            val endIdx = html.indexOf(NEXT_DATA_END, jsonStart)
+            if (endIdx == -1) return null
+            return html.substring(jsonStart, endIdx).trim()
+        }
+
         /**
          * Extracts the __NEXT_DATA__ JSON string from the HTML using indexOf.
          * More reliable than regex on Android's ICU engine.
          */
         fun extractNextDataJson(html: String): String? {
-            val startIdx = html.indexOf(NEXT_DATA_START)
-            if (startIdx == -1) return null
-            val jsonStart = startIdx + NEXT_DATA_START.length
-            val endIdx = html.indexOf(NEXT_DATA_END, jsonStart)
-            if (endIdx == -1) return null
-            return html.substring(jsonStart, endIdx).trim()
+            return extractJsonById(html, "__NEXT_DATA__")
         }
     }
 
@@ -315,24 +320,29 @@ class SpotifyWebScraper {
             val embedUrl = "$SPOTIFY_BASE/embed/$type/$id"
             val html = fetchPage(embedUrl) ?: return emptyList()
 
-            // Extract __NEXT_DATA__ from the embed page
-            val jsonStr = extractNextDataJson(html) ?: return emptyList()
+            // Extract resource or __NEXT_DATA__ from the embed page
+            val jsonStr = extractJsonById(html, "resource")
+                ?: extractJsonById(html, "__NEXT_DATA__")
+                ?: return emptyList()
             val json = JsonParser.parseString(jsonStr).asJsonObject
 
             // Extract track list from embed data
-            val items = json.getAsJsonObject("props")
-                ?.getAsJsonObject("pageProps")
-                ?.getAsJsonObject("state")
-                ?.getAsJsonObject("data")
-                ?.getAsJsonObject("entity")
+            val entity = when {
+                json.has("tracks") || json.has("trackList") -> json
+                else -> json.getAsJsonObject("props")
+                    ?.getAsJsonObject("pageProps")
+                    ?.getAsJsonObject("state")
+                    ?.getAsJsonObject("data")
+                    ?.getAsJsonObject("entity")
+            } ?: return emptyList()
 
-            if (items != null && type == "track") {
-                val track = parseTrackJson(items, parsedLink) ?: return emptyList()
+            if (type == "track") {
+                val track = parseTrackJson(entity, parsedLink) ?: return emptyList()
                 return listOf(track)
             }
 
-            val trackList = items?.getAsJsonObject("trackList")
-                ?.getAsJsonArray("items")
+            val trackList = entity.getAsJsonObject("trackList")?.getAsJsonArray("items")
+                ?: entity.getAsJsonObject("tracks")?.getAsJsonArray("items")
                 ?: return emptyList()
 
             trackList.mapNotNull { item ->
@@ -400,6 +410,16 @@ class SpotifyWebScraper {
             .filter { it.length > 2 } // Filter out noise
 
         if (trackEntries.isEmpty()) return emptyList()
+
+        // Safeguard: if description is just a summary of the playlist name and item count, ignore it
+        if (trackEntries.any {
+                it.contains("Playlist", ignoreCase = true) ||
+                it.contains("items", ignoreCase = true) ||
+                it.contains("songs", ignoreCase = true) ||
+                it.contains("likes", ignoreCase = true)
+            }) {
+            return emptyList()
+        }
 
         // Each entry is typically "Artist - Song" or just "Song"
         return trackEntries.mapIndexed { index, entry ->

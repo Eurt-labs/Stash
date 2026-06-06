@@ -50,11 +50,30 @@ class DownloadQueueManager(
     // Track active download jobs for cancellation
     private val activeJobs = mutableMapOf<String, Job>()
 
-    /**
-     * Enqueues a single download request.
-     * The download will start automatically when a slot is available.
-     */
-    fun enqueue(request: DownloadRequest) {
+    // Throttled pending queue to cap active + queued items in the map at MAX_ACTIVE_QUEUE (7)
+    private val pendingRequests = java.util.Collections.synchronizedList(mutableListOf<DownloadRequest>())
+    private val MAX_ACTIVE_QUEUE = 7
+
+    private fun getActiveQueueCount(): Int {
+        return _downloadItems.value.values.count {
+            it.state == DownloadState.QUEUED ||
+            it.state == DownloadState.SEARCHING ||
+            it.state == DownloadState.DOWNLOADING ||
+            it.state == DownloadState.CONVERTING ||
+            it.state == DownloadState.TAGGING
+        }
+    }
+
+    private fun checkPendingQueue() {
+        synchronized(pendingRequests) {
+            while (pendingRequests.isNotEmpty() && getActiveQueueCount() < MAX_ACTIVE_QUEUE) {
+                val nextRequest = pendingRequests.removeAt(0)
+                startDownloadTask(nextRequest)
+            }
+        }
+    }
+
+    private fun startDownloadTask(request: DownloadRequest) {
         val item = DownloadItem(
             id = request.id,
             trackInfo = request.trackInfo,
@@ -69,30 +88,49 @@ class DownloadQueueManager(
             } finally {
                 semaphore.release()
                 activeJobs.remove(request.id)
+                checkPendingQueue()
             }
         }
         activeJobs[request.id] = job
     }
 
     /**
+     * Enqueues a single download request.
+     * The download will start automatically when a slot is available.
+     */
+    fun enqueue(request: DownloadRequest) {
+        enqueueAll(listOf(request))
+    }
+
+    /**
      * Enqueues multiple download requests at once.
      */
     fun enqueueAll(requests: List<DownloadRequest>) {
-        requests.forEach { enqueue(it) }
+        synchronized(pendingRequests) {
+            pendingRequests.addAll(requests)
+        }
+        checkPendingQueue()
     }
 
     /**
      * Cancels a specific download.
      */
     fun cancel(id: String) {
+        synchronized(pendingRequests) {
+            pendingRequests.removeAll { it.id == id }
+        }
         activeJobs[id]?.cancel()
         updateItemState(id, DownloadState.CANCELLED)
+        checkPendingQueue()
     }
 
     /**
      * Cancels all active and queued downloads.
      */
     fun cancelAll() {
+        synchronized(pendingRequests) {
+            pendingRequests.clear()
+        }
         activeJobs.values.forEach { it.cancel() }
         activeJobs.clear()
         _downloadItems.value = _downloadItems.value.mapValues { (_, item) ->
