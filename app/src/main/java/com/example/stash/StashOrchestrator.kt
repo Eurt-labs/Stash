@@ -1,11 +1,5 @@
 package com.example.stash
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
-import android.os.IBinder
-import android.util.Log
 import com.example.stash.download.*
 import com.example.stash.model.ContentType
 import com.example.stash.model.Platform
@@ -19,78 +13,21 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Main entry point for the Stash download algorithm.
- *
- * **Zero authentication required.** Just paste a link and it downloads.
- *
- * This orchestrator ties together all components:
- * 1. **Link Parsing** → Identifies the platform and content type
- * 2. **Metadata Extraction** → Scrapes public Spotify pages / uses yt-dlp for YouTube
- * 3. **YouTube Matching** → Resolves Spotify tracks to YouTube URLs
- * 4. **Download Execution** → Manages the concurrent download queue
- * 5. **Post-Processing** → Tags files and registers in MediaStore
- *
- * ## Usage
- * ```kotlin
- * val orchestrator = StashOrchestrator(context)
- *
- * // Download a Spotify playlist (no API key needed!)
- * orchestrator.processLink(
- *     link = "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
- *     quality = DownloadQuality.AUDIO_320,
- *     format = DownloadFormat.MP3
- * )
- *
- * // Download a YouTube video
- * orchestrator.processLink(
- *     link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
- *     format = DownloadFormat.VIDEO_720
- * )
- *
- * // Observe progress
- * lifecycleScope.launch {
- *     orchestrator.downloadItems.collect { items ->
- *         items.forEach { (id, item) ->
- *             println("${item.trackInfo.title}: ${item.state} ${(item.progress * 100).toInt()}%")
- *         }
- *     }
- * }
- * ```
+ * Main entry point for the Stash download algorithm (Desktop Version).
  */
-class StashOrchestrator(private val context: Context) {
+class StashOrchestrator {
 
     companion object {
         private const val TAG = "StashOrchestrator"
     }
 
-    // No API keys, no auth — uses public web scraping
     private val spotifyScraper = SpotifyWebScraper()
-    private val downloadEngine = DownloadEngine(context)
-    private val fileManager = FileManager(context)
+    private val downloadEngine = DownloadEngine()
+    private val fileManager = FileManager()
 
-    val queueManager = DownloadQueueManager(context)
+    val queueManager = DownloadQueueManager()
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
-    // ── Service binding ──
-    private var downloadService: DownloadService? = null
-    private var serviceBound = false
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as DownloadService.LocalBinder
-            downloadService = binder.getService()
-            downloadService?.attachQueueManager(queueManager)
-            serviceBound = true
-            Log.d(TAG, "Bound to DownloadService")
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            downloadService = null
-            serviceBound = false
-            Log.d(TAG, "Unbound from DownloadService")
-        }
-    }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /**
      * Exposes the download queue state (batches) for UI observation.
@@ -99,23 +36,12 @@ class StashOrchestrator(private val context: Context) {
         get() = queueManager.batches
 
     /**
-     * Processes a Spotify or YouTube link and starts downloading.
-     * **No authentication required for any platform.**
-     *
-     * @param link A Spotify or YouTube URL
-     * @param outputDir Target directory (defaults to Downloads/Stash/)
-     * @param quality Audio quality preset
-     * @param format Download format (audio or video)
-     * @return List of tracks that were enqueued for download
-     * @throws IllegalArgumentException if the link is not supported
-     */
-    /**
      * Fetches and returns track metadata from the link without initiating a download.
      */
     suspend fun fetchMetadata(link: String): List<TrackInfo> {
         val parsedLink = LinkParser.parse(link)
             ?: throw IllegalArgumentException("Unsupported link: $link")
-        Log.d(TAG, "Fetching metadata for: ${parsedLink.platform} / ${parsedLink.contentType}")
+        println("Fetching metadata for: ${parsedLink.platform} / ${parsedLink.contentType}")
         return fetchTracks(parsedLink)
     }
 
@@ -130,9 +56,8 @@ class StashOrchestrator(private val context: Context) {
     ) {
         if (tracks.isEmpty()) return
 
-        startDownloadService()
-
-        val cacheDir = File(context.cacheDir, "downloads").apply {
+        val userHome = System.getProperty("user.home")
+        val cacheDir = File(userHome, ".stash_cache").apply {
             if (!exists()) mkdirs()
         }.absolutePath
 
@@ -147,7 +72,7 @@ class StashOrchestrator(private val context: Context) {
         }
 
         queueManager.enqueueBatch(batchName, requests)
-        Log.d(TAG, "Enqueued batch '$batchName' with ${requests.size} download(s) to cache directory")
+        println("Enqueued batch '$batchName' with ${requests.size} download(s) to cache directory")
     }
 
     /**
@@ -184,7 +109,8 @@ class StashOrchestrator(private val context: Context) {
                 val tracks = processLink(link, outputDir, quality, format)
                 allTracks.addAll(tracks)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to process link: $link", e)
+                System.err.println("Failed to process link: $link")
+                e.printStackTrace()
             }
         }
         return allTracks
@@ -215,10 +141,6 @@ class StashOrchestrator(private val context: Context) {
      */
     fun shutdown() {
         queueManager.shutdown()
-        if (serviceBound) {
-            context.unbindService(serviceConnection)
-            serviceBound = false
-        }
         scope.cancel()
     }
 
@@ -269,17 +191,6 @@ class StashOrchestrator(private val context: Context) {
 
         return downloadEngine.extractInfo(url).map { track ->
             track.copy(youtubeUrl = track.sourceUrl)
-        }
-    }
-
-    /**
-     * Starts the foreground download service.
-     */
-    private fun startDownloadService() {
-        if (!serviceBound) {
-            val intent = DownloadService.newIntent(context)
-            context.startForegroundService(intent)
-            context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
     }
 }
