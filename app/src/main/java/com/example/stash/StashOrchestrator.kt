@@ -223,7 +223,15 @@ class StashOrchestrator(private val context: Context) {
         return when (parsedLink.platform) {
             Platform.SPOTIFY -> fetchSpotifyTracks(parsedLink)
             Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink)
+            Platform.INSTAGRAM -> fetchInstagramTracks(parsedLink)
         }
+    }
+
+    /**
+     * Extracts Instagram post/reel metadata via yt-dlp.
+     */
+    private suspend fun fetchInstagramTracks(parsedLink: ParsedLink): List<TrackInfo> {
+        return downloadEngine.extractInfo(parsedLink.originalUrl)
     }
 
     /**

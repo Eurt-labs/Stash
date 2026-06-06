@@ -77,8 +77,12 @@ class YouTubeSearchMatcher(private val context: Context) {
      * Format: "Artist1, Artist2 - Track Title"
      */
     private fun buildSearchQuery(trackInfo: TrackInfo): String {
-        val artists = trackInfo.artists.joinToString(", ")
-        return "$artists - ${trackInfo.title}"
+        val primaryArtist = trackInfo.artists.firstOrNull() ?: ""
+        return if (primaryArtist.isNotEmpty()) {
+            "$primaryArtist ${trackInfo.title}"
+        } else {
+            trackInfo.title
+        }
     }
 
     /**
@@ -100,10 +104,17 @@ class YouTubeSearchMatcher(private val context: Context) {
             .mapNotNull { line ->
                 try {
                     val json = gson.fromJson(line, JsonObject::class.java)
-                    YouTubeCandidate(
-                        url = json.get("url")?.asString
+                    val rawId = json.get("id")?.asString ?: ""
+                    val resolvedUrl = if (rawId.isNotEmpty()) {
+                        "https://www.youtube.com/watch?v=$rawId"
+                    } else {
+                        val rawUrl = json.get("url")?.asString
                             ?: json.get("webpage_url")?.asString
-                            ?: "https://www.youtube.com/watch?v=${json.get("id")?.asString}",
+                            ?: ""
+                        if (rawUrl.startsWith("http")) rawUrl else "https://www.youtube.com/watch?v=$rawUrl"
+                    }
+                    YouTubeCandidate(
+                        url = resolvedUrl,
                         title = json.get("title")?.asString ?: "",
                         durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L,
                         channel = json.get("channel")?.asString

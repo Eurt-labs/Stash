@@ -54,6 +54,46 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Platform selection spinner -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose Platform"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/spinner_background">
+
+                    <Spinner
+                        android:id="@+id/platformSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:paddingEnd="32dp"
+                        android:spinnerMode="dropdown" />
+
+                    <!-- Custom dropdown arrow -->
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="12dp"
+                        android:src="@android:drawable/arrow_down_float"
+                        app:tint="@color/text_secondary" />
+                </FrameLayout>
+            </LinearLayout>
+
             <!-- URL input field -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/linkInputLayout"

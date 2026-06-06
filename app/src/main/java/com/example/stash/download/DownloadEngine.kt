@@ -216,10 +216,16 @@ class DownloadEngine(private val context: Context) {
         val durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L
         val thumbnail = json.get("thumbnail")?.asString
 
+        val detectedPlatform = when {
+            sourceUrl.contains("instagram.com") -> Platform.INSTAGRAM
+            sourceUrl.contains("music.youtube.com") -> Platform.YOUTUBE_MUSIC
+            else -> Platform.YOUTUBE
+        }
+
         // Determine the best URL for this entry
         val videoUrl = json.get("webpage_url")?.asString
             ?: json.get("url")?.asString
-            ?: "https://www.youtube.com/watch?v=${json.get("id")?.asString}"
+            ?: if (detectedPlatform == Platform.INSTAGRAM) sourceUrl else "https://www.youtube.com/watch?v=${json.get("id")?.asString}"
 
         return TrackInfo(
             title = title,
@@ -227,9 +233,9 @@ class DownloadEngine(private val context: Context) {
             album = album,
             durationMs = durationMs,
             albumArtUrl = thumbnail,
-            source = Platform.YOUTUBE,
+            source = detectedPlatform,
             sourceUrl = sourceUrl,
-            youtubeUrl = videoUrl
+            youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM) null else videoUrl
         )
     }
 
