@@ -29,7 +29,8 @@ class DownloadQueueManager(
     private val fileManager = FileManager(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val semaphore = Semaphore(2) // Concurrency limit of 2 to prevent severe CPU/RAM throttling on mobile devices
+    private val downloadSemaphore = Semaphore(3) // Up to 3 concurrent network downloads
+    private val convertSemaphore = Semaphore(1)  // Strict limit of 1 conversion to prevent CPU starvation
 
     // ── Observable state ──
     private val _batches = MutableStateFlow<Map<String, DownloadBatch>>(emptyMap())
@@ -77,11 +78,9 @@ class DownloadQueueManager(
             val request = requestMap[item.id]
             if (request != null) {
                 val job = scope.launch {
-                    semaphore.acquire()
                     try {
                         processDownload(request, batchId)
                     } finally {
-                        semaphore.release()
                         activeJobs.remove(request.id)
                         checkBatchCompletion(batchId)
                     }
@@ -235,41 +234,61 @@ class DownloadQueueManager(
             if (request.trackInfo.youtubeUrl == null &&
                 request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
             ) {
-                updateItemState(batchId, request.id, DownloadState.SEARCHING)
-                val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
-                    ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
-                downloadUrl = matchedUrl
+                downloadSemaphore.acquire()
+                try {
+                    updateItemState(batchId, request.id, DownloadState.SEARCHING)
+                    val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
+                        ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
+                    downloadUrl = matchedUrl
+                } finally {
+                    downloadSemaphore.release()
+                }
             } else if (request.trackInfo.youtubeUrl != null) {
                 downloadUrl = request.trackInfo.youtubeUrl
             }
 
             // ── Step 2: Download ──
-            updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
-
-            val updatedRequest = request.copy(url = downloadUrl)
-            val filePath = downloadEngine.download(updatedRequest) { percent, eta, speed, isConverting ->
-                if (isConverting) {
-                    updateItemState(batchId, request.id, DownloadState.CONVERTING)
-                } else {
+            downloadSemaphore.acquire()
+            val rawFilePath: String
+            try {
+                updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
+                val updatedRequest = request.copy(url = downloadUrl)
+                rawFilePath = downloadEngine.download(updatedRequest) { percent, eta, speed ->
                     updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
                 }
+            } finally {
+                downloadSemaphore.release()
             }
 
-            // ── Step 3: Tag ──
+            // ── Step 3: Convert ──
+            updateItemState(batchId, request.id, DownloadState.CONVERTING)
+            convertSemaphore.acquire()
+            val convertedFilePath: String
+            try {
+                convertedFilePath = if (!request.format.isVideo) {
+                    downloadEngine.convertAudio(rawFilePath, request.format, request.quality)
+                } else {
+                    rawFilePath
+                }
+            } finally {
+                convertSemaphore.release()
+            }
+
+            // ── Step 4: Tag ──
             updateItemState(batchId, request.id, DownloadState.TAGGING)
 
             try {
-                metadataTagger.tagFile(filePath, request.trackInfo)
+                metadataTagger.tagFile(convertedFilePath, request.trackInfo)
             } catch (e: Exception) {
                 Log.w(TAG, "Metadata tagging failed (non-fatal): ${e.message}")
             }
 
-            // ── Step 4: Move ──
+            // ── Step 5: Move ──
             val finalPath = withContext(Dispatchers.IO) {
-                fileManager.moveToFinalDestination(filePath, request.trackInfo, request.format.extension)
+                fileManager.moveToFinalDestination(convertedFilePath, request.trackInfo, request.format.extension)
             }
 
-            // ── Step 5: Complete ──
+            // ── Step 6: Complete ──
             completeItem(batchId, request.id, finalPath)
 
             Log.d(TAG, "Download complete: $filePath")

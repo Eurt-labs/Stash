@@ -41,7 +41,7 @@ class DownloadEngine(private val context: Context) {
      */
     suspend fun download(
         request: DownloadRequest,
-        onProgress: ((Float, Long, String, Boolean) -> Unit)? = null
+        onProgress: ((Float, Long, String) -> Unit)? = null
     ): String = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting download: ${request.url} → ${request.outputDir}")
 
@@ -76,8 +76,7 @@ class DownloadEngine(private val context: Context) {
                 ytdlRequest
             ) { progress, etaInSeconds, line ->
                 val speed = parseSpeed(line)
-                val isConverting = progress >= 100.0f && (line.contains("[ExtractAudio]") || line.contains("[ffmpeg]"))
-                onProgress?.invoke(progress, etaInSeconds.toLong(), speed, isConverting)
+                onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
             }
 
             Log.d(TAG, "Download complete. Output: ${response.out}")
@@ -146,6 +145,84 @@ class DownloadEngine(private val context: Context) {
         }
     }
 
+    /**
+     * Manually converts a raw downloaded audio file into the target format using FFmpeg.
+     */
+    suspend fun convertAudio(
+        inputPath: String,
+        format: DownloadFormat,
+        quality: DownloadQuality
+    ): String = withContext(Dispatchers.IO) {
+        val inputFile = File(inputPath)
+        val outputFile = File(inputFile.parent, "${inputFile.nameWithoutExtension}.${format.extension}")
+        
+        Log.d(TAG, "Starting manual FFmpeg conversion: ${inputFile.name} -> ${outputFile.name}")
+        
+        val ffmpegBinary = findFFmpegBinary()
+            ?: throw DownloadException("FFmpeg binary not found on device.")
+
+        val cmd = mutableListOf(
+            ffmpegBinary.absolutePath,
+            "-y", // overwrite
+            "-i", inputFile.absolutePath,
+            "-threads", "1", // Limit CPU usage to prevent freezing
+            "-vn" // No video
+        )
+
+        when (format) {
+            DownloadFormat.MP3 -> {
+                cmd.addAll(listOf("-c:a", "libmp3lame", "-b:a", "${quality.bitrateKbps}k"))
+            }
+            DownloadFormat.M4A -> {
+                cmd.addAll(listOf("-c:a", "aac", "-b:a", "${quality.bitrateKbps}k"))
+            }
+            DownloadFormat.OGG -> {
+                cmd.addAll(listOf("-c:a", "libvorbis", "-b:a", "${quality.bitrateKbps}k"))
+            }
+            DownloadFormat.OPUS -> {
+                cmd.addAll(listOf("-c:a", "libopus", "-b:a", "${quality.bitrateKbps}k"))
+            }
+            else -> {}
+        }
+
+        cmd.add(outputFile.absolutePath)
+
+        val process = ProcessBuilder(cmd)
+            .redirectErrorStream(true)
+            .start()
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val errorOutput = process.inputStream.bufferedReader().readText()
+            Log.e(TAG, "FFmpeg conversion failed (exit $exitCode): $errorOutput")
+            throw DownloadException("Audio conversion failed with code $exitCode")
+        }
+
+        // Delete the original raw file after successful conversion
+        if (inputFile.exists()) {
+            inputFile.delete()
+        }
+
+        return@withContext outputFile.absolutePath
+    }
+
+    private fun findFFmpegBinary(): File? {
+        // Search in noBackupFilesDir (common for youtubedl-android)
+        context.noBackupFilesDir.walkTopDown().forEach { file ->
+            if ((file.name == "ffmpeg" || file.name == "libffmpeg.so") && file.canExecute()) {
+                return file
+            }
+        }
+        // Search in nativeLibraryDir
+        val nativeDir = File(context.applicationInfo.nativeLibraryDir)
+        if (nativeDir.exists()) {
+            nativeDir.listFiles()?.forEach { file ->
+                if (file.name == "libffmpeg.so") return file
+            }
+        }
+        return null
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Private helpers
     // ──────────────────────────────────────────────────────────────
@@ -173,27 +250,10 @@ class DownloadEngine(private val context: Context) {
 
         } else {
             // Audio-only extraction
-            ytdlRequest.addOption("-x") // Extract audio
-            ytdlRequest.addOption("--audio-format", request.format.extension)
-            
-            // Limit FFmpeg threads to prevent CPU exhaustion on mobile when re-encoding multiple audio files
-            ytdlRequest.addOption("--postprocessor-args", "ffmpeg:-threads 1")
-
-            when (request.format) {
-                DownloadFormat.MP3 -> {
-                    ytdlRequest.addOption("--audio-quality", "${request.quality.bitrateKbps}K")
-                }
-                DownloadFormat.M4A -> {
-                    ytdlRequest.addOption("--audio-quality", "0") // Best quality for M4A
-                }
-                DownloadFormat.OGG -> {
-                    ytdlRequest.addOption("--audio-quality", "${request.quality.bitrateKbps}K")
-                }
-                DownloadFormat.OPUS -> {
-                    ytdlRequest.addOption("--audio-quality", "0")
-                }
-                else -> {} // Video formats handled above
-            }
+            // We do NOT use -x or --audio-format here because we manually convert it afterwards
+            // This decouples the network download from the CPU-heavy conversion phase.
+            ytdlRequest.addOption("-f", "bestaudio/best")
+            // Make sure yt-dlp doesn't overwrite container if not needed, but keep extension safe
         }
     }
 
