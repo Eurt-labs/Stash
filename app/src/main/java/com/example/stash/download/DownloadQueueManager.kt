@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 
 /**
@@ -63,10 +64,13 @@ class DownloadQueueManager(
         Log.d(TAG, "Starting execution of batch '$batchId' (${batch.name}) with ${batch.totalTracks} tracks")
         
         // Mark all items in the batch as QUEUED (or preserve their current state)
-        val updatedItems = batch.items.map { item ->
-            if (item.state == DownloadState.QUEUED) item else item.copy(state = DownloadState.QUEUED)
+        _batches.update { currentBatches ->
+            val currentBatch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = currentBatch.items.map { item ->
+                if (item.state == DownloadState.QUEUED) item else item.copy(state = DownloadState.QUEUED)
+            }
+            currentBatches.toMutableMap().apply { put(batchId, currentBatch.copy(items = updatedItems)) }
         }
-        updateBatchItems(batchId, updatedItems)
 
         // Launch execution for each track in the batch
         batch.items.forEach { item ->
@@ -130,8 +134,10 @@ class DownloadQueueManager(
         )
 
         requests.forEach { requestMap[it.id] = it }
-        _batches.value = _batches.value.toMutableMap().apply {
-            put(batchId, batch)
+        _batches.update { currentBatches ->
+            currentBatches.toMutableMap().apply {
+                put(batchId, batch)
+            }
         }
         pendingBatchIds.add(batchId)
         
@@ -162,15 +168,17 @@ class DownloadQueueManager(
         activeJobs.values.forEach { it.cancel() }
         activeJobs.clear()
         
-        _batches.value = _batches.value.mapValues { (_, batch) ->
-            val updatedItems = batch.items.map { item ->
-                if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
-                    item.copy(state = DownloadState.CANCELLED)
-                } else {
-                    item
+        _batches.update { currentBatches ->
+            currentBatches.mapValues { (_, batch) ->
+                val updatedItems = batch.items.map { item ->
+                    if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
+                        item.copy(state = DownloadState.CANCELLED)
+                    } else {
+                        item
+                    }
                 }
+                batch.copy(items = updatedItems)
             }
-            batch.copy(items = updatedItems)
         }
         activeBatchId = null
     }
@@ -179,8 +187,10 @@ class DownloadQueueManager(
      * Clears finished (completed/failed/cancelled) batches.
      */
     fun clearFinished() {
-        _batches.value = _batches.value.filter { (_, batch) ->
-            batch.state == DownloadState.QUEUED || batch.state == DownloadState.DOWNLOADING
+        _batches.update { currentBatches ->
+            currentBatches.filter { (_, batch) ->
+                batch.state == DownloadState.QUEUED || batch.state == DownloadState.DOWNLOADING
+            }
         }
     }
 
@@ -238,16 +248,7 @@ class DownloadQueueManager(
 
             val updatedRequest = request.copy(url = downloadUrl)
             val filePath = downloadEngine.download(updatedRequest) { percent, eta, speed ->
-                getItem(batchId, request.id)?.let { item ->
-                    updateItem(
-                        batchId,
-                        item.copy(
-                            progress = percent / 100f,
-                            eta = eta,
-                            speed = speed.ifBlank { null }
-                        )
-                    )
-                }
+                updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
             }
 
             // ── Step 3: Tag ──
@@ -265,16 +266,7 @@ class DownloadQueueManager(
             }
 
             // ── Step 5: Complete ──
-            getItem(batchId, request.id)?.let { item ->
-                updateItem(
-                    batchId,
-                    item.copy(
-                        state = DownloadState.COMPLETE,
-                        progress = 1f,
-                        filePath = finalPath
-                    )
-                )
-            }
+            completeItem(batchId, request.id, finalPath)
 
             Log.d(TAG, "Download complete: $filePath")
 
@@ -284,15 +276,7 @@ class DownloadQueueManager(
 
         } catch (e: Exception) {
             Log.e(TAG, "Download failed: ${request.trackInfo.displayName}", e)
-            getItem(batchId, request.id)?.let { item ->
-                updateItem(
-                    batchId,
-                    item.copy(
-                        state = DownloadState.FAILED,
-                        error = e.message ?: "Unknown error"
-                    )
-                )
-            }
+            failItem(batchId, request.id, e.message ?: "Unknown error")
         }
     }
 
@@ -302,24 +286,49 @@ class DownloadQueueManager(
         return _batches.value[batchId]?.items?.find { it.id == trackId }
     }
 
-    private fun updateItem(batchId: String, item: DownloadItem) {
-        val batch = _batches.value[batchId] ?: return
-        val updatedItems = batch.items.map {
-            if (it.id == item.id) item else it
+    private fun updateItemProgress(batchId: String, trackId: String, progress: Float, eta: Long, speed: String?) {
+        _batches.update { currentBatches ->
+            val batch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = batch.items.map {
+                if (it.id == trackId) {
+                    it.copy(progress = progress, eta = eta, speed = speed)
+                } else it
+            }
+            currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
         }
-        updateBatchItems(batchId, updatedItems)
     }
 
     private fun updateItemState(batchId: String, trackId: String, state: DownloadState) {
-        getItem(batchId, trackId)?.let { item ->
-            updateItem(batchId, item.copy(state = state))
+        _batches.update { currentBatches ->
+            val batch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = batch.items.map {
+                if (it.id == trackId) it.copy(state = state) else it
+            }
+            currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
         }
     }
 
-    private fun updateBatchItems(batchId: String, items: List<DownloadItem>) {
-        val batch = _batches.value[batchId] ?: return
-        _batches.value = _batches.value.toMutableMap().apply {
-            put(batchId, batch.copy(items = items))
+    private fun completeItem(batchId: String, trackId: String, filePath: String) {
+        _batches.update { currentBatches ->
+            val batch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = batch.items.map {
+                if (it.id == trackId) {
+                    it.copy(state = DownloadState.COMPLETE, progress = 1f, filePath = filePath)
+                } else it
+            }
+            currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
+        }
+    }
+
+    private fun failItem(batchId: String, trackId: String, errorMsg: String) {
+        _batches.update { currentBatches ->
+            val batch = currentBatches[batchId] ?: return@update currentBatches
+            val updatedItems = batch.items.map {
+                if (it.id == trackId) {
+                    it.copy(state = DownloadState.FAILED, error = errorMsg)
+                } else it
+            }
+            currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
         }
     }
 }
