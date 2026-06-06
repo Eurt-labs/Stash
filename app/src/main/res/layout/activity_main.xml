@@ -84,84 +84,53 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Quality + Format row -->
+            <!-- Folder Selector Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="12dp"
-                android:baselineAligned="false">
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
 
-                <!-- Quality Spinner -->
-                <LinearLayout
+                <TextView
+                    android:id="@+id/folderPathText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginEnd="6dp">
+                    android:text="Folder: Downloads/Stash"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:maxLines="1"
+                    android:ellipsize="middle"
+                    android:layout_marginStart="4dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/quality_label"
-                        android:textSize="11sp"
-                        android:textColor="@color/text_secondary"
-                        android:textAllCaps="true"
-                        android:letterSpacing="0.1"
-                        android:layout_marginBottom="4dp"
-                        android:layout_marginStart="4dp" />
-
-                    <Spinner
-                        android:id="@+id/qualitySpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:background="@drawable/spinner_background"
-                        android:popupBackground="@color/surface_card"
-                        android:paddingHorizontal="12dp" />
-                </LinearLayout>
-
-                <!-- Format Spinner -->
-                <LinearLayout
-                    android:layout_width="0dp"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/selectFolderButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="6dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/format_label"
-                        android:textSize="11sp"
-                        android:textColor="@color/text_secondary"
-                        android:textAllCaps="true"
-                        android:letterSpacing="0.1"
-                        android:layout_marginBottom="4dp"
-                        android:layout_marginStart="4dp" />
-
-                    <Spinner
-                        android:id="@+id/formatSpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:background="@drawable/spinner_background"
-                        android:popupBackground="@color/surface_card"
-                        android:paddingHorizontal="12dp" />
-                </LinearLayout>
+                    android:text="Change"
+                    android:textSize="13sp"
+                    android:textColor="@color/accent_primary"
+                    app:icon="@android:drawable/ic_menu_save"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/accent_primary"
+                    android:padding="0dp" />
             </LinearLayout>
 
-            <!-- Download Button -->
+            <!-- Fetch Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/downloadButton"
+                android:id="@+id/fetchButton"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="16dp"
-                android:text="@string/download_button"
+                android:text="Fetch Content"
                 android:textSize="16sp"
                 android:textAllCaps="false"
                 android:textStyle="bold"
                 app:backgroundTint="@color/accent_primary"
                 app:cornerRadius="12dp"
-                app:icon="@android:drawable/stat_sys_download"
+                app:icon="@android:drawable/ic_menu_search"
                 app:iconGravity="textStart"
                 app:iconTint="@color/white" />
 
@@ -181,7 +150,7 @@
                     app:trackThickness="4dp"
                     app:trackCornerRadius="2dp"
                     android:indeterminate="true"
-                    app:trackColor="@color/surface_elevated"
+                    app:trackColor="@color/app_surface_elevated"
                     app:indicatorColor="@color/accent_primary" />
 
                 <TextView
@@ -257,5 +226,16 @@
             android:paddingHorizontal="16dp"
             android:paddingBottom="24dp" />
     </FrameLayout>
+
+    <!-- ─── Footer ─── -->
+    <TextView
+        android:id="@+id/appFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stash · Powered by Eurt-labs"
+        android:textSize="12sp"
+        android:textColor="@color/text_hint"
+        android:gravity="center"
+        android:paddingVertical="12dp" />
 
 </LinearLayout>
