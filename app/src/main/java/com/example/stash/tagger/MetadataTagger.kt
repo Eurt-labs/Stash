@@ -1,6 +1,6 @@
 package com.example.stash.tagger
 
-import android.util.Log
+
 import com.example.stash.model.TrackInfo
 import com.mpatric.mp3agic.ID3v24Tag
 import com.mpatric.mp3agic.Mp3File
@@ -42,7 +42,7 @@ class MetadataTagger {
     fun tagFile(filePath: String, trackInfo: TrackInfo) {
         val file = File(filePath)
         if (!file.exists()) {
-            Log.w(TAG, "File does not exist: $filePath")
+            System.err.println("WARN: " + "File does not exist: $filePath")
             return
         }
 
@@ -51,7 +51,7 @@ class MetadataTagger {
         when (extension) {
             "mp3" -> tagMp3(file, trackInfo)
             else -> {
-                Log.d(TAG, "Skipping tagging for format: $extension (handled by converter)")
+                println("Skipping tagging for format: $extension (handled by converter)")
             }
         }
     }
@@ -79,10 +79,10 @@ class MetadataTagger {
                     val artBytes = downloadArtwork(artUrl)
                     if (artBytes != null && artBytes.isNotEmpty()) {
                         tag.setAlbumImage(artBytes, "image/jpeg")
-                        Log.d(TAG, "Embedded album art (${artBytes.size} bytes)")
+                        println("Embedded album art (${artBytes.size} bytes)")
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to download album artwork: ${e.message}")
+                    System.err.println("WARN: " + "Failed to download album artwork: ${e.message}")
                 }
             }
 
@@ -94,16 +94,16 @@ class MetadataTagger {
 
             // Replace original with tagged version
             if (file.delete() && tempFile.renameTo(file)) {
-                Log.d(TAG, "Tagged successfully: ${file.name}")
+                println("Tagged successfully: ${file.name}")
             } else {
                 // Fallback: copy temp over original
                 tempFile.copyTo(file, overwrite = true)
                 tempFile.delete()
-                Log.d(TAG, "Tagged (fallback copy): ${file.name}")
+                println("Tagged (fallback copy): ${file.name}")
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to tag MP3: ${file.name}", e)
+            System.err.println("Failed to tag MP3: ${file.name}"); e.printStackTrace()
             throw IOException("MP3 tagging failed: ${e.message}", e)
         }
     }
@@ -121,7 +121,7 @@ class MetadataTagger {
             val response = httpClient.newCall(request).execute()
 
             if (!response.isSuccessful) {
-                Log.w(TAG, "Artwork download failed: HTTP ${response.code}")
+                System.err.println("WARN: " + "Artwork download failed: HTTP ${response.code}")
                 return null
             }
 
@@ -129,14 +129,14 @@ class MetadataTagger {
             val bytes = body.bytes()
 
             if (bytes.size > MAX_ART_SIZE_BYTES) {
-                Log.w(TAG, "Artwork too large (${bytes.size} bytes), skipping")
+                System.err.println("WARN: " + "Artwork too large (${bytes.size} bytes), skipping")
                 return null
             }
 
             bytes
 
         } catch (e: Exception) {
-            Log.w(TAG, "Artwork download error: ${e.message}")
+            System.err.println("WARN: " + "Artwork download error: ${e.message}")
             null
         }
     }

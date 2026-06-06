@@ -1,6 +1,6 @@
 package com.example.stash.spotify
 
-import android.util.Log
+
 import com.example.stash.model.Platform
 import com.example.stash.model.TrackInfo
 import com.example.stash.parser.ParsedLink
@@ -120,7 +120,7 @@ class SpotifyWebScraper {
             ContentType.PLAYLIST -> extractPlaylistTracks(parsedLink)
             ContentType.ALBUM -> extractAlbumTracks(parsedLink)
             else -> {
-                Log.w(TAG, "Unsupported content type: ${parsedLink.contentType}")
+                System.err.println("WARN: " + "Unsupported content type: ${parsedLink.contentType}")
                 emptyList()
             }
         }
@@ -146,7 +146,7 @@ class SpotifyWebScraper {
         val oEmbedTrack = tryOEmbed(parsedLink)
         if (oEmbedTrack != null) return listOf(oEmbedTrack)
 
-        Log.w(TAG, "Could not extract track info from: $url")
+        System.err.println("WARN: " + "Could not extract track info from: $url")
         return emptyList()
     }
 
@@ -170,7 +170,7 @@ class SpotifyWebScraper {
         val metaTracks = parsePlaylistFromMetaTags(html, parsedLink)
         if (metaTracks.isNotEmpty()) return metaTracks
 
-        Log.w(TAG, "Could not extract playlist tracks from: $url")
+        System.err.println("WARN: " + "Could not extract playlist tracks from: $url")
         return emptyList()
     }
 
@@ -190,7 +190,7 @@ class SpotifyWebScraper {
         val embedTracks = tryExtractFromEmbed("album", parsedLink.id, parsedLink)
         if (embedTracks.isNotEmpty()) return embedTracks
 
-        Log.w(TAG, "Could not extract album tracks from: $url")
+        System.err.println("WARN: " + "Could not extract album tracks from: $url")
         return emptyList()
     }
 
@@ -216,7 +216,7 @@ class SpotifyWebScraper {
 
             parseTrackJson(trackData, parsedLink)
         } catch (e: Exception) {
-            Log.d(TAG, "NextData extraction failed: ${e.message}")
+            println("NextData extraction failed: ${e.message}")
             null
         }
     }
@@ -264,7 +264,7 @@ class SpotifyWebScraper {
                 }
             }
         } catch (e: Exception) {
-            Log.d(TAG, "Playlist NextData extraction failed: ${e.message}")
+            println("Playlist NextData extraction failed: ${e.message}")
             emptyList()
         }
     }
@@ -335,7 +335,7 @@ class SpotifyWebScraper {
                 }
             }
         } catch (e: Exception) {
-            Log.d(TAG, "Album NextData extraction failed: ${e.message}")
+            println("Album NextData extraction failed: ${e.message}")
             emptyList()
         }
     }
@@ -400,7 +400,7 @@ class SpotifyWebScraper {
                 }
             }
         } catch (e: Exception) {
-            Log.d(TAG, "Embed extraction failed: ${e.message}")
+            println("Embed extraction failed: ${e.message}")
             emptyList()
         }
     }
@@ -519,7 +519,7 @@ class SpotifyWebScraper {
                 sourceUrl = parsedLink.originalUrl
             )
         } catch (e: Exception) {
-            Log.d(TAG, "oEmbed extraction failed: ${e.message}")
+            println("oEmbed extraction failed: ${e.message}")
             null
         }
     }
@@ -534,13 +534,13 @@ class SpotifyWebScraper {
             val response = httpClient.newCall(request).execute()
 
             if (!response.isSuccessful) {
-                Log.w(TAG, "Failed to fetch page: $url → HTTP ${response.code}")
+                System.err.println("WARN: " + "Failed to fetch page: $url → HTTP ${response.code}")
                 return null
             }
 
             response.body?.string()
         } catch (e: Exception) {
-            Log.e(TAG, "Network error fetching: $url", e)
+            System.err.println("Network error fetching: $url"); e.printStackTrace()
             null
         }
     }
