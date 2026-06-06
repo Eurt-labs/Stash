@@ -65,33 +65,39 @@ class DownloadEngine(private val context: Context) {
         // Configure format/quality based on request
         configureFormat(ytdlRequest, request)
 
-        // ── Reliable minimal flags ──
+        // ── Minimal flags — zero ffmpeg dependency ──
         ytdlRequest.addOption("--no-check-certificates")
         ytdlRequest.addOption("--no-warnings")
         ytdlRequest.addOption("--socket-timeout", "30")
-        ytdlRequest.addOption("--retries", "5")
-        ytdlRequest.addOption("--fragment-retries", "5")
-        ytdlRequest.addOption("--ignore-errors")
-        ytdlRequest.addOption("--no-part")
+        ytdlRequest.addOption("--retries", "3")
+        ytdlRequest.addOption("--fragment-retries", "3")
         
-        // DEFINITIVE FIX: Point yt-dlp to the ffmpeg binary in nativeLibraryDir.
-        // The copy in noBackupFilesDir CANNOT execute on modern Android (noexec mount flag).
-        // The native library dir (/data/app/.../lib/arm64/) is ALWAYS executable.
-        val ffmpegInNativeLib = File(context.applicationInfo.nativeLibraryDir, "libffmpeg.so")
-        if (ffmpegInNativeLib.exists()) {
-            ytdlRequest.addOption("--ffmpeg-location", ffmpegInNativeLib.absolutePath)
-            Log.d(TAG, "Using ffmpeg from nativeLibraryDir: ${ffmpegInNativeLib.absolutePath}")
-        }
+        // Don't try to resume previous partial downloads (causes HTTP 416 errors)
+        ytdlRequest.addOption("--no-continue")
+        // Overwrite leftover files from failed attempts
+        ytdlRequest.addOption("--force-overwrites")
+        
+        // CRITICAL: Skip ALL post-processing that needs ffmpeg.
+        // ffmpeg on this device cannot execute (Android security: noexec + SELinux).
+        ytdlRequest.addOption("--fixup", "never")
+        
+        // Tell yt-dlp to prefer free formats (webm/opus) which don't trigger
+        // the M4A-specific ffmpeg fixup post-processor
+        ytdlRequest.addOption("--prefer-free-formats")
 
         try {
-            val response = YoutubeDL.getInstance().execute(
-                ytdlRequest
-            ) { progress, etaInSeconds, line ->
-                val speed = parseSpeed(line)
-                onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
-            }
+            // Run download with a 3-minute timeout per song.
+            // If it hangs (ffmpeg, network, etc.), it fails gracefully and moves on.
+            val result = kotlinx.coroutines.withTimeoutOrNull(180_000L) {
+                YoutubeDL.getInstance().execute(
+                    ytdlRequest
+                ) { progress, etaInSeconds, line ->
+                    val speed = parseSpeed(line)
+                    onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
+                }
+            } ?: throw DownloadException("Download timed out after 3 minutes")
 
-            Log.d(TAG, "Download complete. Output: ${response.out}")
+            Log.d(TAG, "Download complete. Output: ${result.out}")
 
             // Find the actual output file (extension may differ from template)
             val outputFile = findOutputFile(outputDir, request.trackInfo.safeFileName)
@@ -269,11 +275,9 @@ class DownloadEngine(private val context: Context) {
             ytdlRequest.addOption("--merge-output-format", "mp4")
 
         } else {
-            // Audio-only extraction
-            // We do NOT use -x or --audio-format here because we manually convert it afterwards
-            // This decouples the network download from the CPU-heavy conversion phase.
-            // Prefer M4A container — YouTube serves it natively, so zero remuxing delay
-            ytdlRequest.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best")
+            // Audio-only: prefer WebM/Opus — does NOT trigger M4A-specific ffmpeg fixup.
+            // M4A format has a special post-processor that runs even with --fixup never.
+            ytdlRequest.addOption("-f", "bestaudio")
         }
     }
 
