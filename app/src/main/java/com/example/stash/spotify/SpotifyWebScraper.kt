@@ -70,13 +70,12 @@ class SpotifyWebScraper {
             RegexOption.IGNORE_CASE
         )
         fun extractJsonById(html: String, id: String): String? {
-            val startTag = "<script id=\"$id\" type=\"application/json\">"
-            val startIdx = html.indexOf(startTag)
-            if (startIdx == -1) return null
-            val jsonStart = startIdx + startTag.length
-            val endIdx = html.indexOf(NEXT_DATA_END, jsonStart)
-            if (endIdx == -1) return null
-            return html.substring(jsonStart, endIdx).trim()
+            val regex = Regex(
+                """<script\b[^>]*?id\s*=\s*["']$id["'][^>]*?>(.*?)</script>""",
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+            )
+            val match = regex.find(html) ?: return null
+            return match.groupValues[1].trim()
         }
 
         /**
