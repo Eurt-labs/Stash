@@ -65,18 +65,23 @@ class DownloadEngine(private val context: Context) {
         // Configure format/quality based on request
         configureFormat(ytdlRequest, request)
 
-        // Prevent hanging on geo-restricted or unavailable content
+        // ── Resilience ──
         ytdlRequest.addOption("--no-check-certificates")
         ytdlRequest.addOption("--no-warnings")
         ytdlRequest.addOption("--socket-timeout", "30")
         ytdlRequest.addOption("--retries", "5")
+        ytdlRequest.addOption("--fragment-retries", "5")
+        ytdlRequest.addOption("--ignore-errors")  // Skip failed tracks, don't stall the batch
         
-        // SPEED: Force IPv4 — mobile networks often stall on IPv6 DNS
+        // ── Speed: Fragment parallelism ──
+        // Splits each song's DASH stream into 4 parallel chunk downloads
+        ytdlRequest.addOption("--concurrent-fragments", "4")
+        
+        // ── Speed: Larger HTTP chunks = fewer round-trips ──
+        ytdlRequest.addOption("--http-chunk-size", "10M")
+        
+        // ── Speed: Force IPv4 (mobile IPv6 DNS stalls) ──
         ytdlRequest.addOption("--force-ipv4")
-        
-        // SPEED: Use iOS player client — YouTube serves UN-THROTTLED streams to iOS
-        // This is the #1 proven method to bypass YouTube's download speed limits
-        ytdlRequest.addOption("--extractor-args", "youtube:player_client=ios,web")
 
         try {
             val response = YoutubeDL.getInstance().execute(
@@ -267,10 +272,8 @@ class DownloadEngine(private val context: Context) {
             // Audio-only extraction
             // We do NOT use -x or --audio-format here because we manually convert it afterwards
             // This decouples the network download from the CPU-heavy conversion phase.
-            ytdlRequest.addOption("-f", "bestaudio/best")
-            // Add thread limits for any minor container fixing yt-dlp does internally
-            ytdlRequest.addOption("--postprocessor-args", "ffmpeg:-threads 1")
-            // Make sure yt-dlp doesn't overwrite container if not needed, but keep extension safe
+            // Prefer M4A container — YouTube serves it natively, so zero remuxing delay
+            ytdlRequest.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best")
         }
     }
 
