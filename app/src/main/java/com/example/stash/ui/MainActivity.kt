@@ -62,6 +62,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var downloadsHeader: TextView
     private lateinit var folderPathText: TextView
     private lateinit var selectFolderButton: MaterialButton
+    private lateinit var platformSpinner: Spinner
+    private val platforms = arrayOf("Auto Detect", "Spotify", "YouTube", "YouTube Music", "Instagram")
 
     private val NOTIFICATION_PERMISSION_CODE = 101
 
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         orchestrator = StashOrchestrator(this)
 
         bindViews()
+        setupPlatformSpinner()
         setupRecyclerView()
         setupClickListeners()
         observeDownloads()
@@ -130,6 +133,53 @@ class MainActivity : AppCompatActivity() {
         downloadsHeader = findViewById(R.id.downloadsHeader)
         folderPathText = findViewById(R.id.folderPathText)
         selectFolderButton = findViewById(R.id.selectFolderButton)
+        platformSpinner = findViewById(R.id.platformSpinner)
+    }
+
+    private fun setupPlatformSpinner() {
+        val platformAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            platforms
+        )
+        platformAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        platformSpinner.adapter = platformAdapter
+
+        platformSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                when (position) {
+                    0 -> linkInput.hint = getString(R.string.paste_link_hint_auto)
+                    1 -> linkInput.hint = getString(R.string.paste_link_hint_spotify)
+                    2 -> linkInput.hint = getString(R.string.paste_link_hint_youtube)
+                    3 -> linkInput.hint = getString(R.string.paste_link_hint_youtube_music)
+                    4 -> linkInput.hint = getString(R.string.paste_link_hint_instagram)
+                }
+            }
+
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        linkInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val text = s?.toString()?.trim() ?: ""
+                if (text.isNotEmpty()) {
+                    val parsed = LinkParser.parse(text)
+                    if (parsed != null) {
+                        val targetPosition = when (parsed.platform) {
+                            com.example.stash.model.Platform.SPOTIFY -> 1
+                            com.example.stash.model.Platform.YOUTUBE -> 2
+                            com.example.stash.model.Platform.YOUTUBE_MUSIC -> 3
+                            com.example.stash.model.Platform.INSTAGRAM -> 4
+                        }
+                        if (platformSpinner.selectedItemPosition != targetPosition) {
+                            platformSpinner.setSelection(targetPosition)
+                        }
+                    }
+                }
+            }
+        })
     }
 
     private fun setupRecyclerView() {
@@ -160,9 +210,26 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (!LinkParser.isSupported(link)) {
+        val parsedLink = LinkParser.parse(link)
+        if (parsedLink == null) {
             Toast.makeText(this, R.string.unsupported_link, Toast.LENGTH_SHORT).show()
             return
+        }
+
+        // Validate platform selection
+        val selectedPosition = platformSpinner.selectedItemPosition
+        if (selectedPosition > 0) {
+            val expectedPlatform = when (selectedPosition) {
+                1 -> com.example.stash.model.Platform.SPOTIFY
+                2 -> com.example.stash.model.Platform.YOUTUBE
+                3 -> com.example.stash.model.Platform.YOUTUBE_MUSIC
+                4 -> com.example.stash.model.Platform.INSTAGRAM
+                else -> null
+            }
+            if (parsedLink.platform != expectedPlatform) {
+                Toast.makeText(this, R.string.unsupported_link_with_platform, Toast.LENGTH_SHORT).show()
+                return
+            }
         }
 
         if (!StashApplication.isYtDlpInitialized) {
