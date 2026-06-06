@@ -41,7 +41,7 @@ class DownloadEngine(private val context: Context) {
      */
     suspend fun download(
         request: DownloadRequest,
-        onProgress: ((Float, Long, String) -> Unit)? = null
+        onProgress: ((Float, Long, String, Boolean) -> Unit)? = null
     ): String = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting download: ${request.url} → ${request.outputDir}")
 
@@ -76,7 +76,8 @@ class DownloadEngine(private val context: Context) {
                 ytdlRequest
             ) { progress, etaInSeconds, line ->
                 val speed = parseSpeed(line)
-                onProgress?.invoke(progress, etaInSeconds.toLong(), speed)
+                val isConverting = progress >= 100.0f && (line.contains("[ExtractAudio]") || line.contains("[ffmpeg]"))
+                onProgress?.invoke(progress, etaInSeconds.toLong(), speed, isConverting)
             }
 
             Log.d(TAG, "Download complete. Output: ${response.out}")
@@ -174,6 +175,9 @@ class DownloadEngine(private val context: Context) {
             // Audio-only extraction
             ytdlRequest.addOption("-x") // Extract audio
             ytdlRequest.addOption("--audio-format", request.format.extension)
+            
+            // Limit FFmpeg threads to prevent CPU exhaustion on mobile when re-encoding multiple audio files
+            ytdlRequest.addOption("--postprocessor-args", "ffmpeg:-threads 1")
 
             when (request.format) {
                 DownloadFormat.MP3 -> {
