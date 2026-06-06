@@ -230,19 +230,36 @@ class SpotifyWebScraper {
             val pageProps = json.getAsJsonObject("props")
                 ?.getAsJsonObject("pageProps") ?: return emptyList()
 
-            // Try to find the track list in the data structure
-            val trackList = pageProps.getAsJsonObject("state")
+            val entity = pageProps.getAsJsonObject("state")
                 ?.getAsJsonObject("data")
                 ?.getAsJsonObject("entity")
-                ?.getAsJsonObject("trackList")
-                ?.getAsJsonArray("items")
                 ?: return emptyList()
+
+            val trackListJson = entity.get("trackList")
+                ?: entity.get("tracks")
+                ?: return emptyList()
+
+            val trackList = when {
+                trackListJson.isJsonArray -> trackListJson.asJsonArray
+                trackListJson.isJsonObject -> {
+                    val obj = trackListJson.asJsonObject
+                    obj.getAsJsonArray("items") ?: obj.getAsJsonArray("sources")
+                }
+                else -> null
+            } ?: return emptyList()
+
+            val defaultAlbumArtUrl = entity.getAsJsonObject("coverArt")
+                ?.getAsJsonArray("sources")?.firstOrNull()?.asJsonObject
+                ?.get("url")?.asString
+                ?: entity.getAsJsonObject("visualIdentity")
+                    ?.getAsJsonArray("image")?.firstOrNull()?.asJsonObject
+                    ?.get("url")?.asString
 
             trackList.mapNotNull { item ->
                 try {
                     val trackObj = item.asJsonObject.getAsJsonObject("track")
                         ?: item.asJsonObject
-                    parseTrackJson(trackObj, parsedLink)
+                    parseTrackJson(trackObj, parsedLink, defaultAlbumArtUrl)
                 } catch (e: Exception) {
                     null
                 }
@@ -271,23 +288,36 @@ class SpotifyWebScraper {
                 ?.getAsJsonArray("sources")
                 ?.firstOrNull()?.asJsonObject
                 ?.get("url")?.asString
+                ?: albumData.getAsJsonObject("visualIdentity")
+                    ?.getAsJsonArray("image")?.firstOrNull()?.asJsonObject
+                    ?.get("url")?.asString
             val releaseYear = albumData.getAsJsonObject("date")
                 ?.get("year")?.asString
 
-            val trackList = albumData.getAsJsonObject("trackList")
-                ?.getAsJsonArray("items")
-                ?: albumData.getAsJsonObject("tracks")
-                    ?.getAsJsonArray("items")
+            val trackListJson = albumData.get("trackList")
+                ?: albumData.get("tracks")
                 ?: return emptyList()
+
+            val trackList = when {
+                trackListJson.isJsonArray -> trackListJson.asJsonArray
+                trackListJson.isJsonObject -> {
+                    val obj = trackListJson.asJsonObject
+                    obj.getAsJsonArray("items") ?: obj.getAsJsonArray("sources")
+                }
+                else -> null
+            } ?: return emptyList()
 
             trackList.mapIndexedNotNull { index, item ->
                 try {
                     val trackObj = item.asJsonObject.getAsJsonObject("track")
                         ?: item.asJsonObject
-                    val name = trackObj.get("name")?.asString ?: return@mapIndexedNotNull null
+                    val name = trackObj.get("name")?.asString
+                        ?: trackObj.get("title")?.asString
+                        ?: return@mapIndexedNotNull null
                     val artists = extractArtistNames(trackObj)
                     val durationMs = trackObj.get("duration_ms")?.asLong
                         ?: trackObj.getAsJsonObject("duration")?.get("totalMilliseconds")?.asLong
+                        ?: trackObj.get("duration")?.takeIf { it.isJsonPrimitive }?.asLong
                         ?: 0L
 
                     TrackInfo(
@@ -336,20 +366,36 @@ class SpotifyWebScraper {
                     ?.getAsJsonObject("entity")
             } ?: return emptyList()
 
+            val defaultAlbumArtUrl = entity.getAsJsonObject("coverArt")
+                ?.getAsJsonArray("sources")?.firstOrNull()?.asJsonObject
+                ?.get("url")?.asString
+                ?: entity.getAsJsonObject("visualIdentity")
+                    ?.getAsJsonArray("image")?.firstOrNull()?.asJsonObject
+                    ?.get("url")?.asString
+
             if (type == "track") {
-                val track = parseTrackJson(entity, parsedLink) ?: return emptyList()
+                val track = parseTrackJson(entity, parsedLink, defaultAlbumArtUrl) ?: return emptyList()
                 return listOf(track)
             }
 
-            val trackList = entity.getAsJsonObject("trackList")?.getAsJsonArray("items")
-                ?: entity.getAsJsonObject("tracks")?.getAsJsonArray("items")
+            val trackListJson = entity.get("trackList")
+                ?: entity.get("tracks")
                 ?: return emptyList()
+
+            val trackList = when {
+                trackListJson.isJsonArray -> trackListJson.asJsonArray
+                trackListJson.isJsonObject -> {
+                    val obj = trackListJson.asJsonObject
+                    obj.getAsJsonArray("items") ?: obj.getAsJsonArray("sources")
+                }
+                else -> null
+            } ?: return emptyList()
 
             trackList.mapNotNull { item ->
                 try {
                     val trackObj = item.asJsonObject.getAsJsonObject("track")
                         ?: item.asJsonObject
-                    parseTrackJson(trackObj, parsedLink)
+                    parseTrackJson(trackObj, parsedLink, defaultAlbumArtUrl)
                 } catch (e: Exception) {
                     null
                 }
@@ -500,7 +546,11 @@ class SpotifyWebScraper {
         }
     }
 
-    private fun parseTrackJson(trackObj: JsonObject, parsedLink: ParsedLink): TrackInfo? {
+    private fun parseTrackJson(
+        trackObj: JsonObject,
+        parsedLink: ParsedLink,
+        defaultAlbumArtUrl: String? = null
+    ): TrackInfo? {
         val name = trackObj.get("name")?.asString
             ?: trackObj.get("title")?.asString
             ?: return null
@@ -508,15 +558,21 @@ class SpotifyWebScraper {
         val artists = extractArtistNames(trackObj)
         val durationMs = trackObj.get("duration_ms")?.asLong
             ?: trackObj.getAsJsonObject("duration")?.get("totalMilliseconds")?.asLong
+            ?: trackObj.get("duration")?.takeIf { it.isJsonPrimitive }?.asLong
             ?: 0L
 
         val albumName = trackObj.getAsJsonObject("album")?.get("name")?.asString
+            ?: trackObj.get("albumName")?.asString
         val albumArt = trackObj.getAsJsonObject("album")
             ?.getAsJsonArray("images")?.firstOrNull()?.asJsonObject
             ?.get("url")?.asString
             ?: trackObj.getAsJsonObject("coverArt")
                 ?.getAsJsonArray("sources")?.firstOrNull()?.asJsonObject
                 ?.get("url")?.asString
+            ?: trackObj.getAsJsonObject("visualIdentity")
+                ?.getAsJsonArray("image")?.firstOrNull()?.asJsonObject
+                ?.get("url")?.asString
+            ?: defaultAlbumArtUrl
 
         val releaseDate = trackObj.getAsJsonObject("album")
             ?.get("release_date")?.asString
@@ -542,10 +598,14 @@ class SpotifyWebScraper {
             return artistsArray.mapNotNull { it.asJsonObject.get("name")?.asString }
         }
 
-        // Try "artistName" single field
+        // Try "artistName", "artist", or "subtitle" single field
         val singleArtist = trackObj.get("artistName")?.asString
             ?: trackObj.get("artist")?.asString
-        if (singleArtist != null) return listOf(singleArtist)
+            ?: trackObj.get("subtitle")?.asString
+        if (singleArtist != null) {
+            val cleaned = singleArtist.replace("\u00a0", " ").trim()
+            return cleaned.split(Regex(",\\s*")).map { it.trim() }.filter { it.isNotEmpty() }
+        }
 
         return emptyList()
     }
