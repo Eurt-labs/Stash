@@ -29,6 +29,7 @@ import com.example.stash.model.TrackInfo
 import com.example.stash.parser.LinkParser
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var folderPathText: TextView
     private lateinit var selectFolderButton: MaterialButton
     private lateinit var platformSpinner: Spinner
+    private lateinit var linkInputLayout: TextInputLayout
     private val platforms = arrayOf("Auto Detect", "Spotify", "YouTube", "YouTube Music", "Instagram")
 
     private val NOTIFICATION_PERMISSION_CODE = 101
@@ -134,6 +136,7 @@ class MainActivity : AppCompatActivity() {
         folderPathText = findViewById(R.id.folderPathText)
         selectFolderButton = findViewById(R.id.selectFolderButton)
         platformSpinner = findViewById(R.id.platformSpinner)
+        linkInputLayout = findViewById(R.id.linkInputLayout)
     }
 
     private fun setupPlatformSpinner() {
@@ -148,11 +151,11 @@ class MainActivity : AppCompatActivity() {
         platformSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 when (position) {
-                    0 -> linkInput.hint = getString(R.string.paste_link_hint_auto)
-                    1 -> linkInput.hint = getString(R.string.paste_link_hint_spotify)
-                    2 -> linkInput.hint = getString(R.string.paste_link_hint_youtube)
-                    3 -> linkInput.hint = getString(R.string.paste_link_hint_youtube_music)
-                    4 -> linkInput.hint = getString(R.string.paste_link_hint_instagram)
+                    0 -> linkInputLayout.hint = getString(R.string.paste_link_hint_auto)
+                    1 -> linkInputLayout.hint = getString(R.string.paste_link_hint_spotify)
+                    2 -> linkInputLayout.hint = getString(R.string.paste_link_hint_youtube)
+                    3 -> linkInputLayout.hint = getString(R.string.paste_link_hint_youtube_music)
+                    4 -> linkInputLayout.hint = getString(R.string.paste_link_hint_instagram)
                 }
             }
 
@@ -184,6 +187,31 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = DownloadAdapter()
+        adapter.setOnItemClickListener { item ->
+            if (item.state == DownloadState.COMPLETE) {
+                val path = item.filePath
+                if (!path.isNullOrBlank()) {
+                    try {
+                        val uri = Uri.parse(path)
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            val resolvedMimeType = contentResolver.getType(uri) ?: when {
+                                path.endsWith(".mp4", ignoreCase = true) || path.endsWith(".webm", ignoreCase = true) -> "video/*"
+                                else -> "audio/*"
+                            }
+                            setDataAndType(uri, resolvedMimeType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else if (item.state == DownloadState.FAILED) {
+                Toast.makeText(this, "Download failed: ${item.error}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Download in progress...", Toast.LENGTH_SHORT).show()
+            }
+        }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }
