@@ -69,12 +69,14 @@ class DownloadEngine(private val context: Context) {
         ytdlRequest.addOption("--no-check-certificates")
         ytdlRequest.addOption("--no-warnings")
         ytdlRequest.addOption("--socket-timeout", "30")
-        ytdlRequest.addOption("--retries", "3")
+        ytdlRequest.addOption("--retries", "5")
         
-        // CRITICAL SPEED FIX: Bypass YouTube server throttling by downloading 8 stream chunks simultaneously
-        ytdlRequest.addOption("-N", "8")
-        // Increase buffer size for better network throughput
-        ytdlRequest.addOption("--buffer-size", "16K")
+        // SPEED: Force IPv4 — mobile networks often stall on IPv6 DNS
+        ytdlRequest.addOption("--force-ipv4")
+        
+        // SPEED: Use iOS player client — YouTube serves UN-THROTTLED streams to iOS
+        // This is the #1 proven method to bypass YouTube's download speed limits
+        ytdlRequest.addOption("--extractor-args", "youtube:player_client=ios,web")
 
         try {
             val response = YoutubeDL.getInstance().execute(
