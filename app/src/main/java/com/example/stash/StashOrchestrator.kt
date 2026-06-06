@@ -240,7 +240,12 @@ class StashOrchestrator(private val context: Context) {
      */
     private suspend fun fetchSpotifyTracks(parsedLink: ParsedLink): List<TrackInfo> =
         withContext(Dispatchers.IO) {
-            spotifyScraper.extractTracks(parsedLink)
+            val tracks = spotifyScraper.extractTracks(parsedLink)
+            if (parsedLink.contentType == ContentType.PLAYLIST || parsedLink.contentType == ContentType.ALBUM) {
+                tracks.take(7)
+            } else {
+                tracks
+            }
         }
 
     /**
