@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
