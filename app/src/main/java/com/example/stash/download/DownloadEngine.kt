@@ -65,20 +65,23 @@ class DownloadEngine(private val context: Context) {
         // Configure format/quality based on request
         configureFormat(ytdlRequest, request)
 
-        // ── Bulletproof minimal flags (no experimental options) ──
+        // ── Reliable minimal flags ──
         ytdlRequest.addOption("--no-check-certificates")
         ytdlRequest.addOption("--no-warnings")
         ytdlRequest.addOption("--socket-timeout", "30")
         ytdlRequest.addOption("--retries", "5")
         ytdlRequest.addOption("--fragment-retries", "5")
         ytdlRequest.addOption("--ignore-errors")
-        
-        // CRITICAL: Prevent yt-dlp from calling FFmpeg internally for "fixup"
-        // This was causing the 100% stall + "Permission denied" error on this device
-        ytdlRequest.addOption("--fixup", "never")
-        
-        // Don't create .part files — cleaner and avoids Android filesystem issues
         ytdlRequest.addOption("--no-part")
+        
+        // DEFINITIVE FIX: Point yt-dlp to the ffmpeg binary in nativeLibraryDir.
+        // The copy in noBackupFilesDir CANNOT execute on modern Android (noexec mount flag).
+        // The native library dir (/data/app/.../lib/arm64/) is ALWAYS executable.
+        val ffmpegInNativeLib = File(context.applicationInfo.nativeLibraryDir, "libffmpeg.so")
+        if (ffmpegInNativeLib.exists()) {
+            ytdlRequest.addOption("--ffmpeg-location", ffmpegInNativeLib.absolutePath)
+            Log.d(TAG, "Using ffmpeg from nativeLibraryDir: ${ffmpegInNativeLib.absolutePath}")
+        }
 
         try {
             val response = YoutubeDL.getInstance().execute(
