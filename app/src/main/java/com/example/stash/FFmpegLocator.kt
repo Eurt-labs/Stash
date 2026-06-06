@@ -1,17 +1,12 @@
 package com.example.stash
 
-import android.content.Context
-import java.io.File
+import com.yausername.ffmpeg.FFmpeg
+import android.util.Log
 
 class FFmpegLocator {
-    fun find(context: Context): String? {
-        val noBackup = context.noBackupFilesDir
-        val files = noBackup.walkTopDown().toList()
-        for (f in files) {
-            if (f.name == "ffmpeg" || f.name == "libffmpeg.so") {
-                return f.absolutePath
-            }
-        }
-        return null
+    fun find() {
+        val f = FFmpeg.getInstance()
+        // Will throw compile error if these don't exist
+        Log.d("FFMPEG", f.getBinPath() ?: "unknown")
     }
 }
