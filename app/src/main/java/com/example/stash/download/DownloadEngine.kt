@@ -165,7 +165,7 @@ class DownloadEngine(private val context: Context) {
             ffmpegBinary.absolutePath,
             "-y", // overwrite
             "-i", inputFile.absolutePath,
-            "-threads", "1", // Limit CPU usage to prevent freezing
+            "-threads", "2", // Use 2 threads to speed up single-file conversion safely
             "-vn" // No video
         )
 
