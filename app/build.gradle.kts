@@ -1,79 +1,38 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.jetbrains.compose)
+    alias(libs.plugins.compose.compiler)
 }
 
-
-android {
-    namespace = "com.example.stash"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
-
-    defaultConfig {
-        applicationId = "com.example.stash"
-        minSdk = 34
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
-    }
-
-    // Required for youtubedl-android native libs
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-}
+group = "com.example.stash"
+version = "1.0.0"
 
 dependencies {
-    // AndroidX core
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation("androidx.documentfile:documentfile:1.0.1")
-
+    implementation(compose.desktop.currentOs)
+    implementation(compose.material)
+    
     // Coroutines
-    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.swing)
 
-    // Networking (web scraping + album art download)
+    // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
 
-    // yt-dlp engine
-    implementation(libs.youtubedl.android.library)
-    implementation(libs.youtubedl.android.ffmpeg)
-
-    // ID3 metadata tagging
+    // ID3 tagging
     implementation(libs.mp3agic)
+}
 
-    // Testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+compose.desktop {
+    application {
+        mainClass = "com.example.stash.MainKt"
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Stash"
+            packageVersion = "1.0.0"
+        }
+    }
 }
