@@ -39,6 +39,21 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:layout_marginStart="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/stopBatchButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Stop"
+            android:textSize="13sp"
+            android:textColor="@color/text_primary"
+            app:backgroundTint="#CC3333"
+            app:cornerRadius="20dp"
+            app:icon="@android:drawable/ic_media_pause"
+            app:iconTint="@color/text_primary"
+            app:iconSize="16dp"
+            app:iconPadding="4dp"
+            android:paddingHorizontal="12dp" />
     </LinearLayout>
 
     <!-- Batch Summary Info Card -->

@@ -15,6 +15,7 @@ import com.example.stash.StashApplication
 import com.example.stash.download.DownloadItem
 import com.example.stash.download.DownloadState
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -30,6 +31,7 @@ class BatchDetailActivity : AppCompatActivity() {
     private lateinit var batchProgressBar: LinearProgressIndicator
     private lateinit var recyclerView: RecyclerView
     private lateinit var backButton: ImageButton
+    private lateinit var stopBatchButton: MaterialButton
 
     private var batchId: String? = null
 
@@ -56,6 +58,7 @@ class BatchDetailActivity : AppCompatActivity() {
         batchProgressBar = findViewById(R.id.batchProgressBar)
         recyclerView = findViewById(R.id.tracksRecyclerView)
         backButton = findViewById(R.id.backButton)
+        stopBatchButton = findViewById(R.id.stopBatchButton)
     }
 
     private fun setupRecyclerView() {
@@ -77,6 +80,10 @@ class BatchDetailActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         backButton.setOnClickListener {
             finish()
+        }
+        stopBatchButton.setOnClickListener {
+            StashApplication.orchestrator.cancelAll()
+            Toast.makeText(this, "Batch stopped", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -101,6 +108,12 @@ class BatchDetailActivity : AppCompatActivity() {
                 }
                 batchStatusText.text = "Status: $status"
                 batchProgressBar.progress = (batch.progress * 100).toInt()
+
+                // Show/hide stop button based on active state
+                val isActive = batch.state == DownloadState.DOWNLOADING || 
+                               batch.state == DownloadState.QUEUED ||
+                               batch.state == DownloadState.SEARCHING
+                stopBatchButton.visibility = if (isActive) android.view.View.VISIBLE else android.view.View.GONE
 
                 adapter.submitList(batch.items)
             }
