@@ -108,7 +108,7 @@
                             <Spinner
                                 android:id="@+id/platformSpinner"
                                 android:layout_width="match_parent"
-                                android:layout_height="parent"
+                                android:layout_height="match_parent"
                                 android:background="@null"
                                 android:paddingEnd="32dp"
                                 android:spinnerMode="dropdown" />
