@@ -54,6 +54,12 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <!-- Batch detail activity -->
+        <activity
+            android:name=".ui.BatchDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Stash" />
+
     </application>
 
 </manifest>
