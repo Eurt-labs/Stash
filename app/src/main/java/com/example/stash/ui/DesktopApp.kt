@@ -45,6 +45,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
     var formatDropdownExpanded by remember { mutableStateOf(false) }
     val collapsedBatches = remember { mutableStateMapOf<String, Boolean>() }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val lightColors = lightColors(
         primary = Color(0xFF6366F1),       // Premium Indigo
@@ -78,7 +79,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Supports downloading YouTube Videos, YouTube Music Tracks/Playlists/Albums, Instagram Reels/Videos, and other media sources.",
+                text = "Supports downloading YouTube Videos, YouTube Music Tracks/Playlists/Albums, and other media sources.",
                 style = MaterialTheme.typography.body2,
                 color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
             )
@@ -209,7 +210,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     value = linkInput,
                     onValueChange = { linkInput = it },
                     label = { Text("Enter Link or Artist Name") },
-                    placeholder = { Text("e.g. Taylor Swift, or paste YouTube/Instagram URL") },
+                    placeholder = { Text("e.g. Taylor Swift, or paste YouTube URL") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !isProcessing && !isFetching,
@@ -244,6 +245,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                 } catch (e: Exception) {
                                     System.err.println("Failed to process link: ${e.message}")
                                     e.printStackTrace()
+                                    errorMessage = e.message ?: "Failed to process link"
                                 } finally {
                                     isProcessing = false
                                 }
@@ -478,6 +480,36 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                                         style = MaterialTheme.typography.caption,
                                                         fontWeight = FontWeight.Bold
                                                     )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
+
+                                                // Pause/Resume actions
+                                                if (item.state == DownloadState.QUEUED || item.state == DownloadState.DOWNLOADING || item.state == DownloadState.CONVERTING) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .clickable { orchestrator.pauseTrack(item.id) }
+                                                            .padding(4.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "⏸",
+                                                            fontSize = 14.sp,
+                                                            color = MaterialTheme.colors.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                } else if (item.state == DownloadState.PAUSED) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .clickable { orchestrator.resumeTrack(item.id) }
+                                                            .padding(4.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "▶",
+                                                            fontSize = 14.sp,
+                                                            color = MaterialTheme.colors.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -501,6 +533,23 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     },
                     confirmButton = {
                         Button(onClick = { orchestrator.clearUpdateStatus() }) {
+                            Text("OK")
+                        }
+                    }
+                )
+            }
+            if (errorMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { errorMessage = null },
+                    title = { Text("Error") },
+                    text = { 
+                        Text(
+                            text = errorMessage!!,
+                            fontSize = 14.sp
+                        ) 
+                    },
+                    confirmButton = {
+                        Button(onClick = { errorMessage = null }) {
                             Text("OK")
                         }
                     }

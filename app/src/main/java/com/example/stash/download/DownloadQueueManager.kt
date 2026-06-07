@@ -554,4 +554,3 @@ class DownloadQueueManager {
         checkAndCleanupBatch(batchId)
     }
 }
-}

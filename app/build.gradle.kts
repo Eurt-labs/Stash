@@ -33,6 +33,11 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Stash"
             packageVersion = "1.0.0"
+            windows {
+                dirChooser = true
+                menu = true
+                shortcut = true
+            }
         }
     }
 }
