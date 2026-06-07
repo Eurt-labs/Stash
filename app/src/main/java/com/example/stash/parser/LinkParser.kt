@@ -67,6 +67,11 @@ object LinkParser {
         """https?://music\.youtube\.com/playlist\?.*?list=([a-zA-Z0-9_-]+)"""
     )
 
+    /** YouTube/YouTube Music channel/artist URL */
+    private val YOUTUBE_CHANNEL_REGEX = Regex(
+        """https?://(?:music\.|www\.)?youtube\.com/(?:@|channel/|c/)([a-zA-Z0-9_.-]+)"""
+    )
+
     /** Instagram post/reel/tv URL: instagram.com/p/ID, instagram.com/reel/ID, instagram.com/tv/ID */
     private val INSTAGRAM_REGEX = Regex(
         """https?://(?:www\.)?instagram\.com/(?:p|reel|tv)/([a-zA-Z0-9_-]+)"""
@@ -96,6 +101,16 @@ object LinkParser {
         }
         YOUTUBE_SHORT_REGEX.find(trimmedUrl)?.let { match ->
             return ParsedLink(Platform.YOUTUBE, ContentType.VIDEO, match.groupValues[1], trimmedUrl)
+        }
+
+        // ── YouTube Channel ──
+        YOUTUBE_CHANNEL_REGEX.find(trimmedUrl)?.let { match ->
+            val platform = if (trimmedUrl.contains("music.youtube.com")) {
+                Platform.YOUTUBE_MUSIC
+            } else {
+                Platform.YOUTUBE
+            }
+            return ParsedLink(platform, ContentType.PLAYLIST, match.groupValues[1], trimmedUrl)
         }
 
         // ── Instagram ──

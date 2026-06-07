@@ -8,6 +8,8 @@ import com.example.stash.parser.LinkParser
 import com.example.stash.parser.ParsedLink
 
 import com.example.stash.storage.FileManager
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -172,15 +174,44 @@ class StashOrchestrator {
         format: DownloadFormat = _format.value,
         outputDir: String = _outputDir.value
     ): List<TrackInfo> {
-        val tracks = fetchMetadata(link)
+        val parsedLink = LinkParser.parse(link)
+            ?: throw IllegalArgumentException("Unsupported link: $link")
+
+        val isChannel = parsedLink.originalUrl.contains("/@") ||
+                parsedLink.originalUrl.contains("/channel/") ||
+                parsedLink.originalUrl.contains("/c/")
+
+        val channelArtistName = if (isChannel) {
+            _isFetching.value = true
+            _fetchingStatus.value = "Resolving channel artist..."
+            val resolved = withContext(Dispatchers.IO) {
+                fetchChannelName(parsedLink.originalUrl)
+            }
+            _isFetching.value = false
+            _fetchingStatus.value = ""
+            resolved ?: parsedLink.id
+        } else {
+            null
+        }
+
+        val fetchLink = if (isChannel) {
+            "ytsearch30:$channelArtistName music.youtube.com"
+        } else {
+            link
+        }
+
+        val tracks = fetchMetadata(fetchLink)
         if (tracks.isEmpty()) return tracks
 
-        val parsedLink = LinkParser.parse(link)
-        val filteredTracks = if (parsedLink != null && parsedLink.originalUrl.startsWith("ytsearch")) {
-            val artistQuery = parsedLink.id.trim()
+        val isSearchOrChannel = isChannel || parsedLink.originalUrl.startsWith("ytsearch")
+        val artistQuery = channelArtistName ?: if (parsedLink.originalUrl.startsWith("ytsearch")) parsedLink.id else null
+
+        val filteredTracks = if (isSearchOrChannel && artistQuery != null) {
+            val normalizedQuery = normalizeName(artistQuery)
             tracks.filter { track ->
                 track.artists.any { artist ->
-                    artist.contains(artistQuery, ignoreCase = true)
+                    val normalizedArtist = normalizeName(artist)
+                    normalizedArtist.contains(normalizedQuery) || normalizedQuery.contains(normalizedArtist)
                 }
             }
         } else {
@@ -189,18 +220,20 @@ class StashOrchestrator {
 
         if (filteredTracks.isEmpty()) return emptyList()
 
-        // Group tracks by album name
-        // If a track's album is null or blank, group under a default name
-        val defaultGroupName = if (parsedLink != null && parsedLink.originalUrl.startsWith("ytsearch")) {
-            parsedLink.id
+        val defaultGroupName = if (isSearchOrChannel && artistQuery != null) {
+            artistQuery
         } else if (filteredTracks.size == 1) {
             filteredTracks[0].title
         } else {
             "Stash Playlist"
         }
 
-        val groupedTracks = filteredTracks.groupBy {
-            it.album?.trim()?.takeIf { name -> name.isNotBlank() } ?: defaultGroupName
+        val groupedTracks = if (isSearchOrChannel) {
+            mapOf(defaultGroupName to filteredTracks)
+        } else {
+            filteredTracks.groupBy {
+                it.album?.trim()?.takeIf { name -> name.isNotBlank() } ?: defaultGroupName
+            }
         }
 
         groupedTracks.forEach { (albumName, albumTracks) ->
