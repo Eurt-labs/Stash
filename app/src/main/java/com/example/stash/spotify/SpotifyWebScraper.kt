@@ -131,7 +131,7 @@ class SpotifyWebScraper {
     // ──────────────────────────────────────────────────────────────
 
     private fun extractSingleTrack(parsedLink: ParsedLink): List<TrackInfo> {
-        val url = "$SPOTIFY_BASE/track/${parsedLink.id}"
+        val url = "$SPOTIFY_BASE/embed/track/${parsedLink.id}"
         val html = fetchPage(url) ?: return emptyList()
 
         // Try __NEXT_DATA__ JSON first (most reliable)
@@ -155,7 +155,7 @@ class SpotifyWebScraper {
     // ──────────────────────────────────────────────────────────────
 
     private fun extractPlaylistTracks(parsedLink: ParsedLink): List<TrackInfo> {
-        val url = "$SPOTIFY_BASE/playlist/${parsedLink.id}"
+        val url = "$SPOTIFY_BASE/embed/playlist/${parsedLink.id}"
         val html = fetchPage(url) ?: return emptyList()
 
         // Try extracting from __NEXT_DATA__
@@ -179,7 +179,7 @@ class SpotifyWebScraper {
     // ──────────────────────────────────────────────────────────────
 
     private fun extractAlbumTracks(parsedLink: ParsedLink): List<TrackInfo> {
-        val url = "$SPOTIFY_BASE/album/${parsedLink.id}"
+        val url = "$SPOTIFY_BASE/embed/album/${parsedLink.id}"
         val html = fetchPage(url) ?: return emptyList()
 
         // Try __NEXT_DATA__

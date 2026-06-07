@@ -179,21 +179,28 @@ class DownloadEngine {
             val p = process
             val tracks = mutableListOf<TrackInfo>()
             var count = 0
+            val errorLines = mutableListOf<String>()
 
             p.inputStream.bufferedReader().useLines { lines ->
                 lines.forEach { line ->
                     if (!this@withContext.isActive) {
                         throw CancellationException("Metadata extraction cancelled")
                     }
-                    if (line.isNotBlank() && line.startsWith("{")) {
-                        try {
-                            val json = gson.fromJson(line, JsonObject::class.java)
-                            val track = jsonToTrackInfo(json, url)
-                            tracks.add(track)
-                            count++
-                            onTrackExtracted?.invoke(count)
-                        } catch (e: Exception) {
-                            // Ignore json parsing error for single bad line
+                    if (line.isNotBlank()) {
+                        if (line.startsWith("{")) {
+                            try {
+                                val json = gson.fromJson(line, JsonObject::class.java)
+                                val track = jsonToTrackInfo(json, url)
+                                tracks.add(track)
+                                count++
+                                onTrackExtracted?.invoke(count)
+                            } catch (e: Exception) {
+                                // Ignore json parsing error for single bad line
+                            }
+                        } else {
+                            if (line.contains("ERROR:") || line.contains("warning", ignoreCase = true) || errorLines.size < 10) {
+                                errorLines.add(line)
+                            }
                         }
                     }
                 }
@@ -201,7 +208,9 @@ class DownloadEngine {
 
             val exitCode = p.waitFor()
             if (exitCode != 0 && tracks.isEmpty()) {
-                throw DownloadException("yt-dlp extraction failed with code $exitCode")
+                val errorMsg = errorLines.joinToString("\n").trim().takeIf { it.isNotBlank() }
+                    ?: "yt-dlp exited with code $exitCode"
+                throw DownloadException("yt-dlp extraction failed: $errorMsg")
             }
 
             return@withContext tracks
