@@ -125,6 +125,7 @@ class StashOrchestrator {
     fun enqueueTracks(
         tracks: List<TrackInfo>,
         batchName: String,
+        isIndividualTrack: Boolean = false,
         quality: DownloadQuality = _quality.value,
         format: DownloadFormat = _format.value,
         outputDir: String = _outputDir.value
@@ -153,7 +154,8 @@ class StashOrchestrator {
                 trackInfo = track,
                 outputDir = cacheDir,
                 quality = quality,
-                format = resolvedFormat
+                format = resolvedFormat,
+                isIndividualTrack = isIndividualTrack
             )
         }
 
@@ -262,8 +264,9 @@ class StashOrchestrator {
             }
         }
 
+        val isIndividualTrack = !isPlaylistOrSearch
         groupedTracks.forEach { (albumName, albumTracks) ->
-            enqueueTracks(albumTracks, albumName, quality, format, outputDir)
+            enqueueTracks(albumTracks, albumName, isIndividualTrack, quality, format, outputDir)
         }
 
         return filteredTracks

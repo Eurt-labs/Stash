@@ -206,7 +206,9 @@ class DownloadQueueManager {
                                     request.trackInfo.sourceUrl.contains("/@") ||
                                     request.trackInfo.sourceUrl.contains("/channel/") ||
                                     request.trackInfo.sourceUrl.contains("/c/")
-                            val subfolderName = if (isSearchOrChannel) {
+                            val subfolderName = if (request.isIndividualTrack) {
+                                null
+                            } else if (isSearchOrChannel) {
                                 batch.name
                             } else {
                                 request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batch.name

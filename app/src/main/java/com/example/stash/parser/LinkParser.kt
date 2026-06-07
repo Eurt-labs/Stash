@@ -67,6 +67,11 @@ object LinkParser {
         """https?://music\.youtube\.com/playlist\?.*?list=([a-zA-Z0-9_-]+)"""
     )
 
+    /** YouTube Music album: music.youtube.com/album/ALBUM_ID */
+    private val YOUTUBE_MUSIC_ALBUM_REGEX = Regex(
+        """https?://music\.youtube\.com/album/([a-zA-Z0-9_-]+)"""
+    )
+
     /** YouTube/YouTube Music channel/artist URL */
     private val YOUTUBE_CHANNEL_REGEX = Regex(
         """https?://(?:music\.|www\.)?youtube\.com/(?:@|channel/|c/)([a-zA-Z0-9_.-]+)"""
@@ -86,6 +91,9 @@ object LinkParser {
 
         // ── YouTube Music (check before regular YouTube to avoid false matches) ──
         YOUTUBE_MUSIC_PLAYLIST_REGEX.find(trimmedUrl)?.let { match ->
+            return ParsedLink(Platform.YOUTUBE_MUSIC, ContentType.PLAYLIST, match.groupValues[1], trimmedUrl)
+        }
+        YOUTUBE_MUSIC_ALBUM_REGEX.find(trimmedUrl)?.let { match ->
             return ParsedLink(Platform.YOUTUBE_MUSIC, ContentType.PLAYLIST, match.groupValues[1], trimmedUrl)
         }
         YOUTUBE_MUSIC_REGEX.find(trimmedUrl)?.let { match ->

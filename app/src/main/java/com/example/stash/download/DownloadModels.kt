@@ -51,7 +51,8 @@ data class DownloadRequest(
     val outputDir: String,
     val quality: DownloadQuality = DownloadQuality.HIGH,
     val format: DownloadFormat = DownloadFormat.MP3,
-    val embedArtwork: Boolean = true
+    val embedArtwork: Boolean = true,
+    val isIndividualTrack: Boolean = false
 )
 
 /**
