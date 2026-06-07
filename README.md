@@ -45,7 +45,6 @@ flowchart TD
 - ⚡ **Concurrent Execution**: High-speed, semaphore-limited downloading and conversion.
 - ⏸ **Pause & Resume**: Individually pause any track in the queue to save bandwidth and resume it later. The download engine resumes from partial files seamlessly.
 - 📂 **Smart Folder Organization**: Downloads automatically group into subfolders named after the Album/Playlist for batches, while individual tracks download directly without creating subdirectories.
-- 🎨 **Premium Modern UI**: Built with a sleek dark-mode-ready, Glassmorphism-inspired design system.
 - 🔍 **YouTube Playlist Parsing**: Full support for playlist URLs (including watch-playlists with `&list=` parameters).
 - 🔄 **Self-Updating Dependency**: Check and update `yt-dlp` directly within the app UI.
 
