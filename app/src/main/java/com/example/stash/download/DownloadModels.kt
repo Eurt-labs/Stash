@@ -59,7 +59,6 @@ data class DownloadRequest(
  */
 enum class DownloadState {
     QUEUED,
-    SEARCHING,     // Searching YouTube for a match (Spotify tracks)
     DOWNLOADING,
     CONVERTING,
     MOVING,        // Moving converted file to final destination
@@ -143,10 +142,9 @@ data class DownloadBatch(
         if (states.all { it == DownloadState.COMPLETE }) return DownloadState.COMPLETE
         if (states.all { it == DownloadState.CANCELLED }) return DownloadState.CANCELLED
         
-        // If any item is actively downloading, converting, tagging, moving, or searching
+        // If any item is actively downloading, converting, tagging, moving, etc.
         if (states.any { 
             it == DownloadState.DOWNLOADING || 
-            it == DownloadState.SEARCHING || 
             it == DownloadState.CONVERTING || 
             it == DownloadState.MOVING ||
             it == DownloadState.TAGGING 

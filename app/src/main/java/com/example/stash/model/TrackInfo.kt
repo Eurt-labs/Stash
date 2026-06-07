@@ -4,7 +4,6 @@ package com.example.stash.model
  * Platform source of the content.
  */
 enum class Platform {
-    SPOTIFY,
     YOUTUBE,
     YOUTUBE_MUSIC,
     INSTAGRAM,
