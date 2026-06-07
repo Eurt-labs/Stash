@@ -1,29 +1,22 @@
 package com.example.stash.download
 
 /**
- * User-selectable audio quality presets.
+ * User-selectable audio quality presets — simplified to 3 tiers.
  */
 enum class DownloadQuality(val label: String, val bitrateKbps: Int) {
-    AUDIO_128("MP3 128kbps (Small)", 128),
-    AUDIO_192("MP3 192kbps (Medium)", 192),
-    AUDIO_256("MP3 256kbps (Good)", 256),
-    AUDIO_320("MP3 320kbps (Best)", 320);
+    LOW("Low Quality (128kbps)", 128),
+    MID("Mid Quality (192kbps)", 192),
+    HIGH("High Quality (320kbps)", 320);
 
     override fun toString(): String = label
 }
 
 /**
- * Download format — audio-only or video with audio.
+ * Download format — MP3 or AAC audio.
  */
-enum class DownloadFormat(val label: String, val extension: String, val isVideo: Boolean = false) {
-    MP3("MP3 Audio", "mp3"),
-    M4A("M4A/AAC Audio", "m4a"),
-    OGG("OGG Vorbis Audio", "ogg"),
-    OPUS("Opus Audio", "opus"),
-    VIDEO_360("Video 360p", "mp4", isVideo = true),
-    VIDEO_720("Video 720p", "mp4", isVideo = true),
-    VIDEO_1080("Video 1080p", "mp4", isVideo = true),
-    VIDEO_BEST("Video Best Quality", "mp4", isVideo = true);
+enum class DownloadFormat(val label: String, val extension: String, val ffmpegCodec: String) {
+    MP3("MP3 Audio", "mp3", "libmp3lame"),
+    AAC("AAC Audio", "m4a", "aac");
 
     override fun toString(): String = label
 }
@@ -36,7 +29,7 @@ data class DownloadRequest(
     val url: String,
     val trackInfo: com.example.stash.model.TrackInfo,
     val outputDir: String,
-    val quality: DownloadQuality = DownloadQuality.AUDIO_320,
+    val quality: DownloadQuality = DownloadQuality.HIGH,
     val format: DownloadFormat = DownloadFormat.MP3,
     val embedArtwork: Boolean = true
 )
@@ -49,6 +42,7 @@ enum class DownloadState {
     SEARCHING,     // Searching YouTube for a match (Spotify tracks)
     DOWNLOADING,
     CONVERTING,
+    MOVING,        // Moving converted file to final destination
     TAGGING,
     COMPLETE,
     FAILED,
@@ -67,7 +61,8 @@ data class DownloadItem(
     val speed: String? = null,
     val eta: Long? = null,
     val error: String? = null,
-    val filePath: String? = null
+    val filePath: String? = null,
+    val rawFilePath: String? = null  // Path to the raw downloaded file before conversion
 )
 
 /**
@@ -98,7 +93,8 @@ data class DownloadBatch(
     val id: String = java.util.UUID.randomUUID().toString(),
     val name: String,
     val items: List<DownloadItem> = emptyList(),
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val outputDir: String = ""  // User-selected output directory for this batch
 ) {
     // Computed properties for progress and overall state
     val totalTracks: Int get() = items.size
@@ -127,11 +123,12 @@ data class DownloadBatch(
         if (states.all { it == DownloadState.COMPLETE }) return DownloadState.COMPLETE
         if (states.all { it == DownloadState.CANCELLED }) return DownloadState.CANCELLED
         
-        // If any item is actively downloading, converting, tagging, or searching, then the batch is downloading
+        // If any item is actively downloading, converting, tagging, moving, or searching
         if (states.any { 
             it == DownloadState.DOWNLOADING || 
             it == DownloadState.SEARCHING || 
             it == DownloadState.CONVERTING || 
+            it == DownloadState.MOVING ||
             it == DownloadState.TAGGING 
         }) return DownloadState.DOWNLOADING
         

@@ -10,10 +10,19 @@ import com.example.stash.spotify.SpotifyWebScraper
 import com.example.stash.storage.FileManager
 import java.io.File
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Main entry point for the Stash download algorithm (Desktop Version).
+ *
+ * Orchestrates the 5-phase sequential pipeline:
+ * 1. FETCH    — Scrape metadata from link (Spotify/YouTube)
+ * 2. DOWNLOAD — yt-dlp downloads one-by-one from temp JSON manifest
+ * 3. CONVERT  — FFmpeg converts one-by-one to user-selected format/quality
+ * 4. MOVE     — Tag and move to user-selected output folder
+ * 5. CLEANUP  — Delete temp JSON manifest and cache files
  */
 class StashOrchestrator {
 
@@ -29,11 +38,53 @@ class StashOrchestrator {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    // ── User-configurable state ──
+
+    /** The user-selected output directory. Defaults to ~/Downloads/Stash */
+    private val _outputDir = MutableStateFlow(fileManager.getDefaultDownloadDir())
+    val outputDir: StateFlow<String> = _outputDir.asStateFlow()
+
+    /** The user-selected download quality. Defaults to HIGH. */
+    private val _quality = MutableStateFlow(DownloadQuality.HIGH)
+    val quality: StateFlow<DownloadQuality> = _quality.asStateFlow()
+
+    /** The user-selected download format. Defaults to MP3. */
+    private val _format = MutableStateFlow(DownloadFormat.MP3)
+    val format: StateFlow<DownloadFormat> = _format.asStateFlow()
+
     /**
      * Exposes the download queue state (batches) for UI observation.
      */
     val downloadBatches: StateFlow<Map<String, DownloadBatch>>
         get() = queueManager.batches
+
+    // ── User configuration setters ──
+
+    /**
+     * Sets the output directory where downloaded files will be saved.
+     */
+    fun setOutputDirectory(path: String) {
+        val dir = File(path)
+        if (!dir.exists()) dir.mkdirs()
+        _outputDir.value = dir.absolutePath
+        println("Output directory set to: ${dir.absolutePath}")
+    }
+
+    /**
+     * Sets the download quality preset.
+     */
+    fun setQuality(quality: DownloadQuality) {
+        _quality.value = quality
+        println("Quality set to: ${quality.label}")
+    }
+
+    /**
+     * Sets the download format.
+     */
+    fun setFormat(format: DownloadFormat) {
+        _format.value = format
+        println("Format set to: ${format.label}")
+    }
 
     /**
      * Fetches and returns track metadata from the link without initiating a download.
@@ -46,18 +97,19 @@ class StashOrchestrator {
     }
 
     /**
-     * Enqueues tracks for download, saving them to the secure cache directory first.
+     * Enqueues tracks for download using the current quality, format, and output dir settings.
+     * Tracks are saved to a temp JSON manifest before downloading begins.
      */
     fun enqueueTracks(
         tracks: List<TrackInfo>,
         batchName: String,
-        quality: DownloadQuality = DownloadQuality.AUDIO_320,
-        format: DownloadFormat = DownloadFormat.MP3
+        quality: DownloadQuality = _quality.value,
+        format: DownloadFormat = _format.value,
+        outputDir: String = _outputDir.value
     ) {
         if (tracks.isEmpty()) return
 
-        val userHome = System.getProperty("user.home")
-        val cacheDir = File(userHome, ".stash_cache").apply {
+        val cacheDir = File(System.getProperty("user.home"), ".stash_cache").apply {
             if (!exists()) mkdirs()
         }.absolutePath
 
@@ -71,18 +123,22 @@ class StashOrchestrator {
             )
         }
 
-        queueManager.enqueueBatch(batchName, requests)
-        println("Enqueued batch '$batchName' with ${requests.size} download(s) to cache directory")
+        queueManager.enqueueBatch(batchName, requests, outputDir)
+        println("Enqueued batch '$batchName' with ${requests.size} download(s)")
+        println("  Quality: ${quality.label}")
+        println("  Format: ${format.label}")
+        println("  Output: $outputDir")
     }
 
     /**
-     * Processes a Spotify or YouTube link and starts downloading.
+     * Processes a Spotify or YouTube link and starts the download pipeline.
+     * Uses the current quality, format, and output dir settings.
      */
     suspend fun processLink(
         link: String,
-        outputDir: String? = null,
-        quality: DownloadQuality = DownloadQuality.AUDIO_320,
-        format: DownloadFormat = DownloadFormat.MP3
+        quality: DownloadQuality = _quality.value,
+        format: DownloadFormat = _format.value,
+        outputDir: String = _outputDir.value
     ): List<TrackInfo> {
         val tracks = fetchMetadata(link)
         val batchName = if (tracks.size == 1) {
@@ -90,7 +146,7 @@ class StashOrchestrator {
         } else {
             tracks[0].album ?: "Stash Playlist"
         }
-        enqueueTracks(tracks, batchName, quality, format)
+        enqueueTracks(tracks, batchName, quality, format, outputDir)
         return tracks
     }
 
@@ -99,14 +155,14 @@ class StashOrchestrator {
      */
     suspend fun processLinks(
         links: List<String>,
-        outputDir: String? = null,
-        quality: DownloadQuality = DownloadQuality.AUDIO_320,
-        format: DownloadFormat = DownloadFormat.MP3
+        quality: DownloadQuality = _quality.value,
+        format: DownloadFormat = _format.value,
+        outputDir: String = _outputDir.value
     ): List<TrackInfo> {
         val allTracks = mutableListOf<TrackInfo>()
         for (link in links) {
             try {
-                val tracks = processLink(link, outputDir, quality, format)
+                val tracks = processLink(link, quality, format, outputDir)
                 allTracks.addAll(tracks)
             } catch (e: Exception) {
                 System.err.println("Failed to process link: $link")
@@ -189,8 +245,8 @@ class StashOrchestrator {
                 "https://www.youtube.com/watch?v=${parsedLink.id}"
         }
 
-        return downloadEngine.extractInfo(url).map { track ->
-            track.copy(youtubeUrl = track.sourceUrl)
-        }
+        // extractInfo already sets youtubeUrl correctly per-video from the JSON.
+        // Do NOT override it with sourceUrl (which is the playlist URL).
+        return downloadEngine.extractInfo(url)
     }
 }

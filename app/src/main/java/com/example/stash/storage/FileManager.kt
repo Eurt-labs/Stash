@@ -70,21 +70,26 @@ class FileManager {
 
     /**
      * Moves a file from the temporary/cache directory to its final destination.
+     *
+     * @param tempFilePath Absolute path to the temp/converted file.
+     * @param trackInfo Track metadata for generating the filename.
+     * @param extension File extension (e.g. "mp3", "m4a").
+     * @param destinationDir The user-selected output directory. If not provided, uses the default.
      * @return The absolute path to the final destination file.
      */
     fun moveToFinalDestination(
         tempFilePath: String,
         trackInfo: com.example.stash.model.TrackInfo,
-        extension: String
+        extension: String,
+        destinationDir: String? = null
     ): String {
         val cacheFile = File(tempFilePath)
         if (!cacheFile.exists()) {
             throw java.io.IOException("Source file not found: $tempFilePath")
         }
 
-        // Default: save to Downloads/Stash
-        val defaultDir = getDefaultDownloadDir()
-        val uniqueFile = getUniqueFile(defaultDir, trackInfo.safeFileName, extension)
+        val outputDir = destinationDir ?: getDefaultDownloadDir()
+        val uniqueFile = getUniqueFile(outputDir, trackInfo.safeFileName, extension)
         
         val success = cacheFile.renameTo(uniqueFile)
         if (!success) {
@@ -94,5 +99,26 @@ class FileManager {
         }
         
         return uniqueFile.absolutePath
+    }
+
+    /**
+     * Cleans up the cache directory by deleting all files within it.
+     * The directory itself is preserved.
+     */
+    fun cleanupCacheDir() {
+        val userHome = System.getProperty("user.home")
+        val cacheDir = File(userHome, ".stash_cache")
+        if (cacheDir.exists()) {
+            cacheDir.listFiles()?.forEach { file ->
+                try {
+                    if (file.isFile) {
+                        file.delete()
+                    }
+                } catch (e: Exception) {
+                    System.err.println("Failed to delete cache file: ${file.name}")
+                }
+            }
+            println("Cache directory cleaned up")
+        }
     }
 }

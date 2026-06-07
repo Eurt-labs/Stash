@@ -11,11 +11,25 @@ import java.io.InputStreamReader
 
 /**
  * Core download engine wrapping yt-dlp via ProcessBuilder.
+ *
+ * Always downloads the best available audio stream without any format conversion.
+ * Format conversion is handled separately by ConversionEngine.
  */
 class DownloadEngine {
 
     private val gson = Gson()
 
+    /**
+     * Downloads the best audio for the given request using yt-dlp.
+     *
+     * Always downloads the highest quality audio available. Does NOT convert formats —
+     * that is handled by ConversionEngine in a separate phase.
+     *
+     * @param request The download request with URL and output configuration.
+     * @param onProgress Optional callback for download progress (percent, eta, speed).
+     * @return Absolute path to the downloaded raw audio file.
+     * @throws DownloadException if the download fails.
+     */
     suspend fun download(
         request: DownloadRequest,
         onProgress: ((Float, Long, String) -> Unit)? = null
@@ -27,6 +41,7 @@ class DownloadEngine {
             outputDir.mkdirs()
         }
 
+        // Use the track's safeFileName for output — each track has a unique name
         val outputTemplate = File(
             outputDir,
             "${request.trackInfo.safeFileName}.%(ext)s"
@@ -43,11 +58,15 @@ class DownloadEngine {
             "--no-continue",
             "--force-overwrites",
             "--fixup", "never",
-            "--prefer-free-formats",
-            "--newline"
+            "--newline",
+            // CRITICAL: Prevent yt-dlp from expanding playlist URLs.
+            // We always pass individual video URLs, never playlists.
+            "--no-playlist",
+            // Always download best audio — conversion is handled separately
+            "-f", "bestaudio",
+            "--extract-audio"
         )
 
-        configureFormat(cmd, request)
         cmd.add(request.url)
 
         try {
@@ -90,6 +109,17 @@ class DownloadEngine {
         }
     }
 
+    /**
+     * Extracts metadata from a URL using yt-dlp's --dump-json.
+     * For playlists, expands into individual track entries with full metadata.
+     *
+     * IMPORTANT: Does NOT use --flat-playlist because flat mode returns
+     * minimal metadata (missing title, artist, duration for album tracks).
+     * Instead uses full JSON extraction to get complete per-track info.
+     *
+     * @param url The URL to extract metadata from.
+     * @return List of TrackInfo extracted from the URL.
+     */
     suspend fun extractInfo(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
         println("Extracting info from: $url")
 
@@ -98,7 +128,9 @@ class DownloadEngine {
             "--dump-json",
             "--no-download",
             "--no-warnings",
-            "--flat-playlist",
+            // DO NOT use --flat-playlist: it returns minimal metadata
+            // (all tracks get the same generic title/artist).
+            // Full mode gives us per-video title, artist, duration, thumbnail.
             url
         )
 
@@ -131,28 +163,6 @@ class DownloadEngine {
         }
     }
 
-    private fun configureFormat(cmd: MutableList<String>, request: DownloadRequest) {
-        if (request.format.isVideo) {
-            val heightLimit = when (request.format) {
-                DownloadFormat.VIDEO_360 -> 360
-                DownloadFormat.VIDEO_720 -> 720
-                DownloadFormat.VIDEO_1080 -> 1080
-                DownloadFormat.VIDEO_BEST -> 0
-                else -> 720
-            }
-
-            if (heightLimit > 0) {
-                cmd.addAll(listOf("-f", "bestvideo[height<=$heightLimit]+bestaudio/best[height<=$heightLimit]"))
-            } else {
-                cmd.addAll(listOf("-f", "bestvideo+bestaudio/best"))
-            }
-            cmd.addAll(listOf("--merge-output-format", "mp4"))
-
-        } else {
-            cmd.addAll(listOf("-f", "bestaudio"))
-        }
-    }
-
     private fun findOutputFile(dir: File, baseName: String): File? {
         return dir.listFiles()
             ?.filter { it.nameWithoutExtension == baseName }
@@ -175,9 +185,13 @@ class DownloadEngine {
             else -> Platform.YOUTUBE
         }
 
+        // CRITICAL: Build the individual video URL from the JSON, NOT from sourceUrl.
+        // sourceUrl may be a playlist URL, but we need the per-video URL.
+        val videoId = json.get("id")?.asString
         val videoUrl = json.get("webpage_url")?.asString
-            ?: json.get("url")?.asString
-            ?: if (detectedPlatform == Platform.INSTAGRAM) sourceUrl else "https://www.youtube.com/watch?v=${json.get("id")?.asString}"
+            ?: if (videoId != null) "https://www.youtube.com/watch?v=$videoId"
+            else json.get("url")?.asString
+            ?: sourceUrl
 
         return TrackInfo(
             title = title,
@@ -187,6 +201,7 @@ class DownloadEngine {
             albumArtUrl = thumbnail,
             source = detectedPlatform,
             sourceUrl = sourceUrl,
+            // Store the individual video URL, NOT the playlist URL
             youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM) null else videoUrl
         )
     }
