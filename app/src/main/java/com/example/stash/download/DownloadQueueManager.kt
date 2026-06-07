@@ -224,8 +224,9 @@ class DownloadQueueManager {
 
                             updateItemState(batchId, item.id, DownloadState.MOVING)
                             val outputDir = batch.outputDir.ifBlank { fileManager.getDefaultDownloadDir() }
+                            val subfolderName = request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batch.name
                             val finalPath = withContext(Dispatchers.IO) {
-                                fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir)
+                                fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir, subfolderName)
                             }
 
                             completeItem(batchId, item.id, finalPath)
@@ -362,9 +363,11 @@ class DownloadQueueManager {
         // Get the output directory from the batch
         val batch = _batches.value[batchId]
         val outputDir = batch?.outputDir ?: fileManager.getDefaultDownloadDir()
+        val batchName = batch?.name ?: "Stash Playlist"
+        val subfolderName = request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batchName
 
         val finalPath = withContext(Dispatchers.IO) {
-            fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir)
+            fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir, subfolderName)
         }
 
         // Mark as complete
@@ -522,7 +525,7 @@ class DownloadQueueManager {
             val batch = currentBatches[batchId] ?: return@update currentBatches
             val updatedItems = batch.items.map {
                 if (it.id == trackId) {
-                    it.copy(state = DownloadState.COMPLETE, progress = 1f, filePath = filePath)
+                    it.copy(state = DownloadState.COMPLETE, progress = 1f, speed = null, eta = null, filePath = filePath)
                 } else it
             }
             currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
@@ -534,7 +537,7 @@ class DownloadQueueManager {
             val batch = currentBatches[batchId] ?: return@update currentBatches
             val updatedItems = batch.items.map {
                 if (it.id == trackId) {
-                    it.copy(state = DownloadState.FAILED, error = errorMsg)
+                    it.copy(state = DownloadState.FAILED, error = errorMsg, speed = null, eta = null)
                 } else it
             }
             currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
