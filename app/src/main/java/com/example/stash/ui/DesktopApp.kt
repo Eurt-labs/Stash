@@ -44,6 +44,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     // Dropdown expanded states
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
     var formatDropdownExpanded by remember { mutableStateOf(false) }
+    val collapsedBatches = remember { mutableStateMapOf<String, Boolean>() }
 
     val lightColors = lightColors(
         primary = Color(0xFF6366F1),       // Premium Indigo

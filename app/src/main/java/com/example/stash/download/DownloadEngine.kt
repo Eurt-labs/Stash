@@ -249,14 +249,19 @@ class DownloadEngine {
             val output = process.inputStream.bufferedReader().readText()
             val exitCode = process.waitFor()
             if (exitCode == 0) {
-                output.trim()
+                val lower = output.lowercase()
+                if (lower.contains("up to date")) {
+                    "Stash is up to date."
+                } else {
+                    "Stash successfully updated!"
+                }
             } else {
-                "Update failed with exit code $exitCode:\n$output".trim()
+                "Update failed. Please check your internet connection."
             }
         } catch (e: Exception) {
             System.err.println("yt-dlp update failed: ${e.message}")
             e.printStackTrace()
-            "Error: Failed to execute yt-dlp update command. Is yt-dlp installed and on system PATH?\nDetails: ${e.message}"
+            "Update failed. Please check your internet connection."
         } finally {
             process?.let {
                 if (it.isAlive) {

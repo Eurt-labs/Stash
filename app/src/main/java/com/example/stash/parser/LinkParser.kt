@@ -88,6 +88,14 @@ object LinkParser {
     fun parse(url: String): ParsedLink? {
         val trimmedUrl = url.trim()
 
+        // ── YouTube / YouTube Music Playlists (check first to capture &list= in watch URLs) ──
+        val playlistIdMatch = Regex("""[?&]list=([a-zA-Z0-9_-]+)""").find(trimmedUrl)
+        if (playlistIdMatch != null) {
+            val playlistId = playlistIdMatch.groupValues[1]
+            val platform = if (trimmedUrl.contains("music.youtube.com")) Platform.YOUTUBE_MUSIC else Platform.YOUTUBE
+            return ParsedLink(platform, ContentType.PLAYLIST, playlistId, trimmedUrl)
+        }
+
 
         // ── YouTube Music (check before regular YouTube to avoid false matches) ──
         YOUTUBE_MUSIC_PLAYLIST_REGEX.find(trimmedUrl)?.let { match ->
