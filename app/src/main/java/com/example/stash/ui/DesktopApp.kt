@@ -45,8 +45,21 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
     var formatDropdownExpanded by remember { mutableStateOf(false) }
 
-    MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    val darkColors = darkColors(
+        primary = Color(0xFF8B5CF6),
+        primaryVariant = Color(0xFF7C3AED),
+        secondary = Color(0xFF10B981),
+        background = Color(0xFF0F172A),
+        surface = Color(0xFF1E293B),
+        error = Color(0xFFEF4444),
+        onPrimary = Color.White,
+        onSecondary = Color.White,
+        onBackground = Color(0xFFF8FAFC),
+        onSurface = Color(0xFFE2E8F0)
+    )
+
+    MaterialTheme(colors = darkColors) {
+        Column(modifier = Modifier.fillMaxSize().background(darkColors.background).padding(24.dp)) {
 
             // ── Header ──
             Row(
@@ -80,9 +93,10 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(4.dp))
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colors.surface)
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 12.dp)
                 ) {
                     Text(
                         text = outputDir,
@@ -102,7 +116,9 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                         if (result == JFileChooser.APPROVE_OPTION) {
                             orchestrator.setOutputDirectory(chooser.selectedFile.absolutePath)
                         }
-                    }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(48.dp)
                 ) {
                     Icon(Icons.Default.Create, contentDescription = "Browse", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -124,7 +140,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     Box {
                         OutlinedButton(
                             onClick = { qualityDropdownExpanded = true },
-                            modifier = Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) {
                             val icon = when (quality) {
                                 DownloadQuality.LOW -> "🟢"
@@ -163,7 +180,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     Box {
                         OutlinedButton(
                             onClick = { formatDropdownExpanded = true },
-                            modifier = Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) {
                             Text(format.label)
                         }
@@ -191,10 +209,28 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 OutlinedTextField(
                     value = linkInput,
                     onValueChange = { linkInput = it },
-                    label = { Text("Enter YouTube, Instagram, or Other Links") },
+                    label = { Text("Enter Link or Artist Name") },
+                    placeholder = { Text("e.g. Taylor Swift, or paste YouTube/Instagram URL") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    enabled = !isProcessing && !isFetching
+                    enabled = !isProcessing && !isFetching,
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colors.primary
+                        )
+                    },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        textColor = MaterialTheme.colors.onSurface,
+                        focusedBorderColor = MaterialTheme.colors.primary,
+                        unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.2f),
+                        focusedLabelColor = MaterialTheme.colors.primary,
+                        unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                        cursorColor = MaterialTheme.colors.primary,
+                        backgroundColor = MaterialTheme.colors.surface
+                    )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
@@ -215,8 +251,12 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                             }
                         }
                     },
-                    enabled = !isProcessing && !isFetching && linkInput.isNotBlank()
+                    enabled = !isProcessing && !isFetching && linkInput.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(56.dp)
                 ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Download")
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(if (isProcessing || isFetching) "Processing..." else "Download")
                 }
             }
@@ -226,6 +266,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                     elevation = 2.dp,
                     backgroundColor = MaterialTheme.colors.surface
                 ) {
@@ -259,18 +300,24 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = { orchestrator.cancelAll() },
-                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
+                    modifier = Modifier.height(40.dp)
                 ) {
                     Text("Stop All", color = MaterialTheme.colors.onError)
                 }
                 OutlinedButton(
-                    onClick = { orchestrator.queueManager.clearFinished() }
+                    onClick = { orchestrator.queueManager.clearFinished() },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(40.dp)
                 ) {
                     Text("Clear Finished")
                 }
                 Button(
                     onClick = { orchestrator.checkForUpdates() },
-                    enabled = !isUpdating
+                    enabled = !isUpdating,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(40.dp)
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = "Update", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -303,6 +350,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 elevation = 2.dp
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
