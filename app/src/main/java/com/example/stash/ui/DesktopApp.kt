@@ -108,13 +108,11 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        val chooser = JFileChooser(outputDir).apply {
-                            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                            dialogTitle = "Select Output Folder"
-                        }
-                        val result = chooser.showOpenDialog(null)
-                        if (result == JFileChooser.APPROVE_OPTION) {
-                            orchestrator.setOutputDirectory(chooser.selectedFile.absolutePath)
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            val selectedPath = chooseDirectory(outputDir)
+                            if (selectedPath != null) {
+                                orchestrator.setOutputDirectory(selectedPath)
+                            }
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -479,7 +477,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
             if (updateStatus.isNotEmpty()) {
                 AlertDialog(
                     onDismissRequest = { orchestrator.clearUpdateStatus() },
-                    title = { Text("Dependency Update Status") },
+                    title = { Text("Update Status") },
                     text = { 
                         Text(
                             text = updateStatus,
@@ -496,4 +494,42 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
             }
         }
     }
+}
+
+private fun chooseDirectory(currentDir: String): String? {
+    val os = System.getProperty("os.name").lowercase()
+    if (os.contains("win")) {
+        try {
+            val script = """
+                Add-Type -AssemblyName System.Windows.Forms
+                ${'$'}dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+                ${'$'}dialog.SelectedPath = "$currentDir"
+                ${'$'}dialog.Description = "Select Output Folder"
+                if (${'$'}dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+                    Write-Output ${'$'}dialog.SelectedPath
+                }
+            """.trimIndent()
+            val process = ProcessBuilder("powershell", "-NoProfile", "-Command", script)
+                .start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            if (output.isNotBlank() && !output.startsWith("Error")) {
+                return output
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    
+    // Fallback to JFileChooser
+    var selectedPath: String? = null
+    val chooser = javax.swing.JFileChooser(currentDir).apply {
+        fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
+        dialogTitle = "Select Output Folder"
+    }
+    val result = chooser.showOpenDialog(null)
+    if (result == javax.swing.JFileChooser.APPROVE_OPTION) {
+        selectedPath = chooser.selectedFile.absolutePath
+    }
+    return selectedPath
 }
