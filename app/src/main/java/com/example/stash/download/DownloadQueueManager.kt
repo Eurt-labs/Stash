@@ -271,6 +271,7 @@ class DownloadQueueManager {
                         updateItemState(batchId, item.id, DownloadState.CANCELLED)
                     }
                 }
+                manifestManager.cleanupBatch(batchId)
             } finally {
                 synchronized(pendingBatchIds) {
                     if (activeBatchId == batchId) {
@@ -397,9 +398,8 @@ class DownloadQueueManager {
     fun cancelBatch(batchId: String) {
         val batch = _batches.value[batchId] ?: return
 
-        // If this is the active batch, cancel the job
+        val jobToCancel = if (activeBatchId == batchId) activeBatchJob else null
         if (activeBatchId == batchId) {
-            activeBatchJob?.cancel()
             activeBatchJob = null
         }
 
@@ -416,15 +416,25 @@ class DownloadQueueManager {
             currentBatches.toMutableMap().apply { put(batchId, currentBatch.copy(items = updatedItems)) }
         }
 
-        // Clean up
-        manifestManager.cleanupBatch(batchId)
-
         synchronized(pendingBatchIds) {
             pendingBatchIds.remove(batchId)
             if (activeBatchId == batchId) {
                 activeBatchId = null
             }
         }
+
+        scope.launch {
+            if (jobToCancel != null) {
+                try {
+                    jobToCancel.cancelAndJoin()
+                } catch (e: Exception) {
+                    System.err.println("Error joining cancelled batch job: ${e.message}")
+                }
+            }
+            // Clean up files after processes have terminated and released handles
+            manifestManager.cleanupBatch(batchId)
+        }
+
         checkNextBatch()
 
         println("Batch '$batchId' cancelled")
@@ -434,7 +444,7 @@ class DownloadQueueManager {
      * Cancels all batches and active downloads, then cleans up cache.
      */
     fun cancelAll() {
-        activeBatchJob?.cancel()
+        val jobToCancel = activeBatchJob
         activeBatchJob = null
         pendingBatchIds.clear()
 
@@ -452,8 +462,17 @@ class DownloadQueueManager {
         }
         activeBatchId = null
 
-        // Clear the cache directory immediately upon stopping all
-        fileManager.cleanupCacheDir()
+        scope.launch {
+            if (jobToCancel != null) {
+                try {
+                    jobToCancel.cancelAndJoin()
+                } catch (e: Exception) {
+                    System.err.println("Error joining cancelled batch job: ${e.message}")
+                }
+            }
+            // Clear the cache directory safely after processes have terminated and released handles
+            fileManager.cleanupCacheDir()
+        }
     }
 
     /**

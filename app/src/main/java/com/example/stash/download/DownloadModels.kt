@@ -10,7 +10,10 @@ enum class DownloadQuality(val label: String, val bitrateKbps: Int, val videoLab
 
     fun getLabelForFormat(format: DownloadFormat): String {
         return when (format) {
-            DownloadFormat.MP4 -> videoLabel
+            DownloadFormat.MP4,
+            DownloadFormat.YOUTUBE_VIDEO,
+            DownloadFormat.INSTAGRAM_VIDEO,
+            DownloadFormat.OTHER_VIDEO -> videoLabel
             DownloadFormat.AUTO -> when (this) {
                 LOW -> "Low Quality (128kbps / 360p)"
                 MID -> "Mid Quality (192kbps / 720p)"
@@ -24,13 +27,16 @@ enum class DownloadQuality(val label: String, val bitrateKbps: Int, val videoLab
 }
 
 /**
- * Download format — Auto-Detect, MP3/AAC audio, or MP4 video.
+ * Download format — Auto-Detect, MP3/AAC audio, or MP4 video options.
  */
 enum class DownloadFormat(val label: String, val extension: String, val ffmpegCodec: String) {
     AUTO("Auto-Detect", "", ""),
     MP3("MP3 Audio", "mp3", "libmp3lame"),
     AAC("AAC Audio", "m4a", "aac"),
-    MP4("MP4 Video", "mp4", "copy");
+    MP4("MP4 Video", "mp4", "copy"),
+    YOUTUBE_VIDEO("YouTube Video (MP4)", "mp4", "copy"),
+    INSTAGRAM_VIDEO("Instagram Video (MP4)", "mp4", "copy"),
+    OTHER_VIDEO("Other Video (MP4)", "mp4", "copy");
 
     override fun toString(): String = label
 }
