@@ -36,6 +36,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     val outputDir by orchestrator.outputDir.collectAsState()
     val quality by orchestrator.quality.collectAsState()
     val format by orchestrator.format.collectAsState()
+    val isFetching by orchestrator.isFetching.collectAsState()
+    val fetchingStatus by orchestrator.fetchingStatus.collectAsState()
 
     // Dropdown expanded states
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
@@ -171,7 +173,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     onValueChange = { linkInput = it },
                     label = { Text("Enter Spotify/YouTube Link") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isProcessing && !isFetching
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
@@ -192,9 +195,41 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                             }
                         }
                     },
-                    enabled = !isProcessing && linkInput.isNotBlank()
+                    enabled = !isProcessing && !isFetching && linkInput.isNotBlank()
                 ) {
-                    Text(if (isProcessing) "Processing..." else "Download")
+                    Text(if (isProcessing || isFetching) "Processing..." else "Download")
+                }
+            }
+
+            // Fetching/Processing live feedback card
+            if (isFetching || isProcessing) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = 2.dp,
+                    backgroundColor = MaterialTheme.colors.surface
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colors.primary
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = if (fetchingStatus.isNotBlank()) fetchingStatus else "Processing and batching tracks...",
+                                style = MaterialTheme.typography.body2,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colors.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
                 }
             }
 
