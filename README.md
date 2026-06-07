@@ -1,6 +1,16 @@
 # Stash Downloader
 
-Stash is a high-performance, elegant media downloader built with Jetbrains Compose Desktop for JVM. It allows you to download and format-shift your favorite music tracks, playlists, albums, and videos from YouTube, YouTube Music, and Spotify (metadata-matching) into high-quality, cleanly-tagged MP3, AAC, or MP4 files.
+Stash is a high-performance, elegant media downloader built with Jetbrains Compose Desktop for JVM. It allows you to download and format-shift your favorite music tracks, playlists, albums, and videos from YouTube, YouTube Music, and other media sources into high-quality, cleanly-tagged MP3, AAC, or MP4 files.
+
+---
+
+## Supported Sources & Future Roadmap
+
+> [!IMPORTANT]
+> **Spotify Downloads are NOT Supported**
+> Currently, Stash **does not** support downloading or parsing Spotify links (tracks, playlists, or albums) in the desktop application.
+> 
+> **Future Roadmap**: Spotify metadata-matching download support is planned and may be integrated in a future release.
 
 ---
 
@@ -11,7 +21,7 @@ Stash utilizes a strict **5-Phase Concurrent Batch Pipeline** designed to maximi
 ```mermaid
 flowchart TD
     A["User pastes link in UI"] --> B["StashOrchestrator.processLink()"]
-    B --> C["Phase 1: FETCH\n(Spotify Metadata Fetcher / yt-dlp)"]
+    B --> C["Phase 1: FETCH\n(Metadata Query via yt-dlp)"]
     C --> D["ManifestManager\n(Save metadata to temp JSON manifest)"]
     D --> E["DownloadQueueManager\n(Concurrency Semaphores)"]
     
@@ -22,7 +32,7 @@ flowchart TD
 ```
 
 ### The 5 Phases:
-1. **FETCH**: The application parses the input link (via regex in `LinkParser`). For YouTube links, metadata is directly queried. For Spotify links, the public Spotify API is queried to fetch track details (title, artist, album, artwork) which are then matched against YouTube searches (`YouTubeSearchMatcher`). Metadata is saved to a temporary JSON manifest file.
+1. **FETCH**: The application parses the input link (via regex in `LinkParser`). Metadata is queried from the source link and stored in a temporary JSON manifest file.
 2. **DOWNLOAD**: The queue processes tracks in parallel. Up to **5 concurrent downloads** are permitted using `yt-dlp` to extract the best audio streams, saving them to a temporary cache.
 3. **CONVERT**: Transcoding is handled in parallel (up to **3 concurrent conversions**) using `ffmpeg` to target the user's selected format (MP3 or AAC) and quality bitrate (Low/Mid/High).
 4. **TAG & MOVE**: Finished files are automatically tagged with ID3v2.4 metadata (including embedding high-resolution album artwork) using `mp3agic` and cleanly moved to the user's specified output directory.
@@ -48,16 +58,6 @@ flowchart TD
 - **FFmpeg & FFprobe**: Must be installed on your machine and available in your system's `PATH`.
 - **yt-dlp**: Must be installed on your machine and available in your system's `PATH` (can be updated within the app).
 
-### Configuration (Optional - For Spotify Metadata Fetching)
-To enable downloading Spotify playlists and albums:
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and create an app.
-2. Copy your Client ID and Client Secret.
-3. Create a `local.properties` file in the root of the Stash project and add the following lines:
-   ```properties
-   SPOTIFY_CLIENT_ID=your_spotify_client_id_here
-   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-   ```
-
 ### Running Locally
 Run the application using the Gradle wrapper:
 ```cmd
@@ -79,7 +79,6 @@ The resulting installer is compiled with a custom installation wizard dialog box
 Stash is developed strictly as an educational project and personal archiving utility.
 
 - **No DRM Circumvention**: Stash **does not** bypass, disable, decrypt, or otherwise crack any Digital Rights Management (DRM) protection layers (such as Widevine, FairPlay, or PlayReady). 
-- **Metadata Matching**: Spotify support is purely metadata-based. The application fetches public metadata from Spotify and uses it to match publicly indexed streams on YouTube or YouTube Music. 
 - **Fair Use Compliant**: Stash facilitates offline format-shifting for personal use. Users are responsible for complying with the Terms of Service of the platforms and local copyright regulations.
 
 ---
