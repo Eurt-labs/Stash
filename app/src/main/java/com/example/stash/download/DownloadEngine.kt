@@ -64,11 +64,24 @@ class DownloadEngine {
             "--newline",
             // CRITICAL: Prevent yt-dlp from expanding playlist URLs.
             // We always pass individual video URLs, never playlists.
-            "--no-playlist",
-            // Always download best audio — conversion is handled separately
-            "-f", "bestaudio",
-            "--extract-audio"
+            "--no-playlist"
         )
+
+        if (request.format == DownloadFormat.MP4) {
+            val heightLimit = when (request.quality) {
+                DownloadQuality.LOW -> 360
+                DownloadQuality.MID -> 720
+                DownloadQuality.HIGH -> 1080
+            }
+            cmd.add("-f")
+            cmd.add("bestvideo[height<=${heightLimit}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${heightLimit}]/best")
+            cmd.add("--merge-output-format")
+            cmd.add("mp4")
+        } else {
+            cmd.add("-f")
+            cmd.add("bestaudio")
+            cmd.add("--extract-audio")
+        }
 
         cmd.add(request.url)
 
@@ -187,7 +200,7 @@ class DownloadEngine {
             }
 
             val exitCode = p.waitFor()
-            if (exitCode != 0) {
+            if (exitCode != 0 && tracks.isEmpty()) {
                 throw DownloadException("yt-dlp extraction failed with code $exitCode")
             }
 

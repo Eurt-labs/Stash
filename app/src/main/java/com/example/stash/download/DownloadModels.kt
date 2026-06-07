@@ -12,11 +12,13 @@ enum class DownloadQuality(val label: String, val bitrateKbps: Int) {
 }
 
 /**
- * Download format — MP3 or AAC audio.
+ * Download format — Auto-Detect, MP3/AAC audio, or MP4 video.
  */
 enum class DownloadFormat(val label: String, val extension: String, val ffmpegCodec: String) {
+    AUTO("Auto-Detect", "", ""),
     MP3("MP3 Audio", "mp3", "libmp3lame"),
-    AAC("AAC Audio", "m4a", "aac");
+    AAC("AAC Audio", "m4a", "aac"),
+    MP4("MP4 Video", "mp4", "copy");
 
     override fun toString(): String = label
 }

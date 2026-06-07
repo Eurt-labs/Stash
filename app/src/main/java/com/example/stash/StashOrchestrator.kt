@@ -54,8 +54,8 @@ class StashOrchestrator {
     private val _quality = MutableStateFlow(DownloadQuality.HIGH)
     val quality: StateFlow<DownloadQuality> = _quality.asStateFlow()
 
-    /** The user-selected download format. Defaults to MP3. */
-    private val _format = MutableStateFlow(DownloadFormat.MP3)
+    /** The user-selected download format. Defaults to AUTO (Auto-Detect). */
+    private val _format = MutableStateFlow(DownloadFormat.AUTO)
     val format: StateFlow<DownloadFormat> = _format.asStateFlow()
 
     /**
@@ -128,12 +128,22 @@ class StashOrchestrator {
         }.absolutePath
 
         val requests = tracks.map { track ->
+            val resolvedFormat = if (format == DownloadFormat.AUTO) {
+                if (track.source == Platform.INSTAGRAM || track.source == Platform.YOUTUBE) {
+                    DownloadFormat.MP4
+                } else {
+                    DownloadFormat.MP3
+                }
+            } else {
+                format
+            }
+
             DownloadRequest(
                 url = track.youtubeUrl ?: track.sourceUrl,
                 trackInfo = track,
                 outputDir = cacheDir,
                 quality = quality,
-                format = format
+                format = resolvedFormat
             )
         }
 
