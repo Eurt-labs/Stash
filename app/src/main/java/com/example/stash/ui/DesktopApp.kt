@@ -45,21 +45,21 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
     var formatDropdownExpanded by remember { mutableStateOf(false) }
 
-    val darkColors = darkColors(
-        primary = Color(0xFF8B5CF6),
-        primaryVariant = Color(0xFF7C3AED),
-        secondary = Color(0xFF10B981),
-        background = Color(0xFF0F172A),
-        surface = Color(0xFF1E293B),
-        error = Color(0xFFEF4444),
+    val lightColors = lightColors(
+        primary = Color(0xFF6366F1),       // Premium Indigo
+        primaryVariant = Color(0xFF4F46E5),// Deep Indigo
+        secondary = Color(0xFF10B981),     // Emerald
+        background = Color(0xFFF8FAFC),    // Slate 50 (clean light background)
+        surface = Color(0xFFFFFFFF),       // White card surface
+        error = Color(0xFFEF4444),         // Red
         onPrimary = Color.White,
         onSecondary = Color.White,
-        onBackground = Color(0xFFF8FAFC),
-        onSurface = Color(0xFFE2E8F0)
+        onBackground = Color(0xFF0F172A),  // Slate 900 (dark text)
+        onSurface = Color(0xFF1E293B)      // Slate 800 (dark text)
     )
 
-    MaterialTheme(colors = darkColors) {
-        Column(modifier = Modifier.fillMaxSize().background(darkColors.background).padding(24.dp)) {
+    MaterialTheme(colors = lightColors) {
+        Column(modifier = Modifier.fillMaxSize().background(lightColors.background).padding(24.dp)) {
 
             // ── Header ──
             Row(
