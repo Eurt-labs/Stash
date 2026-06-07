@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Main entry point for the Stash download algorithm (Desktop Version).
  *
  * Orchestrates the 5-phase sequential pipeline:
- * 1. FETCH    — Scrape metadata from link (Spotify/YouTube)
+ * 1. FETCH    — Scrape metadata from link (YouTube/Instagram/Other)
  * 2. DOWNLOAD — yt-dlp downloads one-by-one from temp JSON manifest
  * 3. CONVERT  — FFmpeg converts one-by-one to user-selected format/quality
  * 4. MOVE     — Tag and move to user-selected output folder
@@ -157,7 +157,7 @@ class StashOrchestrator {
     }
 
     /**
-     * Processes a Spotify or YouTube link and starts the download pipeline.
+     * Processes a YouTube or other platform link and starts the download pipeline.
      * Uses the current quality, format, and output dir settings.
      */
     suspend fun processLink(

@@ -171,7 +171,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 OutlinedTextField(
                     value = linkInput,
                     onValueChange = { linkInput = it },
-                    label = { Text("Enter Spotify, YouTube, Instagram, or Other Links") },
+                    label = { Text("Enter YouTube, Instagram, or Other Links") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !isProcessing && !isFetching
@@ -329,7 +329,6 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                             // State icon
                                             val stateIcon = when (item.state) {
                                                 DownloadState.QUEUED -> Icons.Default.MoreVert
-                                                DownloadState.SEARCHING -> Icons.Default.Search
                                                 DownloadState.DOWNLOADING -> Icons.Default.ArrowDropDown
                                                 DownloadState.CONVERTING -> Icons.Default.Refresh
                                                 DownloadState.MOVING -> Icons.Default.Star
