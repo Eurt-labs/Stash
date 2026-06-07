@@ -196,7 +196,8 @@ class DownloadEngine {
                                 count++
                                 onTrackExtracted?.invoke(count)
                             } catch (e: Exception) {
-                                // Ignore json parsing error for single bad line
+                                System.err.println("Error parsing track JSON: " + e.message)
+                                e.printStackTrace()
                             }
                         } else {
                             if (line.contains("ERROR:") || line.contains("warning", ignoreCase = true) || errorLines.size < 10) {
@@ -278,18 +279,24 @@ class DownloadEngine {
     }
 
     private fun jsonToTrackInfo(json: JsonObject, sourceUrl: String): TrackInfo {
-        val title = json.get("title")?.asString ?: "Unknown Title"
-        val artist = json.get("artist")?.asString
-            ?: json.get("channel")?.asString
-            ?: json.get("uploader")?.asString
+        val title = json.get("title").safeString() ?: "Unknown Title"
+        val artist = json.get("artist").safeString()
+            ?: json.get("channel").safeString()
+            ?: json.get("uploader").safeString()
             ?: "Unknown Artist"
-        val album = json.get("album")?.asString
-        val durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L
-        var thumbnail = json.get("thumbnail")?.asString
+        val album = json.get("album").safeString()
+        val durationMs = (json.get("duration").safeDouble()?.times(1000))?.toLong() ?: 0L
+        var thumbnail = json.get("thumbnail").safeString()
         if (thumbnail == null && json.has("thumbnails")) {
-            val arr = json.getAsJsonArray("thumbnails")
-            if (arr != null && arr.size() > 0) {
-                thumbnail = arr.get(arr.size() - 1).asJsonObject.get("url")?.asString
+            val thumbnailsEl = json.get("thumbnails")
+            if (thumbnailsEl != null && thumbnailsEl.isJsonArray) {
+                val arr = thumbnailsEl.asJsonArray
+                if (arr.size() > 0) {
+                    val lastThumbnail = arr.get(arr.size() - 1)
+                    if (lastThumbnail != null && lastThumbnail.isJsonObject) {
+                        thumbnail = lastThumbnail.asJsonObject.get("url").safeString()
+                    }
+                }
             }
         }
 
@@ -300,12 +307,10 @@ class DownloadEngine {
             else -> Platform.OTHER
         }
 
-        // CRITICAL: Build the individual video URL from the JSON, NOT from sourceUrl.
-        // sourceUrl may be a playlist URL, but we need the per-video URL.
-        val videoId = json.get("id")?.asString
-        val videoUrl = json.get("webpage_url")?.asString
+        val videoId = json.get("id").safeString()
+        val videoUrl = json.get("webpage_url").safeString()
             ?: if (videoId != null) "https://www.youtube.com/watch?v=$videoId"
-            else json.get("url")?.asString
+            else json.get("url").safeString()
             ?: sourceUrl
 
         return TrackInfo(
@@ -316,9 +321,16 @@ class DownloadEngine {
             albumArtUrl = thumbnail,
             source = detectedPlatform,
             sourceUrl = sourceUrl,
-            // Store the individual video URL, NOT the playlist URL
             youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM || detectedPlatform == Platform.OTHER) null else videoUrl
         )
+    }
+
+    private fun com.google.gson.JsonElement?.safeString(): String? {
+        return if (this == null || this.isJsonNull) null else this.asString
+    }
+
+    private fun com.google.gson.JsonElement?.safeDouble(): Double? {
+        return if (this == null || this.isJsonNull) null else this.asDouble
     }
 
     private fun parseSpeed(line: String): String {
