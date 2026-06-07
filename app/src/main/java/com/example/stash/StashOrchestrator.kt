@@ -266,7 +266,7 @@ class StashOrchestrator {
     fun checkForUpdates() {
         if (_isUpdating.value) return
         _isUpdating.value = true
-        _updateStatus.value = "Checking and updating dependencies..."
+        _updateStatus.value = "Checking for updates..."
         scope.launch {
             try {
                 val result = downloadEngine.updateYtDlp()
