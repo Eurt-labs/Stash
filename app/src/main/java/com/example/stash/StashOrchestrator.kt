@@ -175,18 +175,31 @@ class StashOrchestrator {
         val tracks = fetchMetadata(link)
         if (tracks.isEmpty()) return tracks
 
+        val parsedLink = LinkParser.parse(link)
+        val filteredTracks = if (parsedLink != null && parsedLink.originalUrl.startsWith("ytsearch")) {
+            val artistQuery = parsedLink.id.trim()
+            tracks.filter { track ->
+                track.artists.any { artist ->
+                    artist.contains(artistQuery, ignoreCase = true)
+                }
+            }
+        } else {
+            tracks
+        }
+
+        if (filteredTracks.isEmpty()) return emptyList()
+
         // Group tracks by album name
         // If a track's album is null or blank, group under a default name
-        val parsedLink = LinkParser.parse(link)
         val defaultGroupName = if (parsedLink != null && parsedLink.originalUrl.startsWith("ytsearch")) {
             parsedLink.id
-        } else if (tracks.size == 1) {
-            tracks[0].title
+        } else if (filteredTracks.size == 1) {
+            filteredTracks[0].title
         } else {
             "Stash Playlist"
         }
 
-        val groupedTracks = tracks.groupBy {
+        val groupedTracks = filteredTracks.groupBy {
             it.album?.trim()?.takeIf { name -> name.isNotBlank() } ?: defaultGroupName
         }
 
@@ -194,7 +207,7 @@ class StashOrchestrator {
             enqueueTracks(albumTracks, albumName, quality, format, outputDir)
         }
 
-        return tracks
+        return filteredTracks
     }
 
     /**
