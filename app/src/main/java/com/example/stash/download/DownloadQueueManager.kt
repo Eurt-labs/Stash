@@ -12,16 +12,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Manages a strict 5-phase sequential download pipeline.
+ * Manages a strict 5-phase parallel download pipeline.
  *
  * Phase 1: FETCH    — Metadata already fetched by StashOrchestrator, saved to JSON manifest
- * Phase 2: DOWNLOAD — Download each track one-by-one from the manifest using yt-dlp
- * Phase 3: CONVERT  — Convert each downloaded file one-by-one using FFmpeg
+ * Phase 2: DOWNLOAD — Download tracks concurrently from the manifest using yt-dlp (max 5 parallel)
+ * Phase 3: CONVERT  — Convert downloaded files concurrently using FFmpeg (max 3 parallel)
  * Phase 4: MOVE     — Tag and move each converted file to the user's selected folder
  * Phase 5: CLEANUP  — Delete the temp JSON manifest and cache files
  *
- * All processing within a batch is sequential (one track at a time).
- * Batches themselves are also processed sequentially (one batch at a time).
+ * Processing within a batch is parallel (multiple tracks download/convert at once).
+ * Batches themselves are processed sequentially (one batch at a time).
  */
 class DownloadQueueManager {
     companion object {
@@ -35,9 +35,9 @@ class DownloadQueueManager {
     private val fileManager = FileManager()
     private val manifestManager = ManifestManager()
 
-    // Semaphores to limit active download and convert tasks to 1 at a time for pipeline safety
-    private val downloadSemaphore = Semaphore(1)
-    private val convertSemaphore = Semaphore(1)
+    // Semaphores to limit active download and convert tasks to allow high-speed parallel execution
+    private val downloadSemaphore = Semaphore(5)
+    private val convertSemaphore = Semaphore(3)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
