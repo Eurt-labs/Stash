@@ -58,8 +58,6 @@ class DownloadEngine {
             "--socket-timeout", "30",
             "--retries", "3",
             "--fragment-retries", "3",
-            "--no-continue",
-            "--force-overwrites",
             "--fixup", "never",
             "--newline",
             // CRITICAL: Prevent yt-dlp from expanding playlist URLs.

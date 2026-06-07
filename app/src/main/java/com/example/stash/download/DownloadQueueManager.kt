@@ -116,6 +116,9 @@ class DownloadQueueManager {
         }
     }
 
+    private val pausedTrackIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    private val activeJobs = java.util.Collections.synchronizedMap(mutableMapOf<String, Job>())
+
     /**
      * Starts the strict 5-phase sequential pipeline for a batch.
      */
@@ -131,119 +134,27 @@ class DownloadQueueManager {
             try {
                 val jobs = batch.items.map { item ->
                     launch {
-                        val request = requestMap[item.id]
-                        if (request == null) {
-                            System.err.println("No request found for track ${item.id}")
-                            failItem(batchId, item.id, "No request found")
-                            return@launch
-                        }
-
-                        val downloadUrl = request.url
-
-                        // Step 2: Download (constrained by downloadSemaphore)
-                        val rawFilePath = try {
-                            downloadSemaphore.withPermit {
-                                if (!isActive) return@launch
-                                updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
-                                val updatedRequest = request.copy(url = downloadUrl)
-                                downloadEngine.download(updatedRequest) { percent, eta, speed ->
-                                    updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
-                                }
-                            }
-                        } catch (e: CancellationException) {
-                            updateItemState(batchId, request.id, DownloadState.CANCELLED)
-                            throw e
-                        } catch (e: Exception) {
-                            System.err.println("Download failed for: ${item.trackInfo.displayName}")
-                            e.printStackTrace()
-                            failItem(batchId, request.id, e.message ?: "Download failed")
-                            return@launch
-                        }
-
-                        rawFilePaths[request.id] = rawFilePath
-                        println("Downloaded: ${request.trackInfo.displayName} → $rawFilePath")
-
-                        // Step 3: Convert (constrained by convertSemaphore)
-                        val convertedPath = try {
-                            convertSemaphore.withPermit {
-                                if (!isActive) return@launch
-                                updateItemState(batchId, item.id, DownloadState.CONVERTING)
-                                updateItemProgress(batchId, item.id, 0f, null, "Converting...")
-                                conversionEngine.convert(
-                                    inputPath = rawFilePath,
-                                    format = request.format,
-                                    quality = request.quality
-                                ) { progress ->
-                                    updateItemProgress(batchId, item.id, progress, null, "Converting...")
-                                }
-                            }
-                        } catch (e: CancellationException) {
-                            updateItemState(batchId, item.id, DownloadState.CANCELLED)
-                            throw e
-                        } catch (e: Exception) {
-                            System.err.println("Conversion failed for: ${item.trackInfo.displayName}")
-                            e.printStackTrace()
-                            failItem(batchId, item.id, e.message ?: "Conversion failed")
-                            return@launch
-                        }
-
-                        convertedFilePaths[request.id] = convertedPath
-                        println("Converted: ${request.trackInfo.displayName} → $convertedPath")
-
-                        // Step 4: Tag & Move
-                        try {
-                            if (!isActive) return@launch
-                            updateItemState(batchId, item.id, DownloadState.TAGGING)
-                            try {
-                                metadataTagger.tagFile(convertedPath, request.trackInfo)
-                            } catch (e: Exception) {
-                                System.err.println("Metadata tagging failed (non-fatal): ${e.message}")
-                            }
-
-                            updateItemState(batchId, item.id, DownloadState.MOVING)
-                            val outputDir = batch.outputDir.ifBlank { fileManager.getDefaultDownloadDir() }
-                            val isSearchOrChannel = request.trackInfo.sourceUrl.startsWith("ytsearch") ||
-                                    request.trackInfo.sourceUrl.contains("/@") ||
-                                    request.trackInfo.sourceUrl.contains("/channel/") ||
-                                    request.trackInfo.sourceUrl.contains("/c/")
-                            val subfolderName = if (request.isIndividualTrack) {
-                                null
-                            } else if (isSearchOrChannel) {
-                                batch.name
-                            } else {
-                                request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batch.name
-                            }
-                            val finalPath = withContext(Dispatchers.IO) {
-                                fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir, subfolderName)
-                            }
-
-                            completeItem(batchId, item.id, finalPath)
-                            println("Moved: ${request.trackInfo.displayName} → $finalPath")
-                        } catch (e: CancellationException) {
-                            updateItemState(batchId, item.id, DownloadState.CANCELLED)
-                            throw e
-                        } catch (e: Exception) {
-                            System.err.println("Move failed for: ${item.trackInfo.displayName}")
-                            e.printStackTrace()
-                            failItem(batchId, item.id, e.message ?: "Move failed")
-                        }
+                        executeTrack(batchId, item.id)
                     }
                 }
 
                 jobs.joinAll()
 
-                // ════════════════════════════════════════════
-                // PHASE 5: CLEANUP — delete temp JSON + cache
-                // ════════════════════════════════════════════
-                println("\n── Phase 5: CLEANUP ──")
-                manifestManager.cleanupBatch(batchId)
+                val remainingItems = _batches.value[batchId]?.items ?: emptyList()
+                val isFullyDone = remainingItems.all {
+                    it.state == DownloadState.COMPLETE ||
+                    it.state == DownloadState.FAILED ||
+                    it.state == DownloadState.CANCELLED
+                }
 
-                // Clean up tracking maps for this batch
-                val finalBatch = _batches.value[batchId]
-                finalBatch?.items?.forEach { item ->
-                    rawFilePaths.remove(item.id)
-                    convertedFilePaths.remove(item.id)
-                    requestMap.remove(item.id)
+                if (isFullyDone) {
+                    println("\n── Phase 5: CLEANUP ──")
+                    manifestManager.cleanupBatch(batchId)
+                    remainingItems.forEach { item ->
+                        rawFilePaths.remove(item.id)
+                        convertedFilePaths.remove(item.id)
+                        requestMap.remove(item.id)
+                    }
                 }
 
                 println("\n═══════════════════════════════════════════════════")
@@ -255,7 +166,7 @@ class DownloadQueueManager {
                 // Mark remaining queued items as cancelled
                 val cancelledBatch = _batches.value[batchId]
                 cancelledBatch?.items?.forEach { item ->
-                    if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED) {
+                    if (item.state != DownloadState.COMPLETE && item.state != DownloadState.FAILED && item.state != DownloadState.PAUSED) {
                         updateItemState(batchId, item.id, DownloadState.CANCELLED)
                     }
                 }
@@ -272,7 +183,185 @@ class DownloadQueueManager {
         }
     }
 
+    private suspend fun executeTrack(batchId: String, trackId: String) {
+        val request = requestMap[trackId] ?: return
+        val downloadUrl = request.url
 
+        val currentJob = coroutineContext[Job]
+        if (currentJob != null) {
+            activeJobs[trackId] = currentJob
+        }
+
+        try {
+            // Step 2: Download (constrained by downloadSemaphore)
+            val rawFilePath = try {
+                downloadSemaphore.withPermit {
+                    if (pausedTrackIds.contains(trackId)) {
+                        updateItemState(batchId, trackId, DownloadState.PAUSED)
+                        return
+                    }
+                    updateItemState(batchId, trackId, DownloadState.DOWNLOADING)
+                    val updatedRequest = request.copy(url = downloadUrl)
+                    downloadEngine.download(updatedRequest) { percent, eta, speed ->
+                        updateItemProgress(batchId, trackId, percent / 100f, eta, speed.ifBlank { null })
+                    }
+                }
+            } catch (e: CancellationException) {
+                if (pausedTrackIds.contains(trackId)) {
+                    updateItemState(batchId, trackId, DownloadState.PAUSED)
+                } else {
+                    updateItemState(batchId, trackId, DownloadState.CANCELLED)
+                }
+                throw e
+            } catch (e: Exception) {
+                System.err.println("Download failed for: ${request.trackInfo.displayName}")
+                e.printStackTrace()
+                failItem(batchId, trackId, e.message ?: "Download failed")
+                return
+            }
+
+            rawFilePaths[trackId] = rawFilePath
+            println("Downloaded: ${request.trackInfo.displayName} -> $rawFilePath")
+
+            // Step 3: Convert (constrained by convertSemaphore)
+            val convertedPath = try {
+                convertSemaphore.withPermit {
+                    if (pausedTrackIds.contains(trackId)) {
+                        updateItemState(batchId, trackId, DownloadState.PAUSED)
+                        return
+                    }
+                    updateItemState(batchId, trackId, DownloadState.CONVERTING)
+                    updateItemProgress(batchId, trackId, 0f, null, "Converting...")
+                    conversionEngine.convert(
+                        inputPath = rawFilePath,
+                        format = request.format,
+                        quality = request.quality
+                    ) { progress ->
+                        updateItemProgress(batchId, trackId, progress, null, "Converting...")
+                    }
+                }
+            } catch (e: CancellationException) {
+                if (pausedTrackIds.contains(trackId)) {
+                    updateItemState(batchId, trackId, DownloadState.PAUSED)
+                } else {
+                    updateItemState(batchId, trackId, DownloadState.CANCELLED)
+                }
+                throw e
+            } catch (e: Exception) {
+                System.err.println("Conversion failed for: ${request.trackInfo.displayName}")
+                e.printStackTrace()
+                failItem(batchId, trackId, e.message ?: "Conversion failed")
+                return
+            }
+
+            convertedFilePaths[trackId] = convertedPath
+            println("Converted: ${request.trackInfo.displayName} -> $convertedPath")
+
+            // Step 4: Tag & Move
+            try {
+                if (pausedTrackIds.contains(trackId)) {
+                    updateItemState(batchId, trackId, DownloadState.PAUSED)
+                    return
+                }
+                updateItemState(batchId, trackId, DownloadState.TAGGING)
+                try {
+                    metadataTagger.tagFile(convertedPath, request.trackInfo)
+                } catch (e: Exception) {
+                    System.err.println("Metadata tagging failed (non-fatal): ${e.message}")
+                }
+
+                updateItemState(batchId, trackId, DownloadState.MOVING)
+                val batch = _batches.value[batchId] ?: return
+                val outputDir = batch.outputDir.ifBlank { fileManager.getDefaultDownloadDir() }
+                val isSearchOrChannel = request.trackInfo.sourceUrl.startsWith("ytsearch") ||
+                        request.trackInfo.sourceUrl.contains("/@") ||
+                        request.trackInfo.sourceUrl.contains("/channel/") ||
+                        request.trackInfo.sourceUrl.contains("/c/")
+                val subfolderName = if (request.isIndividualTrack) {
+                    null
+                } else if (isSearchOrChannel) {
+                    batch.name
+                } else {
+                    request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batch.name
+                }
+                val finalPath = withContext(Dispatchers.IO) {
+                    fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir, subfolderName)
+                }
+
+                completeItem(batchId, trackId, finalPath)
+                println("Moved: ${request.trackInfo.displayName} -> $finalPath")
+            } catch (e: CancellationException) {
+                if (pausedTrackIds.contains(trackId)) {
+                    updateItemState(batchId, trackId, DownloadState.PAUSED)
+                } else {
+                    updateItemState(batchId, trackId, DownloadState.CANCELLED)
+                }
+                throw e
+            } catch (e: Exception) {
+                System.err.println("Move failed for: ${request.trackInfo.displayName}")
+                e.printStackTrace()
+                failItem(batchId, trackId, e.message ?: "Move failed")
+            }
+        } finally {
+            activeJobs.remove(trackId)
+        }
+    }
+
+    /**
+     * Pauses a specific download item.
+     */
+    fun pauseTrack(trackId: String) {
+        pausedTrackIds.add(trackId)
+        val batchEntry = _batches.value.entries.find { entry ->
+            entry.value.items.any { it.id == trackId }
+        } ?: return
+        val batchId = batchEntry.key
+
+        // Cancel the active job
+        val activeJob = activeJobs[trackId]
+        if (activeJob != null) {
+            activeJob.cancel()
+        } else {
+            // If it's queued but not active yet, set state to PAUSED directly
+            updateItemState(batchId, trackId, DownloadState.PAUSED)
+        }
+    }
+
+    /**
+     * Resumes a specific download item.
+     */
+    fun resumeTrack(trackId: String) {
+        pausedTrackIds.remove(trackId)
+        val batchEntry = _batches.value.entries.find { entry ->
+            entry.value.items.any { it.id == trackId }
+        } ?: return
+        val batchId = batchEntry.key
+
+        updateItemState(batchId, trackId, DownloadState.QUEUED)
+
+        // Launch executeTrack in the background scope
+        scope.launch {
+            executeTrack(batchId, trackId)
+        }
+    }
+
+    private fun checkAndCleanupBatch(batchId: String) {
+        val batch = _batches.value[batchId] ?: return
+        val isFullyDone = batch.items.all {
+            it.state == DownloadState.COMPLETE ||
+            it.state == DownloadState.FAILED ||
+            it.state == DownloadState.CANCELLED
+        }
+        if (isFullyDone) {
+            println("\n── Phase 5: CLEANUP (Asynchronous) for batch '$batchId' ──")
+            manifestManager.cleanupBatch(batchId)
+            batch.items.forEach { item ->
+                rawFilePaths.remove(item.id)
+                convertedFilePaths.remove(item.id)
+                requestMap.remove(item.id)
+            }
+        }
+    }
 
     // ══════════════════════════════════════════════════════
     // Cancellation
@@ -449,6 +538,7 @@ class DownloadQueueManager {
             }
             currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
         }
+        checkAndCleanupBatch(batchId)
     }
 
     private fun failItem(batchId: String, trackId: String, errorMsg: String) {
@@ -461,5 +551,7 @@ class DownloadQueueManager {
             }
             currentBatches.toMutableMap().apply { put(batchId, batch.copy(items = updatedItems)) }
         }
+        checkAndCleanupBatch(batchId)
     }
+}
 }

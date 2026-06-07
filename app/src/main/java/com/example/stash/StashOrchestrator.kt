@@ -305,6 +305,16 @@ class StashOrchestrator {
     fun cancelDownload(id: String) = queueManager.cancel(id)
 
     /**
+     * Pauses a specific download item.
+     */
+    fun pauseTrack(id: String) = queueManager.pauseTrack(id)
+
+    /**
+     * Resumes a specific download item.
+     */
+    fun resumeTrack(id: String) = queueManager.resumeTrack(id)
+
+    /**
      * Cancels all downloads within a specific batch only.
      */
     fun cancelBatch(batchId: String) = queueManager.cancelBatch(batchId)
@@ -355,18 +365,7 @@ class StashOrchestrator {
     private suspend fun fetchTracks(parsedLink: ParsedLink, flatPlaylist: Boolean = false): List<TrackInfo> {
         return when (parsedLink.platform) {
             Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink, flatPlaylist)
-            Platform.INSTAGRAM -> fetchInstagramTracks(parsedLink)
             Platform.OTHER -> fetchOtherTracks(parsedLink)
-        }
-    }
-
-    /**
-     * Extracts Instagram post/reel metadata via yt-dlp.
-     */
-    private suspend fun fetchInstagramTracks(parsedLink: ParsedLink): List<TrackInfo> {
-        _fetchingStatus.value = "Fetching metadata from Instagram..."
-        return downloadEngine.extractInfo(parsedLink.originalUrl) { count ->
-            _fetchingStatus.value = "Fetching metadata from Instagram (extracted $count)..."
         }
     }
 

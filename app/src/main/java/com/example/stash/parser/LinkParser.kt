@@ -77,10 +77,7 @@ object LinkParser {
         """https?://(?:music\.|www\.)?youtube\.com/(?:@|channel/|c/)([a-zA-Z0-9_.-]+)"""
     )
 
-    /** Instagram post/reel/tv URL: instagram.com/p/ID, instagram.com/reel/ID, instagram.com/tv/ID */
-    private val INSTAGRAM_REGEX = Regex(
-        """https?://(?:www\.)?instagram\.com/(?:p|reel|tv)/([a-zA-Z0-9_-]+)"""
-    )
+
 
     /**
      * Parses a URL string and returns a [ParsedLink] if recognized, or null otherwise.
@@ -129,10 +126,7 @@ object LinkParser {
             return ParsedLink(platform, ContentType.PLAYLIST, match.groupValues[1], trimmedUrl)
         }
 
-        // ── Instagram ──
-        INSTAGRAM_REGEX.find(trimmedUrl)?.let { match ->
-            return ParsedLink(Platform.INSTAGRAM, ContentType.VIDEO, match.groupValues[1], trimmedUrl)
-        }
+
 
         // ── Generic Fallback (any other http/https link) ──
         if (trimmedUrl.startsWith("http://", ignoreCase = true) || trimmedUrl.startsWith("https://", ignoreCase = true)) {
