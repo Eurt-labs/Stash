@@ -109,6 +109,11 @@ object LinkParser {
             return ParsedLink(Platform.OTHER, ContentType.VIDEO, simpleId, trimmedUrl)
         }
 
+        // ── Artist / Query Search Fallback ──
+        if (trimmedUrl.isNotBlank() && !trimmedUrl.contains("://")) {
+            return ParsedLink(Platform.YOUTUBE, ContentType.PLAYLIST, trimmedUrl, "ytsearch30:$trimmedUrl songs")
+        }
+
         return null
     }
 

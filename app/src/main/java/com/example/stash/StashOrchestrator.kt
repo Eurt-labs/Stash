@@ -135,7 +135,7 @@ class StashOrchestrator {
 
         val requests = tracks.map { track ->
             val resolvedFormat = if (format == DownloadFormat.AUTO) {
-                if (track.source == Platform.YOUTUBE_MUSIC) {
+                if (track.source == Platform.YOUTUBE_MUSIC || track.sourceUrl.startsWith("ytsearch")) {
                     DownloadFormat.MP3
                 } else {
                     DownloadFormat.MP4
@@ -177,7 +177,10 @@ class StashOrchestrator {
 
         // Group tracks by album name
         // If a track's album is null or blank, group under a default name
-        val defaultGroupName = if (tracks.size == 1) {
+        val parsedLink = LinkParser.parse(link)
+        val defaultGroupName = if (parsedLink != null && parsedLink.originalUrl.startsWith("ytsearch")) {
+            parsedLink.id
+        } else if (tracks.size == 1) {
             tracks[0].title
         } else {
             "Stash Playlist"
