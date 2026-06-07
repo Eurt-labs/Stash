@@ -47,6 +47,26 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     val collapsedBatches = remember { mutableStateMapOf<String, Boolean>() }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    var showDependencyDialog by remember { mutableStateOf(false) }
+    var isYtDlpInstalled by remember { mutableStateOf(false) }
+    var isFfmpegInstalled by remember { mutableStateOf(false) }
+
+    var ytDlpChecked by remember { mutableStateOf(false) }
+    var ffmpegChecked by remember { mutableStateOf(false) }
+    var showWarningPrompt by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val ytDlpOk = checkCommand("yt-dlp", "--version")
+        val ffmpegOk = checkCommand("ffmpeg", "-version")
+        
+        isYtDlpInstalled = ytDlpOk
+        isFfmpegInstalled = ffmpegOk
+        
+        if (!ytDlpOk || !ffmpegOk) {
+            showDependencyDialog = true
+        }
+    }
+
     val lightColors = lightColors(
         primary = Color(0xFF6366F1),       // Premium Indigo
         primaryVariant = Color(0xFF4F46E5),// Deep Indigo
@@ -555,6 +575,91 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     }
                 )
             }
+            if (showDependencyDialog) {
+                AlertDialog(
+                    onDismissRequest = { /* Prevent dismissing by clicking outside */ },
+                    title = {
+                        Text(
+                            text = "⚠️ Missing System Dependencies",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colors.error
+                        )
+                    },
+                    text = {
+                        Column(modifier = Modifier.padding(top = 8.dp)) {
+                            Text(
+                                text = "Stash requires both 'yt-dlp' and 'ffmpeg' to be installed and available in your system's Environment PATH to download and convert files.",
+                                style = MaterialTheme.typography.body2
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            if (!isYtDlpInstalled) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clickable { ytDlpChecked = !ytDlpChecked }
+                                ) {
+                                    Checkbox(
+                                        checked = ytDlpChecked,
+                                        onCheckedChange = { ytDlpChecked = it }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "I understand I need to install 'yt-dlp' (Important)",
+                                        style = MaterialTheme.typography.body2,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                            
+                            if (!isFfmpegInstalled) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clickable { ffmpegChecked = !ffmpegChecked }
+                                ) {
+                                    Checkbox(
+                                        checked = ffmpegChecked,
+                                        onCheckedChange = { ffmpegChecked = it }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "I understand I need to install 'ffmpeg' (Important)",
+                                        style = MaterialTheme.typography.body2,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            
+                            if (showWarningPrompt) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "❌ Please check the boxes to confirm you understand that these dependencies are required.",
+                                    color = MaterialTheme.colors.error,
+                                    style = MaterialTheme.typography.caption,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                val ytDlpRequirementMet = isYtDlpInstalled || ytDlpChecked
+                                val ffmpegRequirementMet = isFfmpegInstalled || ffmpegChecked
+                                
+                                if (ytDlpRequirementMet && ffmpegRequirementMet) {
+                                    showDependencyDialog = false
+                                } else {
+                                    showWarningPrompt = true
+                                }
+                            }
+                        ) {
+                            Text("Proceed")
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -600,4 +705,16 @@ private fun chooseDirectory(currentDir: String): String? {
         selectedPath = chooser.selectedFile.absolutePath
     }
     return selectedPath
+}
+
+private fun checkCommand(cmd: String, arg: String): Boolean {
+    return try {
+        val process = ProcessBuilder(cmd, arg)
+            .redirectErrorStream(true)
+            .start()
+        process.destroy()
+        true
+    } catch (e: Exception) {
+        false
+    }
 }
