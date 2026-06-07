@@ -242,7 +242,9 @@ class DownloadEngine {
         val detectedPlatform = when {
             sourceUrl.contains("instagram.com") -> Platform.INSTAGRAM
             sourceUrl.contains("music.youtube.com") -> Platform.YOUTUBE_MUSIC
-            else -> Platform.YOUTUBE
+            sourceUrl.contains("youtube.com") || sourceUrl.contains("youtu.be") -> Platform.YOUTUBE
+            sourceUrl.contains("spotify.com") -> Platform.SPOTIFY
+            else -> Platform.OTHER
         }
 
         // CRITICAL: Build the individual video URL from the JSON, NOT from sourceUrl.
@@ -262,7 +264,7 @@ class DownloadEngine {
             source = detectedPlatform,
             sourceUrl = sourceUrl,
             // Store the individual video URL, NOT the playlist URL
-            youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM) null else videoUrl
+            youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM || detectedPlatform == Platform.OTHER) null else videoUrl
         )
     }
 

@@ -431,7 +431,7 @@ class DownloadQueueManager {
     }
 
     /**
-     * Cancels all batches and active downloads.
+     * Cancels all batches and active downloads, then cleans up cache.
      */
     fun cancelAll() {
         activeBatchJob?.cancel()
@@ -451,6 +451,9 @@ class DownloadQueueManager {
             }
         }
         activeBatchId = null
+
+        // Clear the cache directory immediately upon stopping all
+        fileManager.cleanupCacheDir()
     }
 
     /**
