@@ -55,6 +55,10 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var ffmpegChecked by remember { mutableStateOf(false) }
     var showWarningPrompt by remember { mutableStateOf(false) }
 
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadStatus by remember { mutableStateOf("") }
+    var downloadProgress by remember { mutableStateOf(0f) }
+
     LaunchedEffect(Unit) {
         val ytDlpOk = com.example.stash.util.DependencyResolver.checkExecutable("yt-dlp", "--version")
         val ffmpegOk = com.example.stash.util.DependencyResolver.checkExecutable("ffmpeg", "-version")
@@ -580,82 +584,136 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                     onDismissRequest = { /* Prevent dismissing by clicking outside */ },
                     title = {
                         Text(
-                            text = "⚠️ Missing System Dependencies",
+                            text = if (isDownloading) "📥 Installing Dependencies..." else "⚠️ Missing System Dependencies",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = MaterialTheme.colors.error
+                            color = if (isDownloading) MaterialTheme.colors.primary else MaterialTheme.colors.error
                         )
                     },
                     text = {
                         Column(modifier = Modifier.padding(top = 8.dp)) {
-                            Text(
-                                text = "Stash requires both 'yt-dlp' and 'ffmpeg' to be installed and available in your system's Environment PATH to download and convert files.",
-                                style = MaterialTheme.typography.body2
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            if (!isYtDlpInstalled) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth().clickable { ytDlpChecked = !ytDlpChecked }
-                                ) {
-                                    Checkbox(
-                                        checked = ytDlpChecked,
-                                        onCheckedChange = { ytDlpChecked = it }
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "I understand I need to install 'yt-dlp' (Important)",
-                                        style = MaterialTheme.typography.body2,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                            
-                            if (!isFfmpegInstalled) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth().clickable { ffmpegChecked = !ffmpegChecked }
-                                ) {
-                                    Checkbox(
-                                        checked = ffmpegChecked,
-                                        onCheckedChange = { ffmpegChecked = it }
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "I understand I need to install 'ffmpeg' (Important)",
-                                        style = MaterialTheme.typography.body2,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                            
-                            if (showWarningPrompt) {
-                                Spacer(modifier = Modifier.height(12.dp))
+                            if (isDownloading) {
                                 Text(
-                                    text = "❌ Please check the boxes to confirm you understand that these dependencies are required.",
-                                    color = MaterialTheme.colors.error,
-                                    style = MaterialTheme.typography.caption,
-                                    fontWeight = FontWeight.Bold
+                                    text = downloadStatus,
+                                    style = MaterialTheme.typography.body2,
+                                    fontWeight = FontWeight.SemiBold
                                 )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                if (downloadProgress >= 0f) {
+                                    LinearProgressIndicator(
+                                        progress = downloadProgress,
+                                        modifier = Modifier.fillMaxWidth().height(8.dp),
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                } else {
+                                    LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth().height(8.dp),
+                                        color = MaterialTheme.colors.error
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Stash requires 'yt-dlp' and 'ffmpeg' to download and convert files. You can install them automatically now, or proceed to configure them manually.",
+                                    style = MaterialTheme.typography.body2
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                if (!isYtDlpInstalled) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth().clickable { ytDlpChecked = !ytDlpChecked }
+                                    ) {
+                                        Checkbox(
+                                            checked = ytDlpChecked,
+                                            onCheckedChange = { ytDlpChecked = it }
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "I understand I need to install 'yt-dlp' (Important)",
+                                            style = MaterialTheme.typography.body2,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                
+                                if (!isFfmpegInstalled) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth().clickable { ffmpegChecked = !ffmpegChecked }
+                                    ) {
+                                        Checkbox(
+                                            checked = ffmpegChecked,
+                                            onCheckedChange = { ffmpegChecked = it }
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "I understand I need to install 'ffmpeg' (Important)",
+                                            style = MaterialTheme.typography.body2,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                                
+                                if (showWarningPrompt) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = "❌ Please check the boxes or click 'Install Automatically'.",
+                                        color = MaterialTheme.colors.error,
+                                        style = MaterialTheme.typography.caption,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     },
                     confirmButton = {
-                        Button(
-                            onClick = {
-                                val ytDlpRequirementMet = isYtDlpInstalled || ytDlpChecked
-                                val ffmpegRequirementMet = isFfmpegInstalled || ffmpegChecked
+                        if (!isDownloading) {
+                            Row(
+                                horizontalArrangement = Arrangement.End,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isDownloading = true
+                                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                            val success = com.example.stash.util.DependencyDownloader.downloadDependencies { status, progress ->
+                                                downloadStatus = status
+                                                downloadProgress = progress
+                                            }
+                                            if (success) {
+                                                kotlinx.coroutines.delay(1000)
+                                                isYtDlpInstalled = true
+                                                isFfmpegInstalled = true
+                                                showDependencyDialog = false
+                                                isDownloading = false
+                                            } else {
+                                                kotlinx.coroutines.delay(3000)
+                                                isDownloading = false
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text("Install Automatically", color = MaterialTheme.colors.onPrimary)
+                                }
                                 
-                                if (ytDlpRequirementMet && ffmpegRequirementMet) {
-                                    showDependencyDialog = false
-                                } else {
-                                    showWarningPrompt = true
+                                OutlinedButton(
+                                    onClick = {
+                                        val ytDlpRequirementMet = isYtDlpInstalled || ytDlpChecked
+                                        val ffmpegRequirementMet = isFfmpegInstalled || ffmpegChecked
+                                        
+                                        if (ytDlpRequirementMet && ffmpegRequirementMet) {
+                                            showDependencyDialog = false
+                                        } else {
+                                            showWarningPrompt = true
+                                        }
+                                    }
+                                ) {
+                                    Text("Proceed")
                                 }
                             }
-                        ) {
-                            Text("Proceed")
                         }
                     }
                 )

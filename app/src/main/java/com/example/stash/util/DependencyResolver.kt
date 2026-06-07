@@ -15,9 +15,13 @@ object DependencyResolver {
         // 1. Check compose application resources dir (when packaged via jpackage/MSI)
         val resourcesDir = System.getProperty("compose.application.resources.dir")
         if (resourcesDir != null) {
-            val file = File(resourcesDir, "windows/$name$extension")
-            if (file.exists()) {
-                return file.absolutePath
+            val fileDirect = File(resourcesDir, "$name$extension")
+            if (fileDirect.exists()) {
+                return fileDirect.absolutePath
+            }
+            val fileWin = File(resourcesDir, "windows/$name$extension")
+            if (fileWin.exists()) {
+                return fileWin.absolutePath
             }
         }
         

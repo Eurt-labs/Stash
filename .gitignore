@@ -19,3 +19,4 @@ local.properties
 1209
 /app-resources/
 /download_dependencies.ps1
+/build-installer/
