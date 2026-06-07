@@ -181,21 +181,32 @@ class StashOrchestrator {
                 parsedLink.originalUrl.contains("/channel/") ||
                 parsedLink.originalUrl.contains("/c/")
 
-        val channelArtistName = if (isChannel) {
+        val channelArtistData = if (isChannel) {
             _isFetching.value = true
             _fetchingStatus.value = "Resolving channel artist..."
-            val resolved = withContext(Dispatchers.IO) {
-                fetchChannelName(parsedLink.originalUrl)
+            val resolvedData = withContext(Dispatchers.IO) {
+                fetchChannelData(parsedLink.originalUrl)
             }
             _isFetching.value = false
             _fetchingStatus.value = ""
-            resolved ?: parsedLink.id
+            if (resolvedData != null) {
+                resolvedData.first to resolvedData.second
+            } else {
+                parsedLink.id to null
+            }
         } else {
-            null
+            null to null
         }
 
+        val artistName = channelArtistData.first
+        val playlistId = channelArtistData.second
+
         val fetchLink = if (isChannel) {
-            "ytsearch30:$channelArtistName music.youtube.com"
+            if (playlistId != null) {
+                "https://www.youtube.com/playlist?list=$playlistId"
+            } else {
+                "ytsearch100:$artistName music.youtube.com"
+            }
         } else {
             link
         }
@@ -204,16 +215,18 @@ class StashOrchestrator {
         if (tracks.isEmpty()) return tracks
 
         val isSearchOrChannel = isChannel || parsedLink.originalUrl.startsWith("ytsearch")
-        val artistQuery = channelArtistName ?: if (parsedLink.originalUrl.startsWith("ytsearch")) parsedLink.id else null
+        val artistQuery = artistName ?: if (parsedLink.originalUrl.startsWith("ytsearch")) parsedLink.id else null
 
         val filteredTracks = if (isSearchOrChannel && artistQuery != null) {
             val normalizedQuery = normalizeName(artistQuery)
-            tracks.filter { track ->
-                track.artists.any { artist ->
-                    val normalizedArtist = normalizeName(artist)
-                    normalizedArtist.contains(normalizedQuery) || normalizedQuery.contains(normalizedArtist)
+            tracks
+                .map { it.copy(sourceUrl = parsedLink.originalUrl) }
+                .filter { track ->
+                    track.artists.any { artist ->
+                        val normalizedArtist = normalizeName(artist)
+                        normalizedArtist.contains(normalizedQuery) || normalizedQuery.contains(normalizedArtist)
+                    }
                 }
-            }
         } else {
             tracks
         }
@@ -353,11 +366,19 @@ class StashOrchestrator {
 
         val url = if (isChannel) {
             _fetchingStatus.value = "Resolving channel artist..."
-            val artistName = withContext(Dispatchers.IO) {
-                fetchChannelName(parsedLink.originalUrl)
-            } ?: parsedLink.id
-            println("Resolved channel artist name: $artistName")
-            "ytsearch30:$artistName music.youtube.com"
+            val resolvedData = withContext(Dispatchers.IO) {
+                fetchChannelData(parsedLink.originalUrl)
+            }
+            val artistName = resolvedData?.first ?: parsedLink.id
+            val playlistId = resolvedData?.second
+            
+            println("Resolved channel artist name: $artistName, playlist ID: $playlistId")
+            
+            if (playlistId != null) {
+                "https://www.youtube.com/playlist?list=$playlistId"
+            } else {
+                "ytsearch100:$artistName music.youtube.com"
+            }
         } else {
             when {
                 parsedLink.originalUrl.startsWith("ytsearch") ->
@@ -377,7 +398,7 @@ class StashOrchestrator {
         }
     }
 
-    private fun fetchChannelName(url: String): String? {
+    private fun fetchChannelData(url: String): Pair<String, String?>? {
         val client = OkHttpClient.Builder()
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
@@ -391,15 +412,139 @@ class StashOrchestrator {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
                 val html = response.body?.string() ?: return null
+                
                 val titleMatch = Regex("<title>(.*?)</title>", RegexOption.IGNORE_CASE).find(html)
                 val title = titleMatch?.groupValues?.get(1)?.trim() ?: return null
-                cleanChannelTitle(title)
+                val artistName = cleanChannelTitle(title)
+                
+                val playlistId = findTopSongsPlaylistId(html)
+                Pair(artistName, playlistId)
             }
         } catch (e: Exception) {
-            System.err.println("Failed to fetch channel name: ${e.message}")
+            System.err.println("Failed to fetch channel data: ${e.message}")
             e.printStackTrace()
             null
         }
+    }
+
+    private fun findTopSongsPlaylistId(html: String): String? {
+        val pushRegex = Regex("""initialData\.push\(\{path:\s*'(.*?)'.*?data:\s*'(.*?)'\s*\}\);""", RegexOption.DOT_MATCHES_ALL)
+        val matches = pushRegex.findAll(html)
+        
+        val gson = com.google.gson.Gson()
+        for (match in matches) {
+            try {
+                val escapedData = match.groupValues[2]
+                val decoded = unescapeJsHex(escapedData)
+                    .replace("\\\"", "\"")
+                    .replace("\\/", "/")
+                    .replace("\\\\", "\\")
+                    .replace("\\n", "\n")
+                    .replace("\\r", "\r")
+                    .replace("\\t", "\t")
+                
+                val json = gson.fromJson(decoded, com.google.gson.JsonElement::class.java)
+                val playlistId = searchForTopSongsPlaylistId(json)
+                if (playlistId != null) {
+                    return playlistId
+                }
+            } catch (e: Exception) {
+                // Ignore parsing errors for individual bad pushes
+            }
+        }
+        
+        // Fallback: search for any OLAK5uy_ playlist ID in the html using regex
+        val fallbackRegex = Regex("""OLAK5uy_[a-zA-Z0-9_-]+""")
+        val fallbackMatch = fallbackRegex.find(html)
+        if (fallbackMatch != null) {
+            return fallbackMatch.value
+        }
+        
+        return null
+    }
+
+    private fun unescapeJsHex(input: String): String {
+        val regex = Regex("""\\x([0-9a-fA-F]{2})""")
+        return regex.replace(input) { matchResult ->
+            val hex = matchResult.groupValues[1]
+            val char = hex.toInt(16).toChar()
+            char.toString()
+        }
+    }
+
+    private fun searchForTopSongsPlaylistId(element: com.google.gson.JsonElement): String? {
+        if (element.isJsonObject) {
+            val obj = element.asJsonObject
+            
+            var isTopSongs = false
+            if (obj.has("title")) {
+                val titleEl = obj.get("title")
+                if (titleEl.isJsonObject) {
+                    val titleObj = titleEl.asJsonObject
+                    if (titleObj.has("runs")) {
+                        val runs = titleObj.getAsJsonArray("runs")
+                        val runsText = StringBuilder()
+                        for (run in runs) {
+                            if (run.isJsonObject && run.asJsonObject.has("text")) {
+                                runsText.append(run.asJsonObject.get("text").asString)
+                            }
+                        }
+                        if (runsText.toString().trim().lowercase() == "top songs") {
+                            isTopSongs = true
+                        }
+                    }
+                }
+            }
+            
+            if (isTopSongs) {
+                val extracted = extractOlakId(obj)
+                if (extracted != null) return extracted
+            }
+            
+            for (entry in obj.entrySet()) {
+                val res = searchForTopSongsPlaylistId(entry.value)
+                if (res != null) return res
+            }
+        } else if (element.isJsonArray) {
+            val arr = element.asJsonArray
+            for (item in arr) {
+                val res = searchForTopSongsPlaylistId(item)
+                if (res != null) return res
+            }
+        }
+        return null
+    }
+
+    private fun extractOlakId(element: com.google.gson.JsonElement): String? {
+        if (element.isJsonObject) {
+            val obj = element.asJsonObject
+            if (obj.has("playlistId")) {
+                val pId = obj.get("playlistId").asString
+                if (pId.startsWith("OLAK5uy_")) {
+                    return pId
+                }
+            }
+            if (obj.has("browseId")) {
+                val bId = obj.get("browseId").asString
+                if (bId.startsWith("OLAK5uy_")) {
+                    return bId
+                }
+                if (bId.startsWith("VLOLAK5uy_")) {
+                    return bId.substring(2)
+                }
+            }
+            for (entry in obj.entrySet()) {
+                val res = extractOlakId(entry.value)
+                if (res != null) return res
+            }
+        } else if (element.isJsonArray) {
+            val arr = element.asJsonArray
+            for (item in arr) {
+                val res = extractOlakId(item)
+                if (res != null) return res
+            }
+        }
+        return null
     }
 
     private fun cleanChannelTitle(title: String): String {
