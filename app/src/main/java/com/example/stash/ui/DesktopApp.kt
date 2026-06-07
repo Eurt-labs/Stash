@@ -354,16 +354,27 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     // Batch header
+                                    val isCollapsed = collapsedBatches[batch.id] == true
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { collapsedBatches[batch.id] = !isCollapsed }
                                     ) {
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                batch.name,
-                                                style = MaterialTheme.typography.subtitle1,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    batch.name,
+                                                    style = MaterialTheme.typography.subtitle1,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                 Text(
+                                                     if (isCollapsed) "▶" else "▼",
+                                                     style = MaterialTheme.typography.body2,
+                                                     color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+                                                 )
+                                            }
                                             Text(
                                                 "${batch.completedTracks}/${batch.totalTracks} completed • ${batch.state.name}",
                                                 style = MaterialTheme.typography.caption
@@ -393,79 +404,81 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                         }
                                     )
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    if (!isCollapsed) {
+                                        Spacer(modifier = Modifier.height(8.dp))
 
-                                    // Individual track items
-                                    batch.items.forEach { item ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            // State icon
-                                            val stateIcon = when (item.state) {
-                                                DownloadState.QUEUED -> Icons.Default.MoreVert
-                                                DownloadState.DOWNLOADING -> Icons.Default.ArrowDropDown
-                                                DownloadState.CONVERTING -> Icons.Default.Refresh
-                                                DownloadState.MOVING -> Icons.Default.Star
-                                                DownloadState.TAGGING -> Icons.Default.Edit
-                                                DownloadState.COMPLETE -> Icons.Default.Done
-                                                DownloadState.FAILED -> Icons.Default.Warning
-                                                DownloadState.CANCELLED -> Icons.Default.Clear
-                                                DownloadState.PAUSED -> Icons.Default.Refresh
-                                            }
-                                            val stateColor = when (item.state) {
-                                                DownloadState.COMPLETE -> Color(0xFF4CAF50)
-                                                DownloadState.FAILED -> MaterialTheme.colors.error
-                                                DownloadState.CANCELLED -> Color.Gray
-                                                else -> MaterialTheme.colors.primary
-                                            }
-                                            Icon(
-                                                stateIcon,
-                                                contentDescription = item.state.name,
-                                                tint = stateColor,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    item.trackInfo.title,
-                                                    style = MaterialTheme.typography.body2,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                        // Individual track items
+                                        batch.items.forEach { item ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // State icon
+                                                val stateIcon = when (item.state) {
+                                                    DownloadState.QUEUED -> Icons.Default.MoreVert
+                                                    DownloadState.DOWNLOADING -> Icons.Default.ArrowDropDown
+                                                    DownloadState.CONVERTING -> Icons.Default.Refresh
+                                                    DownloadState.MOVING -> Icons.Default.Star
+                                                    DownloadState.TAGGING -> Icons.Default.Edit
+                                                    DownloadState.COMPLETE -> Icons.Default.Done
+                                                    DownloadState.FAILED -> Icons.Default.Warning
+                                                    DownloadState.CANCELLED -> Icons.Default.Clear
+                                                    DownloadState.PAUSED -> Icons.Default.Refresh
+                                                }
+                                                val stateColor = when (item.state) {
+                                                    DownloadState.COMPLETE -> Color(0xFF4CAF50)
+                                                    DownloadState.FAILED -> MaterialTheme.colors.error
+                                                    DownloadState.CANCELLED -> Color.Gray
+                                                    else -> MaterialTheme.colors.primary
+                                                }
+                                                Icon(
+                                                    stateIcon,
+                                                    contentDescription = item.state.name,
+                                                    tint = stateColor,
+                                                    modifier = Modifier.size(16.dp)
                                                 )
-                                                Row {
+                                                Spacer(modifier = Modifier.width(8.dp))
+
+                                                Column(modifier = Modifier.weight(1f)) {
                                                     Text(
-                                                        item.state.name,
-                                                        style = MaterialTheme.typography.overline,
-                                                        color = stateColor
+                                                        item.trackInfo.title,
+                                                        style = MaterialTheme.typography.body2,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
                                                     )
-                                                    if (item.speed != null) {
-                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                    Row {
                                                         Text(
-                                                            item.speed,
+                                                            item.state.name,
                                                             style = MaterialTheme.typography.overline,
-                                                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                                            color = stateColor
                                                         )
-                                                    }
-                                                    if (item.error != null) {
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Text(
-                                                            item.error,
-                                                            style = MaterialTheme.typography.overline,
-                                                            color = MaterialTheme.colors.error
-                                                        )
+                                                        if (item.speed != null) {
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Text(
+                                                                item.speed,
+                                                                style = MaterialTheme.typography.overline,
+                                                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                                            )
+                                                        }
+                                                        if (item.error != null) {
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Text(
+                                                                item.error,
+                                                                style = MaterialTheme.typography.overline,
+                                                                color = MaterialTheme.colors.error
+                                                            )
+                                                        }
                                                     }
                                                 }
-                                            }
 
-                                            // Per-item progress
-                                            if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.CONVERTING) {
-                                                Text(
-                                                    "${(item.progress * 100).toInt()}%",
-                                                    style = MaterialTheme.typography.caption,
-                                                    fontWeight = FontWeight.Bold
-                                                )
+                                                // Per-item progress
+                                                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.CONVERTING) {
+                                                    Text(
+                                                        "${(item.progress * 100).toInt()}%",
+                                                        style = MaterialTheme.typography.caption,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
                                             }
                                         }
                                     }
