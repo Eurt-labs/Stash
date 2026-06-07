@@ -46,6 +46,12 @@ class StashOrchestrator {
     private val _fetchingStatus = MutableStateFlow("")
     val fetchingStatus: StateFlow<String> = _fetchingStatus.asStateFlow()
 
+    private val _isUpdating = MutableStateFlow(false)
+    val isUpdating: StateFlow<Boolean> = _isUpdating.asStateFlow()
+
+    private val _updateStatus = MutableStateFlow("")
+    val updateStatus: StateFlow<String> = _updateStatus.asStateFlow()
+
     /** The user-selected output directory. Defaults to ~/Downloads/Stash */
     private val _outputDir = MutableStateFlow(fileManager.getDefaultDownloadDir())
     val outputDir: StateFlow<String> = _outputDir.asStateFlow()
@@ -236,6 +242,32 @@ class StashOrchestrator {
     fun shutdown() {
         queueManager.shutdown()
         scope.cancel()
+    }
+
+    /**
+     * Checks and updates yt-dlp dependencies asynchronously.
+     */
+    fun checkForUpdates() {
+        if (_isUpdating.value) return
+        _isUpdating.value = true
+        _updateStatus.value = "Checking and updating dependencies..."
+        scope.launch {
+            try {
+                val result = downloadEngine.updateYtDlp()
+                _updateStatus.value = result
+            } catch (e: Exception) {
+                _updateStatus.value = "Update failed: ${e.message}"
+            } finally {
+                _isUpdating.value = false
+            }
+        }
+    }
+
+    /**
+     * Resets the update status string back to empty.
+     */
+    fun clearUpdateStatus() {
+        _updateStatus.value = ""
     }
 
     // ──────────────────────────────────────────────────────────────

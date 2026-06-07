@@ -38,6 +38,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     val format by orchestrator.format.collectAsState()
     val isFetching by orchestrator.isFetching.collectAsState()
     val fetchingStatus by orchestrator.fetchingStatus.collectAsState()
+    val isUpdating by orchestrator.isUpdating.collectAsState()
+    val updateStatus by orchestrator.updateStatus.collectAsState()
 
     // Dropdown expanded states
     var qualityDropdownExpanded by remember { mutableStateOf(false) }
@@ -47,7 +49,25 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
             // ── Header ──
-            Text("Stash Downloader", style = MaterialTheme.typography.h4, fontWeight = FontWeight.Bold)
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Stash Downloader", style = MaterialTheme.typography.h4, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "~By eurt-labs",
+                    style = MaterialTheme.typography.caption.copy(fontSize = 12.sp),
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Supports downloading YouTube Videos, YouTube Music Tracks/Playlists/Albums, Instagram Reels/Videos, and other media sources.",
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
             // ── Output Folder Picker ──
@@ -248,6 +268,14 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 ) {
                     Text("Clear Finished")
                 }
+                Button(
+                    onClick = { orchestrator.checkForUpdates() },
+                    enabled = !isUpdating
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Update", modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (isUpdating) "Updating..." else "Check for Updates")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -399,6 +427,24 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                         }
                     }
                 }
+            }
+            if (updateStatus.isNotEmpty()) {
+                AlertDialog(
+                    onDismissRequest = { orchestrator.clearUpdateStatus() },
+                    title = { Text("Dependency Update Status") },
+                    text = { 
+                        Text(
+                            text = updateStatus,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            fontSize = 12.sp
+                        ) 
+                    },
+                    confirmButton = {
+                        Button(onClick = { orchestrator.clearUpdateStatus() }) {
+                            Text("OK")
+                        }
+                    }
+                )
             }
         }
     }

@@ -232,6 +232,39 @@ class DownloadEngine {
         }
     }
 
+    /**
+     * Updates yt-dlp by running `yt-dlp -U`.
+     *
+     * @return Output message from the update command.
+     */
+    suspend fun updateYtDlp(): String = withContext(Dispatchers.IO) {
+        println("Checking/Updating yt-dlp...")
+        val cmd = listOf("yt-dlp", "-U")
+        var process: Process? = null
+        try {
+            process = ProcessBuilder(cmd)
+                .redirectErrorStream(true)
+                .start()
+            val output = process.inputStream.bufferedReader().readText()
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                output.trim()
+            } else {
+                "Update failed with exit code $exitCode:\n$output".trim()
+            }
+        } catch (e: Exception) {
+            System.err.println("yt-dlp update failed: ${e.message}")
+            e.printStackTrace()
+            "Error: Failed to execute yt-dlp update command. Is yt-dlp installed and on system PATH?\nDetails: ${e.message}"
+        } finally {
+            process?.let {
+                if (it.isAlive) {
+                    it.destroyForcibly()
+                }
+            }
+        }
+    }
+
     private fun findOutputFile(dir: File, baseName: String): File? {
         return dir.listFiles()
             ?.filter { it.nameWithoutExtension == baseName }
