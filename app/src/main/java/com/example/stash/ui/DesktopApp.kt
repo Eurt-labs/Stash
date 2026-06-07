@@ -507,12 +507,17 @@ private fun chooseDirectory(currentDir: String): String? {
                 ${'$'}dialog.Description = "Select Output Folder"
                 if (${'$'}dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     Write-Output ${'$'}dialog.SelectedPath
+                } else {
+                    Write-Output "__CANCEL__"
                 }
             """.trimIndent()
             val process = ProcessBuilder("powershell", "-NoProfile", "-Command", script)
                 .start()
             val output = process.inputStream.bufferedReader().readText().trim()
             process.waitFor()
+            if (output == "__CANCEL__") {
+                return null
+            }
             if (output.isNotBlank() && !output.startsWith("Error")) {
                 return output
             }
