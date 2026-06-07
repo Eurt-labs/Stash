@@ -100,7 +100,7 @@ class ManifestManager {
                     trackNumber = st.trackNumber,
                     releaseYear = st.releaseYear,
                     genre = st.genre,
-                    source = try { Platform.valueOf(st.source) } catch (e: Exception) { Platform.SPOTIFY },
+                    source = try { Platform.valueOf(st.source) } catch (e: Exception) { Platform.OTHER },
                     sourceUrl = st.sourceUrl,
                     youtubeUrl = st.youtubeUrl
                 )

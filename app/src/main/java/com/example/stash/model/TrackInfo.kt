@@ -22,7 +22,7 @@ enum class ContentType {
 
 /**
  * Unified track metadata model used across all components of the download pipeline.
- * Populated from either Spotify API or YouTube metadata extraction.
+ * Populated from YouTube metadata extraction or other supported platforms.
  */
 data class TrackInfo(
     val title: String,
