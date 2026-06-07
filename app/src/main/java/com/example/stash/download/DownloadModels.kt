@@ -12,7 +12,6 @@ enum class DownloadQuality(val label: String, val bitrateKbps: Int, val videoLab
         return when (format) {
             DownloadFormat.MP4,
             DownloadFormat.YOUTUBE_VIDEO,
-            DownloadFormat.INSTAGRAM_VIDEO,
             DownloadFormat.OTHER_VIDEO -> videoLabel
             DownloadFormat.AUTO -> when (this) {
                 LOW -> "Low Quality (128kbps / 360p)"
@@ -35,7 +34,6 @@ enum class DownloadFormat(val label: String, val extension: String, val ffmpegCo
     AAC("AAC Audio", "m4a", "aac"),
     MP4("MP4 Video", "mp4", "copy"),
     YOUTUBE_VIDEO("YouTube Video (MP4)", "mp4", "copy"),
-    INSTAGRAM_VIDEO("Instagram Video (MP4)", "mp4", "copy"),
     OTHER_VIDEO("Other Video (MP4)", "mp4", "copy");
 
     override fun toString(): String = label
@@ -153,6 +151,9 @@ data class DownloadBatch(
         
         // If any item is queued and we haven't finished everything
         if (states.any { it == DownloadState.QUEUED }) return DownloadState.QUEUED
+        
+        // If any item is paused
+        if (states.any { it == DownloadState.PAUSED }) return DownloadState.PAUSED
         
         // If everything failed or was cancelled
         if (states.all { it == DownloadState.FAILED || it == DownloadState.CANCELLED }) return DownloadState.FAILED

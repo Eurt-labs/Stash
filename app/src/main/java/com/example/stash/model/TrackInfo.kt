@@ -6,7 +6,6 @@ package com.example.stash.model
 enum class Platform {
     YOUTUBE,
     YOUTUBE_MUSIC,
-    INSTAGRAM,
     OTHER
 }
 
