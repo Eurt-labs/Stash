@@ -252,7 +252,6 @@ class DownloadEngine {
             sourceUrl.contains("instagram.com") -> Platform.INSTAGRAM
             sourceUrl.contains("music.youtube.com") -> Platform.YOUTUBE_MUSIC
             sourceUrl.contains("youtube.com") || sourceUrl.contains("youtu.be") -> Platform.YOUTUBE
-            sourceUrl.contains("spotify.com") -> Platform.SPOTIFY
             else -> Platform.OTHER
         }
 

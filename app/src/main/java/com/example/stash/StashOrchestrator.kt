@@ -6,7 +6,7 @@ import com.example.stash.model.Platform
 import com.example.stash.model.TrackInfo
 import com.example.stash.parser.LinkParser
 import com.example.stash.parser.ParsedLink
-import com.example.stash.spotify.SpotifyWebScraper
+
 import com.example.stash.storage.FileManager
 import java.io.File
 import kotlinx.coroutines.*
@@ -30,7 +30,7 @@ class StashOrchestrator {
         private const val TAG = "StashOrchestrator"
     }
 
-    private val spotifyScraper = SpotifyWebScraper()
+
     private val downloadEngine = DownloadEngine()
     private val fileManager = FileManager()
 
@@ -129,10 +129,10 @@ class StashOrchestrator {
 
         val requests = tracks.map { track ->
             val resolvedFormat = if (format == DownloadFormat.AUTO) {
-                if (track.source == Platform.INSTAGRAM || track.source == Platform.YOUTUBE || track.source == Platform.OTHER) {
-                    DownloadFormat.MP4
-                } else {
+                if (track.source == Platform.YOUTUBE_MUSIC) {
                     DownloadFormat.MP3
+                } else {
+                    DownloadFormat.MP4
                 }
             } else if (format == DownloadFormat.YOUTUBE_VIDEO || format == DownloadFormat.INSTAGRAM_VIDEO || format == DownloadFormat.OTHER_VIDEO) {
                 DownloadFormat.MP4
@@ -242,13 +242,8 @@ class StashOrchestrator {
     // Internal helpers
     // ──────────────────────────────────────────────────────────────
 
-    /**
-     * Fetches track metadata based on the parsed link type.
-     * No API keys needed for any platform.
-     */
     private suspend fun fetchTracks(parsedLink: ParsedLink): List<TrackInfo> {
         return when (parsedLink.platform) {
-            Platform.SPOTIFY -> fetchSpotifyTracks(parsedLink)
             Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink)
             Platform.INSTAGRAM -> fetchInstagramTracks(parsedLink)
             Platform.OTHER -> fetchOtherTracks(parsedLink)
@@ -265,16 +260,7 @@ class StashOrchestrator {
         }
     }
 
-    /**
-     * Extracts Spotify track metadata by scraping the public page.
-     * No Client ID, no Client Secret, no API key — just public HTML.
-     */
-    private suspend fun fetchSpotifyTracks(parsedLink: ParsedLink): List<TrackInfo> =
-        withContext(Dispatchers.IO) {
-            _fetchingStatus.value = "Fetching metadata from Spotify..."
-            val tracks = spotifyScraper.extractTracks(parsedLink)
-            tracks
-        }
+
 
     /**
      * Extracts track info from YouTube/YouTube Music links via yt-dlp.

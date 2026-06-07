@@ -3,7 +3,6 @@ package com.example.stash.download
 import com.example.stash.convert.ConversionEngine
 import com.example.stash.storage.FileManager
 import com.example.stash.tagger.MetadataTagger
-import com.example.stash.youtube.YouTubeSearchMatcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -31,7 +30,7 @@ class DownloadQueueManager {
 
     private val downloadEngine = DownloadEngine()
     private val conversionEngine = ConversionEngine()
-    private val youtubeSearchMatcher = YouTubeSearchMatcher()
+
     private val metadataTagger = MetadataTagger()
     private val fileManager = FileManager()
     private val manifestManager = ManifestManager()
@@ -139,28 +138,7 @@ class DownloadQueueManager {
                             return@launch
                         }
 
-                        // Step 1: Search (for Spotify tracks)
-                        var downloadUrl = request.url
-                        if (request.trackInfo.youtubeUrl == null &&
-                            request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
-                        ) {
-                            updateItemState(batchId, request.id, DownloadState.SEARCHING)
-                            try {
-                                val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
-                                    ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
-                                downloadUrl = matchedUrl
-                            } catch (e: CancellationException) {
-                                updateItemState(batchId, request.id, DownloadState.CANCELLED)
-                                throw e
-                            } catch (e: Exception) {
-                                System.err.println("YouTube search failed for: ${item.trackInfo.displayName}")
-                                e.printStackTrace()
-                                failItem(batchId, request.id, e.message ?: "YouTube search failed")
-                                return@launch
-                            }
-                        } else if (request.trackInfo.youtubeUrl != null) {
-                            downloadUrl = request.trackInfo.youtubeUrl
-                        }
+                        val downloadUrl = request.url
 
                         // Step 2: Download (constrained by downloadSemaphore)
                         val rawFilePath = try {
@@ -284,97 +262,7 @@ class DownloadQueueManager {
         }
     }
 
-    // ══════════════════════════════════════════════════════
-    // Phase 2: Download one track
-    // ══════════════════════════════════════════════════════
 
-    private suspend fun processDownloadPhase(request: DownloadRequest, batchId: String) {
-        var downloadUrl = request.url
-
-        // Step 2a: Search YouTube if needed (for Spotify tracks)
-        if (request.trackInfo.youtubeUrl == null &&
-            request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
-        ) {
-            updateItemState(batchId, request.id, DownloadState.SEARCHING)
-            val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
-                ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
-            downloadUrl = matchedUrl
-        } else if (request.trackInfo.youtubeUrl != null) {
-            downloadUrl = request.trackInfo.youtubeUrl
-        }
-
-        // Step 2b: Download raw audio
-        updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
-        val updatedRequest = request.copy(url = downloadUrl)
-        val rawFilePath = downloadEngine.download(updatedRequest) { percent, eta, speed ->
-            updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
-        }
-
-        // Store the raw file path for the convert phase
-        rawFilePaths[request.id] = rawFilePath
-        println("Downloaded: ${request.trackInfo.displayName} → $rawFilePath")
-    }
-
-    // ══════════════════════════════════════════════════════
-    // Phase 3: Convert one track
-    // ══════════════════════════════════════════════════════
-
-    private suspend fun processConvertPhase(
-        trackId: String,
-        rawPath: String,
-        request: DownloadRequest,
-        batchId: String
-    ) {
-        updateItemState(batchId, trackId, DownloadState.CONVERTING)
-        updateItemProgress(batchId, trackId, 0f, null, null)
-
-        val convertedPath = conversionEngine.convert(
-            inputPath = rawPath,
-            format = request.format,
-            quality = request.quality
-        ) { progress ->
-            updateItemProgress(batchId, trackId, progress, null, "Converting...")
-        }
-
-        convertedFilePaths[trackId] = convertedPath
-        println("Converted: ${request.trackInfo.displayName} → $convertedPath")
-    }
-
-    // ══════════════════════════════════════════════════════
-    // Phase 4: Tag and move one track
-    // ══════════════════════════════════════════════════════
-
-    private suspend fun processMovePhase(
-        trackId: String,
-        convertedPath: String,
-        request: DownloadRequest,
-        batchId: String
-    ) {
-        // Step 4a: Tag the file with metadata
-        updateItemState(batchId, trackId, DownloadState.TAGGING)
-        try {
-            metadataTagger.tagFile(convertedPath, request.trackInfo)
-        } catch (e: Exception) {
-            System.err.println("Metadata tagging failed (non-fatal): ${e.message}")
-        }
-
-        // Step 4b: Move to final destination
-        updateItemState(batchId, trackId, DownloadState.MOVING)
-
-        // Get the output directory from the batch
-        val batch = _batches.value[batchId]
-        val outputDir = batch?.outputDir ?: fileManager.getDefaultDownloadDir()
-        val batchName = batch?.name ?: "Stash Playlist"
-        val subfolderName = request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batchName
-
-        val finalPath = withContext(Dispatchers.IO) {
-            fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir, subfolderName)
-        }
-
-        // Mark as complete
-        completeItem(batchId, trackId, finalPath)
-        println("Moved: ${request.trackInfo.displayName} → $finalPath")
-    }
 
     // ══════════════════════════════════════════════════════
     // Cancellation
@@ -493,7 +381,6 @@ class DownloadQueueManager {
         return _batches.value.values.sumOf { batch ->
             batch.items.count {
                 it.state == DownloadState.DOWNLOADING ||
-                it.state == DownloadState.SEARCHING ||
                 it.state == DownloadState.CONVERTING ||
                 it.state == DownloadState.MOVING ||
                 it.state == DownloadState.TAGGING
