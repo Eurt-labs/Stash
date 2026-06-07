@@ -47,4 +47,16 @@ compose.desktop {
 tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask>().configureEach {
     freeArgs.add("--temp")
     freeArgs.add(project.layout.buildDirectory.dir("jpackage-temp").get().asFile.absolutePath)
+    
+    doFirst {
+        val resourcesDir = project.file("build/compose/tmp/resources")
+        if (!resourcesDir.exists()) {
+            resourcesDir.mkdirs()
+        }
+        project.copy {
+            from(project.file("../installer-resources"))
+            into(resourcesDir)
+        }
+        println("Injected custom WiX resource files into: ${resourcesDir.absolutePath}")
+    }
 }
