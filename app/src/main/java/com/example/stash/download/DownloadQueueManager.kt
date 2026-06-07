@@ -202,7 +202,11 @@ class DownloadQueueManager {
 
                             updateItemState(batchId, item.id, DownloadState.MOVING)
                             val outputDir = batch.outputDir.ifBlank { fileManager.getDefaultDownloadDir() }
-                            val subfolderName = if (request.trackInfo.sourceUrl.startsWith("ytsearch")) {
+                            val isSearchOrChannel = request.trackInfo.sourceUrl.startsWith("ytsearch") ||
+                                    request.trackInfo.sourceUrl.contains("/@") ||
+                                    request.trackInfo.sourceUrl.contains("/channel/") ||
+                                    request.trackInfo.sourceUrl.contains("/c/")
+                            val subfolderName = if (isSearchOrChannel) {
                                 batch.name
                             } else {
                                 request.trackInfo.album?.trim()?.takeIf { it.isNotBlank() } ?: batch.name

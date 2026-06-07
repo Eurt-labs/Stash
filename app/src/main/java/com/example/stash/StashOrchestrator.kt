@@ -347,19 +347,86 @@ class StashOrchestrator {
      * Extracts track info from YouTube/YouTube Music links via yt-dlp.
      */
     private suspend fun fetchYouTubeTracks(parsedLink: ParsedLink): List<TrackInfo> {
-        val url = when {
-            parsedLink.contentType == ContentType.PLAYLIST ->
-                "https://www.youtube.com/playlist?list=${parsedLink.id}"
-            parsedLink.platform == Platform.YOUTUBE_MUSIC ->
-                "https://music.youtube.com/watch?v=${parsedLink.id}"
-            else ->
-                "https://www.youtube.com/watch?v=${parsedLink.id}"
+        val isChannel = parsedLink.originalUrl.contains("/@") ||
+                parsedLink.originalUrl.contains("/channel/") ||
+                parsedLink.originalUrl.contains("/c/")
+
+        val url = if (isChannel) {
+            _fetchingStatus.value = "Resolving channel artist..."
+            val artistName = withContext(Dispatchers.IO) {
+                fetchChannelName(parsedLink.originalUrl)
+            } ?: parsedLink.id
+            println("Resolved channel artist name: $artistName")
+            "ytsearch30:$artistName music.youtube.com"
+        } else {
+            when {
+                parsedLink.originalUrl.startsWith("ytsearch") ->
+                    parsedLink.originalUrl
+                parsedLink.contentType == ContentType.PLAYLIST ->
+                    "https://www.youtube.com/playlist?list=${parsedLink.id}"
+                parsedLink.platform == Platform.YOUTUBE_MUSIC ->
+                    "https://music.youtube.com/watch?v=${parsedLink.id}"
+                else ->
+                    "https://www.youtube.com/watch?v=${parsedLink.id}"
+            }
         }
 
         _fetchingStatus.value = "Fetching metadata from YouTube..."
         return downloadEngine.extractInfo(url) { count ->
             _fetchingStatus.value = "Fetching metadata from YouTube (extracted $count tracks)..."
         }
+    }
+
+    private fun fetchChannelName(url: String): String? {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .build()
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val html = response.body?.string() ?: return null
+                val titleMatch = Regex("<title>(.*?)</title>", RegexOption.IGNORE_CASE).find(html)
+                val title = titleMatch?.groupValues?.get(1)?.trim() ?: return null
+                cleanChannelTitle(title)
+            }
+        } catch (e: Exception) {
+            System.err.println("Failed to fetch channel name: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun cleanChannelTitle(title: String): String {
+        var clean = title
+            .replace(" - YouTube Music", "", ignoreCase = true)
+            .replace(" - YouTube", "", ignoreCase = true)
+
+        // Remove (@handle) if present, e.g. "The Weeknd (@theweeknd)"
+        clean = Regex("""\s*\(@[a-zA-Z0-9_.-]+\)""").replace(clean, "")
+
+        // Unescape common HTML entities
+        clean = clean
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
+            .replace("&#39;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+
+        return clean.trim()
+    }
+
+    private fun normalizeName(name: String): String {
+        return name.lowercase()
+            .replace(Regex("""\s+"""), "")
+            .replace(Regex("""[^a-z0-9]"""), "")
+            .replace("topic", "")
     }
 
     /**
