@@ -28,7 +28,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.example.stash.MainKt"
+        mainClass = "com.example.stash.TestScraperKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Stash"
