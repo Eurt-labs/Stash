@@ -4,6 +4,9 @@ import com.example.stash.download.DownloadFormat
 import com.example.stash.download.DownloadQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import java.io.File
 
 /**
@@ -70,14 +73,20 @@ class ConversionEngine {
             outputFile.absolutePath
         )
 
+        var process: Process? = null
         try {
-            val process = ProcessBuilder(cmd)
+            process = ProcessBuilder(cmd)
                 .redirectErrorStream(false)
                 .start()
 
+            val p = process
+
             // Read progress from stdout
-            process.inputStream.bufferedReader().useLines { lines ->
+            p.inputStream.bufferedReader().useLines { lines ->
                 lines.forEach { line ->
+                    if (!this@withContext.isActive) {
+                        throw CancellationException("Conversion cancelled")
+                    }
                     if (line.startsWith("out_time_us=")) {
                         val timeUs = line.substringAfter("out_time_us=").toLongOrNull()
                         if (timeUs != null && durationSeconds > 0) {
@@ -90,9 +99,9 @@ class ConversionEngine {
             }
 
             // Also drain stderr to prevent blocking
-            val stderrOutput = process.errorStream.bufferedReader().readText()
+            val stderrOutput = p.errorStream.bufferedReader().readText()
 
-            val exitCode = process.waitFor()
+            val exitCode = p.waitFor()
             if (exitCode != 0) {
                 throw ConversionException(
                     "FFmpeg exited with code $exitCode: ${stderrOutput.take(500)}"
@@ -114,12 +123,21 @@ class ConversionEngine {
 
             return@withContext outputFile.absolutePath
 
-        } catch (e: ConversionException) {
-            throw e
         } catch (e: Exception) {
-            System.err.println("Conversion failed: ${e.message}")
-            e.printStackTrace()
-            throw ConversionException("Conversion failed: ${e.message}", e)
+            if (e is CancellationException) {
+                println("Conversion coroutine cancelled, destroying FFmpeg process...")
+            } else {
+                System.err.println("Conversion failed: ${e.message}")
+                e.printStackTrace()
+            }
+            throw e
+        } finally {
+            process?.let {
+                if (it.isAlive) {
+                    it.destroyForcibly()
+                    println("Forcibly destroyed FFmpeg process")
+                }
+            }
         }
     }
 

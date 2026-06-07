@@ -5,6 +5,8 @@ import com.example.stash.storage.FileManager
 import com.example.stash.tagger.MetadataTagger
 import com.example.stash.youtube.YouTubeSearchMatcher
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +35,10 @@ class DownloadQueueManager {
     private val metadataTagger = MetadataTagger()
     private val fileManager = FileManager()
     private val manifestManager = ManifestManager()
+
+    // Semaphores to limit active download and convert tasks to 1 at a time for pipeline safety
+    private val downloadSemaphore = Semaphore(1)
+    private val convertSemaphore = Semaphore(1)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -124,99 +130,118 @@ class DownloadQueueManager {
 
         activeBatchJob = scope.launch {
             try {
-                // ════════════════════════════════════════════
-                // PHASE 2: DOWNLOAD — one by one sequentially
-                // ════════════════════════════════════════════
-                println("\n── Phase 2: DOWNLOAD ──")
-                for (item in batch.items) {
-                    if (!isActive) break // Check for cancellation
+                val jobs = batch.items.map { item ->
+                    launch {
+                        val request = requestMap[item.id]
+                        if (request == null) {
+                            System.err.println("No request found for track ${item.id}")
+                            failItem(batchId, item.id, "No request found")
+                            return@launch
+                        }
 
-                    val request = requestMap[item.id]
-                    if (request == null) {
-                        System.err.println("No request found for track ${item.id}")
-                        failItem(batchId, item.id, "No request found")
-                        continue
-                    }
+                        // Step 1: Search (for Spotify tracks)
+                        var downloadUrl = request.url
+                        if (request.trackInfo.youtubeUrl == null &&
+                            request.trackInfo.source == com.example.stash.model.Platform.SPOTIFY
+                        ) {
+                            updateItemState(batchId, request.id, DownloadState.SEARCHING)
+                            try {
+                                val matchedUrl = youtubeSearchMatcher.findBestMatch(request.trackInfo)
+                                    ?: throw DownloadException("No YouTube match found for: ${request.trackInfo.displayName}")
+                                downloadUrl = matchedUrl
+                            } catch (e: CancellationException) {
+                                updateItemState(batchId, request.id, DownloadState.CANCELLED)
+                                throw e
+                            } catch (e: Exception) {
+                                System.err.println("YouTube search failed for: ${item.trackInfo.displayName}")
+                                e.printStackTrace()
+                                failItem(batchId, request.id, e.message ?: "YouTube search failed")
+                                return@launch
+                            }
+                        } else if (request.trackInfo.youtubeUrl != null) {
+                            downloadUrl = request.trackInfo.youtubeUrl
+                        }
 
-                    try {
-                        processDownloadPhase(request, batchId)
-                    } catch (e: CancellationException) {
-                        updateItemState(batchId, item.id, DownloadState.CANCELLED)
-                        throw e
-                    } catch (e: Exception) {
-                        System.err.println("Download failed for: ${item.trackInfo.displayName}")
-                        e.printStackTrace()
-                        failItem(batchId, item.id, e.message ?: "Download failed")
+                        // Step 2: Download (constrained by downloadSemaphore)
+                        val rawFilePath = try {
+                            downloadSemaphore.withPermit {
+                                if (!isActive) return@launch
+                                updateItemState(batchId, request.id, DownloadState.DOWNLOADING)
+                                val updatedRequest = request.copy(url = downloadUrl)
+                                downloadEngine.download(updatedRequest) { percent, eta, speed ->
+                                    updateItemProgress(batchId, request.id, percent / 100f, eta, speed.ifBlank { null })
+                                }
+                            }
+                        } catch (e: CancellationException) {
+                            updateItemState(batchId, request.id, DownloadState.CANCELLED)
+                            throw e
+                        } catch (e: Exception) {
+                            System.err.println("Download failed for: ${item.trackInfo.displayName}")
+                            e.printStackTrace()
+                            failItem(batchId, request.id, e.message ?: "Download failed")
+                            return@launch
+                        }
+
+                        rawFilePaths[request.id] = rawFilePath
+                        println("Downloaded: ${request.trackInfo.displayName} → $rawFilePath")
+
+                        // Step 3: Convert (constrained by convertSemaphore)
+                        val convertedPath = try {
+                            convertSemaphore.withPermit {
+                                if (!isActive) return@launch
+                                updateItemState(batchId, item.id, DownloadState.CONVERTING)
+                                updateItemProgress(batchId, item.id, 0f, null, "Converting...")
+                                conversionEngine.convert(
+                                    inputPath = rawFilePath,
+                                    format = request.format,
+                                    quality = request.quality
+                                ) { progress ->
+                                    updateItemProgress(batchId, item.id, progress, null, "Converting...")
+                                }
+                            }
+                        } catch (e: CancellationException) {
+                            updateItemState(batchId, item.id, DownloadState.CANCELLED)
+                            throw e
+                        } catch (e: Exception) {
+                            System.err.println("Conversion failed for: ${item.trackInfo.displayName}")
+                            e.printStackTrace()
+                            failItem(batchId, item.id, e.message ?: "Conversion failed")
+                            return@launch
+                        }
+
+                        convertedFilePaths[request.id] = convertedPath
+                        println("Converted: ${request.trackInfo.displayName} → $convertedPath")
+
+                        // Step 4: Tag & Move
+                        try {
+                            if (!isActive) return@launch
+                            updateItemState(batchId, item.id, DownloadState.TAGGING)
+                            try {
+                                metadataTagger.tagFile(convertedPath, request.trackInfo)
+                            } catch (e: Exception) {
+                                System.err.println("Metadata tagging failed (non-fatal): ${e.message}")
+                            }
+
+                            updateItemState(batchId, item.id, DownloadState.MOVING)
+                            val outputDir = batch.outputDir.ifBlank { fileManager.getDefaultDownloadDir() }
+                            val finalPath = withContext(Dispatchers.IO) {
+                                fileManager.moveToFinalDestination(convertedPath, request.trackInfo, request.format.extension, outputDir)
+                            }
+
+                            completeItem(batchId, item.id, finalPath)
+                            println("Moved: ${request.trackInfo.displayName} → $finalPath")
+                        } catch (e: CancellationException) {
+                            updateItemState(batchId, item.id, DownloadState.CANCELLED)
+                            throw e
+                        } catch (e: Exception) {
+                            System.err.println("Move failed for: ${item.trackInfo.displayName}")
+                            e.printStackTrace()
+                            failItem(batchId, item.id, e.message ?: "Move failed")
+                        }
                     }
                 }
 
-                // ════════════════════════════════════════════
-                // PHASE 3: CONVERT — one by one sequentially
-                // ════════════════════════════════════════════
-                println("\n── Phase 3: CONVERT ──")
-                val currentBatch = _batches.value[batchId] ?: return@launch
-                for (item in currentBatch.items) {
-                    if (!isActive) break
-
-                    // Skip items that failed during download
-                    if (item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED) {
-                        continue
-                    }
-
-                    val rawPath = rawFilePaths[item.id]
-                    if (rawPath == null) {
-                        System.err.println("No raw file path for track ${item.id}")
-                        failItem(batchId, item.id, "Raw file not found")
-                        continue
-                    }
-
-                    val request = requestMap[item.id] ?: continue
-
-                    try {
-                        processConvertPhase(item.id, rawPath, request, batchId)
-                    } catch (e: CancellationException) {
-                        updateItemState(batchId, item.id, DownloadState.CANCELLED)
-                        throw e
-                    } catch (e: Exception) {
-                        System.err.println("Conversion failed for: ${item.trackInfo.displayName}")
-                        e.printStackTrace()
-                        failItem(batchId, item.id, e.message ?: "Conversion failed")
-                    }
-                }
-
-                // ════════════════════════════════════════════
-                // PHASE 4: MOVE — tag and move to final folder
-                // ════════════════════════════════════════════
-                println("\n── Phase 4: MOVE & TAG ──")
-                val updatedBatch = _batches.value[batchId] ?: return@launch
-                for (item in updatedBatch.items) {
-                    if (!isActive) break
-
-                    // Skip failed/cancelled items
-                    if (item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED) {
-                        continue
-                    }
-
-                    val convertedPath = convertedFilePaths[item.id]
-                    if (convertedPath == null) {
-                        System.err.println("No converted file path for track ${item.id}")
-                        failItem(batchId, item.id, "Converted file not found")
-                        continue
-                    }
-
-                    val request = requestMap[item.id] ?: continue
-
-                    try {
-                        processMovePhase(item.id, convertedPath, request, batchId)
-                    } catch (e: CancellationException) {
-                        updateItemState(batchId, item.id, DownloadState.CANCELLED)
-                        throw e
-                    } catch (e: Exception) {
-                        System.err.println("Move failed for: ${item.trackInfo.displayName}")
-                        e.printStackTrace()
-                        failItem(batchId, item.id, e.message ?: "Move failed")
-                    }
-                }
+                jobs.joinAll()
 
                 // ════════════════════════════════════════════
                 // PHASE 5: CLEANUP — delete temp JSON + cache

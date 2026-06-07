@@ -40,6 +40,12 @@ class StashOrchestrator {
 
     // ── User-configurable state ──
 
+    private val _isFetching = MutableStateFlow(false)
+    val isFetching: StateFlow<Boolean> = _isFetching.asStateFlow()
+
+    private val _fetchingStatus = MutableStateFlow("")
+    val fetchingStatus: StateFlow<String> = _fetchingStatus.asStateFlow()
+
     /** The user-selected output directory. Defaults to ~/Downloads/Stash */
     private val _outputDir = MutableStateFlow(fileManager.getDefaultDownloadDir())
     val outputDir: StateFlow<String> = _outputDir.asStateFlow()
@@ -93,7 +99,15 @@ class StashOrchestrator {
         val parsedLink = LinkParser.parse(link)
             ?: throw IllegalArgumentException("Unsupported link: $link")
         println("Fetching metadata for: ${parsedLink.platform} / ${parsedLink.contentType}")
-        return fetchTracks(parsedLink)
+        
+        _isFetching.value = true
+        _fetchingStatus.value = "Parsing link..."
+        return try {
+            fetchTracks(parsedLink)
+        } finally {
+            _isFetching.value = false
+            _fetchingStatus.value = ""
+        }
     }
 
     /**
@@ -141,12 +155,24 @@ class StashOrchestrator {
         outputDir: String = _outputDir.value
     ): List<TrackInfo> {
         val tracks = fetchMetadata(link)
-        val batchName = if (tracks.size == 1) {
+        if (tracks.isEmpty()) return tracks
+
+        // Group tracks by album name
+        // If a track's album is null or blank, group under a default name
+        val defaultGroupName = if (tracks.size == 1) {
             tracks[0].title
         } else {
-            tracks[0].album ?: "Stash Playlist"
+            "Stash Playlist"
         }
-        enqueueTracks(tracks, batchName, quality, format, outputDir)
+
+        val groupedTracks = tracks.groupBy {
+            it.album?.trim()?.takeIf { name -> name.isNotBlank() } ?: defaultGroupName
+        }
+
+        groupedTracks.forEach { (albumName, albumTracks) ->
+            enqueueTracks(albumTracks, albumName, quality, format, outputDir)
+        }
+
         return tracks
     }
 
@@ -220,7 +246,10 @@ class StashOrchestrator {
      * Extracts Instagram post/reel metadata via yt-dlp.
      */
     private suspend fun fetchInstagramTracks(parsedLink: ParsedLink): List<TrackInfo> {
-        return downloadEngine.extractInfo(parsedLink.originalUrl)
+        _fetchingStatus.value = "Fetching metadata from Instagram..."
+        return downloadEngine.extractInfo(parsedLink.originalUrl) { count ->
+            _fetchingStatus.value = "Fetching metadata from Instagram (extracted $count)..."
+        }
     }
 
     /**
@@ -229,7 +258,9 @@ class StashOrchestrator {
      */
     private suspend fun fetchSpotifyTracks(parsedLink: ParsedLink): List<TrackInfo> =
         withContext(Dispatchers.IO) {
-            spotifyScraper.extractTracks(parsedLink)
+            _fetchingStatus.value = "Fetching metadata from Spotify..."
+            val tracks = spotifyScraper.extractTracks(parsedLink)
+            tracks
         }
 
     /**
@@ -245,8 +276,9 @@ class StashOrchestrator {
                 "https://www.youtube.com/watch?v=${parsedLink.id}"
         }
 
-        // extractInfo already sets youtubeUrl correctly per-video from the JSON.
-        // Do NOT override it with sourceUrl (which is the playlist URL).
-        return downloadEngine.extractInfo(url)
+        _fetchingStatus.value = "Fetching metadata from YouTube..."
+        return downloadEngine.extractInfo(url) { count ->
+            _fetchingStatus.value = "Fetching metadata from YouTube (extracted $count tracks)..."
+        }
     }
 }

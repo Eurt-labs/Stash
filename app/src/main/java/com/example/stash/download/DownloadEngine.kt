@@ -6,6 +6,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import java.io.File
 import java.io.InputStreamReader
 
@@ -69,14 +72,20 @@ class DownloadEngine {
 
         cmd.add(request.url)
 
+        var process: Process? = null
         try {
-            val process = ProcessBuilder(cmd)
+            process = ProcessBuilder(cmd)
                 .redirectErrorStream(true)
                 .start()
 
+            val p = process
+
             // Read output stream line-by-line as it comes in
-            process.inputStream.bufferedReader().useLines { lines ->
+            p.inputStream.bufferedReader().useLines { lines ->
                 lines.forEach { line ->
+                    if (!this@withContext.isActive) {
+                        throw CancellationException("Download cancelled")
+                    }
                     println("yt-dlp: $line") // For debug logging
                     if (line.contains("[download]")) {
                         val percent = parsePercent(line)
@@ -90,7 +99,7 @@ class DownloadEngine {
                 }
             }
 
-            val exitCode = process.waitFor()
+            val exitCode = p.waitFor()
             if (exitCode != 0) {
                 throw DownloadException("yt-dlp exited with code $exitCode")
             }
@@ -103,9 +112,20 @@ class DownloadEngine {
             return@withContext outputFile.absolutePath
 
         } catch (e: Exception) {
-            System.err.println("Download failed: ${e.message}")
-            e.printStackTrace()
-            throw DownloadException("Download failed: ${e.message}", e)
+            if (e is CancellationException) {
+                println("Download coroutine cancelled, destroying yt-dlp process...")
+            } else {
+                System.err.println("Download failed: ${e.message}")
+                e.printStackTrace()
+            }
+            throw e
+        } finally {
+            process?.let {
+                if (it.isAlive) {
+                    it.destroyForcibly()
+                    println("Forcibly destroyed yt-dlp process")
+                }
+            }
         }
     }
 
@@ -120,7 +140,10 @@ class DownloadEngine {
      * @param url The URL to extract metadata from.
      * @return List of TrackInfo extracted from the URL.
      */
-    suspend fun extractInfo(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
+    suspend fun extractInfo(
+        url: String,
+        onTrackExtracted: ((Int) -> Unit)? = null
+    ): List<TrackInfo> = withContext(Dispatchers.IO) {
         println("Extracting info from: $url")
 
         val cmd = listOf(
@@ -134,32 +157,56 @@ class DownloadEngine {
             url
         )
 
+        var process: Process? = null
         try {
-            val process = ProcessBuilder(cmd)
+            process = ProcessBuilder(cmd)
                 .redirectErrorStream(true)
                 .start()
 
-            val lines = InputStreamReader(process.inputStream).readLines()
-            val exitCode = process.waitFor()
+            val p = process
+            val tracks = mutableListOf<TrackInfo>()
+            var count = 0
 
+            p.inputStream.bufferedReader().useLines { lines ->
+                lines.forEach { line ->
+                    if (!this@withContext.isActive) {
+                        throw CancellationException("Metadata extraction cancelled")
+                    }
+                    if (line.isNotBlank() && line.startsWith("{")) {
+                        try {
+                            val json = gson.fromJson(line, JsonObject::class.java)
+                            val track = jsonToTrackInfo(json, url)
+                            tracks.add(track)
+                            count++
+                            onTrackExtracted?.invoke(count)
+                        } catch (e: Exception) {
+                            // Ignore json parsing error for single bad line
+                        }
+                    }
+                }
+            }
+
+            val exitCode = p.waitFor()
             if (exitCode != 0) {
                 throw DownloadException("yt-dlp extraction failed with code $exitCode")
             }
 
-            return@withContext lines
-                .filter { it.isNotBlank() && it.startsWith("{") }
-                .mapNotNull { line ->
-                    try {
-                        val json = gson.fromJson(line, JsonObject::class.java)
-                        jsonToTrackInfo(json, url)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
+            return@withContext tracks
         } catch (e: Exception) {
-            System.err.println("Info extraction failed: ${e.message}")
-            e.printStackTrace()
-            throw DownloadException("Failed to extract info: ${e.message}", e)
+            if (e is CancellationException) {
+                println("Metadata extraction coroutine cancelled, destroying yt-dlp process...")
+            } else {
+                System.err.println("Info extraction failed: ${e.message}")
+                e.printStackTrace()
+            }
+            throw e
+        } finally {
+            process?.let {
+                if (it.isAlive) {
+                    it.destroyForcibly()
+                    println("Forcibly destroyed yt-dlp metadata process")
+                }
+            }
         }
     }
 
