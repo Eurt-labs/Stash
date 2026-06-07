@@ -155,20 +155,21 @@ class DownloadEngine {
      */
     suspend fun extractInfo(
         url: String,
+        flatPlaylist: Boolean = false,
         onTrackExtracted: ((Int) -> Unit)? = null
     ): List<TrackInfo> = withContext(Dispatchers.IO) {
         println("Extracting info from: $url")
 
-        val cmd = listOf(
+        val cmd = mutableListOf(
             "yt-dlp",
             "--dump-json",
             "--no-download",
-            "--no-warnings",
-            // DO NOT use --flat-playlist: it returns minimal metadata
-            // (all tracks get the same generic title/artist).
-            // Full mode gives us per-video title, artist, duration, thumbnail.
-            url
+            "--no-warnings"
         )
+        if (flatPlaylist) {
+            cmd.add("--flat-playlist")
+        }
+        cmd.add(url)
 
         var process: Process? = null
         try {
@@ -279,7 +280,13 @@ class DownloadEngine {
             ?: "Unknown Artist"
         val album = json.get("album")?.asString
         val durationMs = (json.get("duration")?.asDouble?.times(1000))?.toLong() ?: 0L
-        val thumbnail = json.get("thumbnail")?.asString
+        var thumbnail = json.get("thumbnail")?.asString
+        if (thumbnail == null && json.has("thumbnails")) {
+            val arr = json.getAsJsonArray("thumbnails")
+            if (arr != null && arr.size() > 0) {
+                thumbnail = arr.get(arr.size() - 1).asJsonObject.get("url")?.asString
+            }
+        }
 
         val detectedPlatform = when {
             sourceUrl.contains("instagram.com") -> Platform.INSTAGRAM

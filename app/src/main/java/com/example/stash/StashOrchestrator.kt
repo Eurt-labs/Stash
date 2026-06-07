@@ -103,7 +103,7 @@ class StashOrchestrator {
     /**
      * Fetches and returns track metadata from the link without initiating a download.
      */
-    suspend fun fetchMetadata(link: String): List<TrackInfo> {
+    suspend fun fetchMetadata(link: String, flatPlaylist: Boolean = false): List<TrackInfo> {
         val parsedLink = LinkParser.parse(link)
             ?: throw IllegalArgumentException("Unsupported link: $link")
         println("Fetching metadata for: ${parsedLink.platform} / ${parsedLink.contentType}")
@@ -111,7 +111,7 @@ class StashOrchestrator {
         _isFetching.value = true
         _fetchingStatus.value = "Parsing link..."
         return try {
-            fetchTracks(parsedLink)
+            fetchTracks(parsedLink, flatPlaylist)
         } finally {
             _isFetching.value = false
             _fetchingStatus.value = ""
@@ -205,13 +205,17 @@ class StashOrchestrator {
             if (playlistId != null) {
                 "https://www.youtube.com/playlist?list=$playlistId"
             } else {
-                "ytsearch100:$artistName music.youtube.com"
+                "ytsearch150:$artistName music.youtube.com"
             }
         } else {
             link
         }
 
-        val tracks = fetchMetadata(fetchLink)
+        val isPlaylistOrSearch = parsedLink.contentType == ContentType.PLAYLIST ||
+                isChannel ||
+                parsedLink.originalUrl.startsWith("ytsearch")
+
+        val tracks = fetchMetadata(fetchLink, flatPlaylist = isPlaylistOrSearch)
         if (tracks.isEmpty()) return tracks
 
         val isSearchOrChannel = isChannel || parsedLink.originalUrl.startsWith("ytsearch")
@@ -220,7 +224,16 @@ class StashOrchestrator {
         val filteredTracks = if (isSearchOrChannel && artistQuery != null) {
             val normalizedQuery = normalizeName(artistQuery)
             tracks
-                .map { it.copy(sourceUrl = parsedLink.originalUrl) }
+                .map { track ->
+                    val updatedArtists = if (isChannel && artistName != null) {
+                        listOf(artistName)
+                    } else if (track.artists.isEmpty() || track.artists.first() == "Unknown Artist") {
+                        listOf(artistQuery)
+                    } else {
+                        track.artists
+                    }
+                    track.copy(artists = updatedArtists, sourceUrl = parsedLink.originalUrl)
+                }
                 .filter { track ->
                     track.artists.any { artist ->
                         val normalizedArtist = normalizeName(artist)
@@ -336,9 +349,9 @@ class StashOrchestrator {
     // Internal helpers
     // ──────────────────────────────────────────────────────────────
 
-    private suspend fun fetchTracks(parsedLink: ParsedLink): List<TrackInfo> {
+    private suspend fun fetchTracks(parsedLink: ParsedLink, flatPlaylist: Boolean = false): List<TrackInfo> {
         return when (parsedLink.platform) {
-            Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink)
+            Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink, flatPlaylist)
             Platform.INSTAGRAM -> fetchInstagramTracks(parsedLink)
             Platform.OTHER -> fetchOtherTracks(parsedLink)
         }
@@ -359,7 +372,7 @@ class StashOrchestrator {
     /**
      * Extracts track info from YouTube/YouTube Music links via yt-dlp.
      */
-    private suspend fun fetchYouTubeTracks(parsedLink: ParsedLink): List<TrackInfo> {
+    private suspend fun fetchYouTubeTracks(parsedLink: ParsedLink, flatPlaylist: Boolean = false): List<TrackInfo> {
         val isChannel = parsedLink.originalUrl.contains("/@") ||
                 parsedLink.originalUrl.contains("/channel/") ||
                 parsedLink.originalUrl.contains("/c/")
@@ -377,7 +390,7 @@ class StashOrchestrator {
             if (playlistId != null) {
                 "https://www.youtube.com/playlist?list=$playlistId"
             } else {
-                "ytsearch100:$artistName music.youtube.com"
+                "ytsearch150:$artistName music.youtube.com"
             }
         } else {
             when {
@@ -393,7 +406,7 @@ class StashOrchestrator {
         }
 
         _fetchingStatus.value = "Fetching metadata from YouTube..."
-        return downloadEngine.extractInfo(url) { count ->
+        return downloadEngine.extractInfo(url, flatPlaylist) { count ->
             _fetchingStatus.value = "Fetching metadata from YouTube (extracted $count tracks)..."
         }
     }
