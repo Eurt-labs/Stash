@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.example.stash"
-version = "1.0.0"
+version = "1.1.0"
 
 dependencies {
     implementation(compose.desktop.currentOs)
@@ -32,7 +32,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Stash"
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
             windows {
                 dirChooser = true
                 menu = true
