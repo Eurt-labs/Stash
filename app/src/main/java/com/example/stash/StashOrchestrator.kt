@@ -449,7 +449,8 @@ class StashOrchestrator {
                     return playlistId
                 }
             } catch (e: Exception) {
-                // Ignore parsing errors for individual bad pushes
+                System.err.println("Error parsing push in findTopSongsPlaylistId: ${e.message}")
+                e.printStackTrace()
             }
         }
         
