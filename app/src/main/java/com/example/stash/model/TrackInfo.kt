@@ -7,7 +7,8 @@ enum class Platform {
     SPOTIFY,
     YOUTUBE,
     YOUTUBE_MUSIC,
-    INSTAGRAM
+    INSTAGRAM,
+    OTHER
 }
 
 /**

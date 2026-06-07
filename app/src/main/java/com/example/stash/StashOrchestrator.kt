@@ -129,7 +129,7 @@ class StashOrchestrator {
 
         val requests = tracks.map { track ->
             val resolvedFormat = if (format == DownloadFormat.AUTO) {
-                if (track.source == Platform.INSTAGRAM || track.source == Platform.YOUTUBE) {
+                if (track.source == Platform.INSTAGRAM || track.source == Platform.YOUTUBE || track.source == Platform.OTHER) {
                     DownloadFormat.MP4
                 } else {
                     DownloadFormat.MP3
@@ -249,6 +249,7 @@ class StashOrchestrator {
             Platform.SPOTIFY -> fetchSpotifyTracks(parsedLink)
             Platform.YOUTUBE, Platform.YOUTUBE_MUSIC -> fetchYouTubeTracks(parsedLink)
             Platform.INSTAGRAM -> fetchInstagramTracks(parsedLink)
+            Platform.OTHER -> fetchOtherTracks(parsedLink)
         }
     }
 
@@ -289,6 +290,16 @@ class StashOrchestrator {
         _fetchingStatus.value = "Fetching metadata from YouTube..."
         return downloadEngine.extractInfo(url) { count ->
             _fetchingStatus.value = "Fetching metadata from YouTube (extracted $count tracks)..."
+        }
+    }
+
+    /**
+     * Extracts generic/other post/reel/video metadata via yt-dlp.
+     */
+    private suspend fun fetchOtherTracks(parsedLink: ParsedLink): List<TrackInfo> {
+        _fetchingStatus.value = "Fetching metadata from link..."
+        return downloadEngine.extractInfo(parsedLink.originalUrl) { count ->
+            _fetchingStatus.value = "Fetching metadata from link (extracted $count)..."
         }
     }
 }

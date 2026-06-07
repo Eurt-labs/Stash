@@ -1,12 +1,24 @@
 package com.example.stash.download
 
 /**
- * User-selectable audio quality presets — simplified to 3 tiers.
+ * User-selectable quality presets (dynamic for both Audio and Video).
  */
-enum class DownloadQuality(val label: String, val bitrateKbps: Int) {
-    LOW("Low Quality (128kbps)", 128),
-    MID("Mid Quality (192kbps)", 192),
-    HIGH("High Quality (320kbps)", 320);
+enum class DownloadQuality(val label: String, val bitrateKbps: Int, val videoLabel: String) {
+    LOW("Low Quality (128kbps)", 128, "Low Quality (360p)"),
+    MID("Mid Quality (192kbps)", 192, "Mid Quality (720p)"),
+    HIGH("High Quality (320kbps)", 320, "High Quality (1080p)");
+
+    fun getLabelForFormat(format: DownloadFormat): String {
+        return when (format) {
+            DownloadFormat.MP4 -> videoLabel
+            DownloadFormat.AUTO -> when (this) {
+                LOW -> "Low Quality (128kbps / 360p)"
+                MID -> "Mid Quality (192kbps / 720p)"
+                HIGH -> "High Quality (320kbps / 1080p)"
+            }
+            else -> label
+        }
+    }
 
     override fun toString(): String = label
 }

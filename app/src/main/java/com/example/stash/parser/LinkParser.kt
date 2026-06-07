@@ -128,6 +128,12 @@ object LinkParser {
             return ParsedLink(Platform.INSTAGRAM, ContentType.VIDEO, match.groupValues[1], trimmedUrl)
         }
 
+        // ── Generic Fallback (any other http/https link) ──
+        if (trimmedUrl.startsWith("http://", ignoreCase = true) || trimmedUrl.startsWith("https://", ignoreCase = true)) {
+            val simpleId = java.util.UUID.nameUUIDFromBytes(trimmedUrl.toByteArray()).toString()
+            return ParsedLink(Platform.OTHER, ContentType.VIDEO, simpleId, trimmedUrl)
+        }
+
         return null
     }
 

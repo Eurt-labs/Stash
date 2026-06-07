@@ -111,7 +111,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                 DownloadQuality.MID -> "🟡"
                                 DownloadQuality.HIGH -> "🔴"
                             }
-                            Text("$icon ${quality.label}")
+                            Text("$icon ${quality.getLabelForFormat(format)}")
                         }
                         DropdownMenu(
                             expanded = qualityDropdownExpanded,
@@ -127,7 +127,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                     orchestrator.setQuality(q)
                                     qualityDropdownExpanded = false
                                 }) {
-                                    Text("$icon ${q.label}")
+                                    Text("$icon ${q.getLabelForFormat(format)}")
                                 }
                             }
                         }
@@ -171,7 +171,7 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                 OutlinedTextField(
                     value = linkInput,
                     onValueChange = { linkInput = it },
-                    label = { Text("Enter Spotify/YouTube Link") },
+                    label = { Text("Enter Spotify, YouTube, Instagram, or Other Links") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !isProcessing && !isFetching
