@@ -143,7 +143,7 @@ class StashOrchestrator {
                 } else {
                     DownloadFormat.MP4
                 }
-            } else if (format == DownloadFormat.YOUTUBE_VIDEO || format == DownloadFormat.INSTAGRAM_VIDEO || format == DownloadFormat.OTHER_VIDEO) {
+            } else if (format == DownloadFormat.YOUTUBE_VIDEO || format == DownloadFormat.OTHER_VIDEO) {
                 DownloadFormat.MP4
             } else {
                 format

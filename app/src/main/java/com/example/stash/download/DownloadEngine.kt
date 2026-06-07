@@ -299,7 +299,6 @@ class DownloadEngine {
         }
 
         val detectedPlatform = when {
-            sourceUrl.contains("instagram.com") -> Platform.INSTAGRAM
             sourceUrl.contains("music.youtube.com") -> Platform.YOUTUBE_MUSIC
             sourceUrl.contains("youtube.com") || sourceUrl.contains("youtu.be") -> Platform.YOUTUBE
             else -> Platform.OTHER
@@ -319,7 +318,7 @@ class DownloadEngine {
             albumArtUrl = thumbnail,
             source = detectedPlatform,
             sourceUrl = sourceUrl,
-            youtubeUrl = if (detectedPlatform == Platform.INSTAGRAM || detectedPlatform == Platform.OTHER) null else videoUrl
+            youtubeUrl = if (detectedPlatform == Platform.OTHER) null else videoUrl
         )
     }
 
