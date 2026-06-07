@@ -33,6 +33,8 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Stash"
             packageVersion = "1.1.0"
+            vendor = "Eurt-labs"
+            copyright = "© 2026 Eurt-labs. All rights reserved."
             windows {
                 dirChooser = true
                 menu = true
@@ -40,4 +42,9 @@ compose.desktop {
             }
         }
     }
+}
+
+tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask>().configureEach {
+    freeArgs.add("--temp")
+    freeArgs.add(project.layout.buildDirectory.dir("jpackage-temp").get().asFile.absolutePath)
 }
