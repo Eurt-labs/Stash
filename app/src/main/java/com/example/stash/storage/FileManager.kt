@@ -75,20 +75,38 @@ class FileManager {
      * @param trackInfo Track metadata for generating the filename.
      * @param extension File extension (e.g. "mp3", "m4a").
      * @param destinationDir The user-selected output directory. If not provided, uses the default.
+     * @param subfolderName The optional subfolder name (album or playlist) to create within destinationDir.
      * @return The absolute path to the final destination file.
      */
     fun moveToFinalDestination(
         tempFilePath: String,
         trackInfo: com.example.stash.model.TrackInfo,
         extension: String,
-        destinationDir: String? = null
+        destinationDir: String? = null,
+        subfolderName: String? = null
     ): String {
         val cacheFile = File(tempFilePath)
         if (!cacheFile.exists()) {
             throw java.io.IOException("Source file not found: $tempFilePath")
         }
 
-        val outputDir = destinationDir ?: getDefaultDownloadDir()
+        val baseOutputDir = destinationDir ?: getDefaultDownloadDir()
+        
+        val outputDir = if (!subfolderName.isNullOrBlank()) {
+            val safeSubfolderName = subfolderName
+                .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+                .take(150)
+            val subfolder = File(baseOutputDir, safeSubfolderName)
+            if (!subfolder.exists()) {
+                subfolder.mkdirs()
+            }
+            subfolder.absolutePath
+        } else {
+            baseOutputDir
+        }
+
         val uniqueFile = getUniqueFile(outputDir, trackInfo.safeFileName, extension)
         
         val success = cacheFile.renameTo(uniqueFile)
