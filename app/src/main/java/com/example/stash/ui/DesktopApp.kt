@@ -56,8 +56,8 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var showWarningPrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val ytDlpOk = checkCommand("yt-dlp", "--version")
-        val ffmpegOk = checkCommand("ffmpeg", "-version")
+        val ytDlpOk = com.example.stash.util.DependencyResolver.checkExecutable("yt-dlp", "--version")
+        val ffmpegOk = com.example.stash.util.DependencyResolver.checkExecutable("ffmpeg", "-version")
         
         isYtDlpInstalled = ytDlpOk
         isFfmpegInstalled = ffmpegOk
@@ -707,14 +707,3 @@ private fun chooseDirectory(currentDir: String): String? {
     return selectedPath
 }
 
-private fun checkCommand(cmd: String, arg: String): Boolean {
-    return try {
-        val process = ProcessBuilder(cmd, arg)
-            .redirectErrorStream(true)
-            .start()
-        process.destroy()
-        true
-    } catch (e: Exception) {
-        false
-    }
-}

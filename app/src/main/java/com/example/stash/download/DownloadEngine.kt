@@ -51,7 +51,7 @@ class DownloadEngine {
         ).absolutePath
 
         val cmd = mutableListOf(
-            "yt-dlp",
+            com.example.stash.util.DependencyResolver.resolveExecutable("yt-dlp"),
             "-o", outputTemplate,
             "--no-check-certificates",
             "--no-warnings",
@@ -159,7 +159,7 @@ class DownloadEngine {
         println("Extracting info from: $url")
 
         val cmd = mutableListOf(
-            "yt-dlp",
+            com.example.stash.util.DependencyResolver.resolveExecutable("yt-dlp"),
             "--dump-json",
             "--no-download",
             "--no-warnings"
@@ -239,7 +239,7 @@ class DownloadEngine {
      */
     suspend fun updateYtDlp(): String = withContext(Dispatchers.IO) {
         println("Checking/Updating yt-dlp...")
-        val cmd = listOf("yt-dlp", "-U")
+        val cmd = listOf(com.example.stash.util.DependencyResolver.resolveExecutable("yt-dlp"), "-U")
         var process: Process? = null
         try {
             process = ProcessBuilder(cmd)

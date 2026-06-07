@@ -60,7 +60,7 @@ class ConversionEngine {
         val durationSeconds = getDuration(inputPath)
 
         val cmd = mutableListOf(
-            "ffmpeg",
+            com.example.stash.util.DependencyResolver.resolveExecutable("ffmpeg"),
             "-i", inputPath,
             "-y",                          // Overwrite output
             "-vn",                         // No video
@@ -148,7 +148,7 @@ class ConversionEngine {
     private fun getDuration(filePath: String): Double {
         return try {
             val cmd = listOf(
-                "ffprobe",
+                com.example.stash.util.DependencyResolver.resolveExecutable("ffprobe"),
                 "-v", "quiet",
                 "-show_entries", "format=duration",
                 "-of", "default=noprint_wrappers=1:nokey=1",

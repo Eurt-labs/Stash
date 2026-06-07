@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.example.stash"
-version = "1.1.0"
+version = "1.2.0"
 
 dependencies {
     implementation(compose.desktop.currentOs)
@@ -32,9 +32,10 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Stash"
-            packageVersion = "1.1.0"
+            packageVersion = "1.2.0"
             vendor = "Eurt-labs"
             copyright = "© 2026 Eurt-labs. All rights reserved."
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("../app-resources"))
             windows {
                 dirChooser = true
                 menu = true
