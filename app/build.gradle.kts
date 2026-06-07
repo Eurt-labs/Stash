@@ -49,6 +49,11 @@ tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJPackageT
     freeArgs.add(project.layout.buildDirectory.dir("jpackage-temp").get().asFile.absolutePath)
     
     doFirst {
+        val tempDir = project.file("build/jpackage-temp")
+        if (tempDir.exists()) {
+            tempDir.deleteRecursively()
+        }
+        
         val resourcesDir = project.file("build/compose/tmp/resources")
         if (!resourcesDir.exists()) {
             resourcesDir.mkdirs()
