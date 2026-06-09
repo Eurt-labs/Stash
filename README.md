@@ -7,7 +7,7 @@ Stash is a high-performance, elegant media downloader built with Jetbrains Compo
 ## Supported Sources & Future Roadmap
 
 > [!IMPORTANT]
-> **Spotify Downloads are NOT Supported**
+> **Spotify Downloads are NOT Supported!**
 > Currently, Stash **does not** support downloading or parsing Spotify links (tracks, playlists, or albums) in the desktop application.
 > 
 > **Future Roadmap**: Spotify metadata-matching download support is planned and may be integrated in a future release.
