@@ -12,7 +12,8 @@
       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="6">NOT Installed</Publish>
       <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="6">NOT Installed</Publish>
       
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CustomOptionsDlg" Order="6">NOT Installed</Publish>
+      <!-- Force navigation from InstallDirDlg to CustomOptionsDlg -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CustomOptionsDlg" Order="3">1</Publish>
       <Publish Dialog="CustomOptionsDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="6">NOT Installed</Publish>
       
       <Publish Dialog="CustomOptionsDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="6">NOT Installed</Publish>

@@ -51,9 +51,6 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
     var isYtDlpInstalled by remember { mutableStateOf(false) }
     var isFfmpegInstalled by remember { mutableStateOf(false) }
 
-    var ytDlpChecked by remember { mutableStateOf(false) }
-    var ffmpegChecked by remember { mutableStateOf(false) }
-    var showWarningPrompt by remember { mutableStateOf(false) }
 
     var isDownloading by remember { mutableStateOf(false) }
     var downloadStatus by remember { mutableStateOf("") }
@@ -613,57 +610,9 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                 }
                             } else {
                                 Text(
-                                    text = "Stash requires 'yt-dlp' and 'ffmpeg' to download and convert files. You can install them automatically now, or proceed to configure them manually.",
+                                    text = "Stash requires 'yt-dlp' and 'ffmpeg' to download and convert files. Click 'Install' to automatically set them up now.",
                                     style = MaterialTheme.typography.body2
                                 )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                
-                                if (!isYtDlpInstalled) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxWidth().clickable { ytDlpChecked = !ytDlpChecked }
-                                    ) {
-                                        Checkbox(
-                                            checked = ytDlpChecked,
-                                            onCheckedChange = { ytDlpChecked = it }
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "I understand I need to install 'yt-dlp' (Important)",
-                                            style = MaterialTheme.typography.body2,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-                                
-                                if (!isFfmpegInstalled) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxWidth().clickable { ffmpegChecked = !ffmpegChecked }
-                                    ) {
-                                        Checkbox(
-                                            checked = ffmpegChecked,
-                                            onCheckedChange = { ffmpegChecked = it }
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "I understand I need to install 'ffmpeg' (Important)",
-                                            style = MaterialTheme.typography.body2,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                }
-                                
-                                if (showWarningPrompt) {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = "❌ Please check the boxes or click 'Install Automatically'.",
-                                        color = MaterialTheme.colors.error,
-                                        style = MaterialTheme.typography.caption,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
                             }
                         }
                     },
@@ -696,22 +645,15 @@ fun DesktopApp(orchestrator: StashOrchestrator) {
                                     colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
                                     modifier = Modifier.padding(end = 8.dp)
                                 ) {
-                                    Text("Install Automatically", color = MaterialTheme.colors.onPrimary)
+                                    Text("Install", color = MaterialTheme.colors.onPrimary)
                                 }
                                 
                                 OutlinedButton(
                                     onClick = {
-                                        val ytDlpRequirementMet = isYtDlpInstalled || ytDlpChecked
-                                        val ffmpegRequirementMet = isFfmpegInstalled || ffmpegChecked
-                                        
-                                        if (ytDlpRequirementMet && ffmpegRequirementMet) {
-                                            showDependencyDialog = false
-                                        } else {
-                                            showWarningPrompt = true
-                                        }
+                                        java.lang.System.exit(0)
                                     }
                                 ) {
-                                    Text("Proceed")
+                                    Text("Exit")
                                 }
                             }
                         }
