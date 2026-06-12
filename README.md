@@ -1,79 +1,80 @@
-# Stash Downloader
+# ⚡ Stash Downloader v1.3.0
 
-Stash is a high-performance, elegant media downloader built with Jetbrains Compose Desktop for JVM. It allows you to download and format-shift your favorite music tracks, playlists, albums, and videos from YouTube, YouTube Music, and other media sources into high-quality, cleanly-tagged MP3, AAC, or MP4 files.
+![Stash Banner](app-resources/stash_app_banner.png)
 
----
+Hey there! Welcome to **Stash**—a high-performance, elegant media downloader built with Jetpack Compose Desktop for JVM. Whether you want to format-shift your favorite music tracks, playlists, albums, or videos from YouTube and YouTube Music into clean, tagged local files, Stash has got your back. 
 
-## Supported Sources & Future Roadmap
-
-> [!IMPORTANT]
-> **Spotify Downloads are NOT Supported!**
-> Currently, Stash **does not** support downloading or parsing Spotify links (tracks, playlists, or albums) in the desktop application.
-> 
-> **Future Roadmap**: Spotify metadata-matching download support is planned and may be integrated in a future release.
+It's fast, it's pretty, and it actually works. Let's get you set up!
 
 ---
 
-## Architecture & How It Works
+## 🚀 How It works: The sequential pipeline
 
-Stash utilizes a strict **5-Phase Concurrent Batch Pipeline** designed to maximize downloading speed while maintaining stability and preventing system congestion or IP bans.
+Stash runs a super stable **5-Phase Sequential Batch Pipeline** that downloads and converts everything cleanly without choking your system or getting your IP banned. 
+
+![Stash Flow](app-resources/stash_download_flow.png)
 
 ```mermaid
 flowchart TD
     A["User pastes link in UI"] --> B["StashOrchestrator.processLink()"]
     B --> C["Phase 1: FETCH\n(Metadata Query via yt-dlp)"]
     C --> D["ManifestManager\n(Save metadata to temp JSON manifest)"]
-    D --> E["DownloadQueueManager\n(Concurrency Semaphores)"]
+    D --> E["DownloadQueueManager\n(Sequential execution)"]
     
-    E --> F["Phase 2: DOWNLOAD\n(Max 5 parallel tracks via yt-dlp)"]
-    F --> G["Phase 3: CONVERT\n(Max 3 parallel tracks via FFmpeg)"]
-    G --> H["Phase 4: TAG & MOVE\n(ID3v2.4 metadata + embed album art)"]
-    H --> I["Phase 5: CLEANUP\n(Deletes manifest & cache files)"]
+    E --> F["Phase 2: DOWNLOAD\n(Downloads track-by-track via yt-dlp)"]
+    F --> G["Phase 3: CONVERT\n(Transcodes one-by-one via FFmpeg)"]
+    G --> H["Phase 4: TAG & MOVE\n(ID3v2.4 tags + embed artwork)"]
+    H --> I["Phase 5: CLEANUP\n(Deletes manifest & temp cache files)"]
 ```
 
 ### The 5 Phases:
-1. **FETCH**: The application parses the input link (via regex in `LinkParser`). Metadata is queried from the source link and stored in a temporary JSON manifest file.
-2. **DOWNLOAD**: The queue processes tracks in parallel. Up to **5 concurrent downloads** are permitted using `yt-dlp` to extract the best audio streams, saving them to a temporary cache.
-3. **CONVERT**: Transcoding is handled in parallel (up to **3 concurrent conversions**) using `ffmpeg` to target the user's selected format (MP3 or AAC) and quality bitrate (Low/Mid/High).
-4. **TAG & MOVE**: Finished files are automatically tagged with ID3v2.4 metadata (including embedding high-resolution album artwork) using `mp3agic` and cleanly moved to the user's specified output directory.
+1. **FETCH**: Stash parses your link (using regex in `LinkParser`) and queries metadata using `yt-dlp`. It saves this metadata to a temporary JSON manifest file.
+2. **DOWNLOAD**: Tracks are downloaded sequentially (one-by-one) using `yt-dlp` to extract the best audio streams, saving them to a temporary cache.
+3. **CONVERT**: Transcoding is handled one-by-one using `ffmpeg` to target your selected format (MP3/AAC) and quality (Low/Mid/High).
+4. **TAG & MOVE**: Converted files are tagged with ID3v2.4 metadata (including high-resolution album artwork) using `mp3agic` and moved to your chosen output folder.
 5. **CLEANUP**: All cache and manifest files are deleted, leaving a clean workspace.
 
 ---
 
-## Features
+## 🛠️ Instalation & Dependecies
 
-- ⚡ **Concurrent Execution**: High-speed, semaphore-limited downloading and conversion.
-- ⏸ **Pause & Resume**: Individually pause any track in the queue to save bandwidth and resume it later. The download engine resumes from partial files seamlessly.
-- 📂 **Smart Folder Organization**: Downloads automatically group into subfolders named after the Album/Playlist for batches, while individual tracks download directly without creating subdirectories.
+Installing Stash is super easy. You have two main ways to get up and running:
+
+### Method 1: The Standalone Installer (Recommended)
+We compile a custom Windows MSI installer. The best part? **It bundles all dependecies!**
+- The installer includes `yt-dlp.exe`, `ffmpeg.exe`, and `ffprobe.exe` out of the box.
+- It will automatically set them up for you inside the application's resources folder. No manual PATH configuration needed!
+- **Post-Install Launch:** Once the installation finishes, you can check the "Launch Stash" box, and it will open the app automaticaly.
+
+To build the installer yourself:
+```cmd
+.\gradlew.bat :app:packageMsi
+```
+Find the MSI installer at:
+`app/build/compose/binaries/main/msi/Stash-1.3.0.msi`
+
+### Method 2: Running Locally from Source
+If you are running the project from source, you'll need:
+- **Java Development Kit (JDK) 17 or higher**
+- **FFmpeg & yt-dlp**: You can place `yt-dlp.exe`, `ffmpeg.exe`, and `ffprobe.exe` in `app-resources/windows/` before building, or Stash will ask to install them automatically for you inside the app when it starts up!
+
+To start the app in development mode:
+```cmd
+.\gradlew.bat :app:run
+```
+
+---
+
+## ✨ Cool Features
+
+- ⏸ **Pause & Resume**: You can pause any track in the queue to save bandwidth and resume it later. The download engine resumes from partial files seamlessly.
+- 📂 **Smart Folder Organization**: Downloads automatically group into subfolders named after the Album/Playlist. Individual tracks download directly without creating subdirectories.
 - 🔍 **YouTube Playlist Parsing**: Full support for playlist URLs (including watch-playlists with `&list=` parameters).
 - 🔄 **Self-Updating Dependency**: Check and update `yt-dlp` directly within the app UI.
 
 ---
 
-## Setup & Installation
-
-### Requirements
-- **Java Development Kit (JDK) 17+**
-- **FFmpeg & FFprobe**: Must be installed on your machine and available in your system's `PATH`.
-- **yt-dlp**: Must be installed on your machine and available in your system's `PATH` (can be updated within the app).
-
-### Running Locally
-Run the application using the Gradle wrapper:
-```cmd
-.\gradlew.bat :app:run
-```
-
-### Packaging the Windows MSI Installer
-To compile the production code and generate a standalone Windows MSI installer:
-```cmd
-.\gradlew.bat :app:packageMsi
-```
-The resulting installer is compiled with a custom installation wizard dialog box allowing custom path installation and shortcut generation. It will be located at:
-`app/build/compose/binaries/main/msi/Stash-1.0.0.msi`
-
----
-
-## Legal & Fair Use Status
+## ⚖️ Legal & Fair Use Status
 
 Stash is developed strictly as an educational project and personal archiving utility.
 
@@ -82,6 +83,6 @@ Stash is developed strictly as an educational project and personal archiving uti
 
 ---
 
-## License
+## 📝 License
 
 This project is open-source and released under the [MIT License](LICENSE).

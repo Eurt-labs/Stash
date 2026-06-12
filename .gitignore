@@ -17,6 +17,8 @@ local.properties
 /1209
 1209/
 1209
-/app-resources/
+/app-resources/*
+!/app-resources/stash_app_banner.png
+!/app-resources/stash_download_flow.png
 /download_dependencies.ps1
 /build-installer/
