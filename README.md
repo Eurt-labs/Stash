@@ -2,6 +2,8 @@
 
 ![Stash Banner](app-resources/stash_app_banner.png)
 
+![Rainbow Separator](https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139b6daec5c5.gif)
+
 Hey there! Welcome to **Stash**—a high-performance, elegant media downloader built with Jetpack Compose Desktop for JVM. Whether you want to format-shift your favorite music tracks, playlists, albums, or videos from YouTube and YouTube Music into clean, tagged local files, Stash has got your back. 
 
 It's fast, it's pretty, and it actually works. Let's get you set up!
@@ -38,20 +40,20 @@ flowchart TD
 
 ## 🛠️ Instalation & Dependecies
 
-Installing Stash is super easy. You have two main ways to get up and running:
+Installing Stash is super easy. We've got a couple of ways for you to get up and running:
 
-### Method 1: The Standalone Installer (Recommended)
-We compile a custom Windows MSI installer. The best part? **It bundles all dependecies!**
-- The installer includes `yt-dlp.exe`, `ffmpeg.exe`, and `ffprobe.exe` out of the box.
-- It will automatically set them up for you inside the application's resources folder. No manual PATH configuration needed!
-- **Post-Install Launch:** Once the installation finishes, you can check the "Launch Stash" box, and it will open the app automaticaly.
+### Method 1: The Provided Standalone Installer (Easiest!)
+We have already compiled and provided a standalone Windows MSI installer directly in this repository!
+* You can grab the installer from the [build-installer/](file:///c:/Projects/Stash/build-installer/) folder.
+* Simply run the [Stash-1.3.0.msi](file:///c:/Projects/Stash/build-installer/Stash-1.3.0.msi) file to install the application instantly.
+* **All dependecies are bundled!** The installer packages `yt-dlp.exe`, `ffmpeg.exe`, and `ffprobe.exe` out of the box and sets them up inside the application's resources folder. No manual environment PATH configuration needed!
+* **Post-Install Launch:** Once the installation finishes, check the "Launch Stash" box, and it will open the app automaticaly.
 
-To build the installer yourself:
+If you ever want to rebuild the installer yourself:
 ```cmd
 .\gradlew.bat :app:packageMsi
 ```
-Find the MSI installer at:
-`app/build/compose/binaries/main/msi/Stash-1.3.0.msi`
+The compiled MSI will be written to: `app/build/compose/binaries/main/msi/Stash-1.3.0.msi`
 
 ### Method 2: Running Locally from Source
 If you are running the project from source, you'll need:
@@ -61,6 +63,37 @@ If you are running the project from source, you'll need:
 To start the app in development mode:
 ```cmd
 .\gradlew.bat :app:run
+```
+
+---
+
+## 📦 Manual Dependency Installation Commands
+If you prefer installing the dependencies globally on your machine instead of using our automatic bundled/in-app downloaders:
+
+### Windows
+* **Using winget (Command Prompt / PowerShell):**
+  ```cmd
+  winget install yt-dlp
+  winget install Gyan.FFmpeg
+  ```
+* **Using scoop:**
+  ```cmd
+  scoop install yt-dlp ffmpeg
+  ```
+
+### macOS (using Homebrew)
+```bash
+brew install yt-dlp ffmpeg
+```
+
+### Linux (Debian/Ubuntu)
+```bash
+sudo apt update
+sudo apt install ffmpeg
+
+# Download and install the latest yt-dlp binary
+sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp
 ```
 
 ---
