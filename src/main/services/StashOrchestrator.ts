@@ -95,7 +95,7 @@ export class StashOrchestrator {
         this.onFetchingStatusChanged({ isFetching: true, message: `Querying metadata from ${parsed.platform}...` })
       }
 
-      const tracks = await this.downloadEngine.extractInfo(fetchUrl, false, (count) => {
+      const tracks = await this.downloadEngine.extractInfo(fetchUrl, isPlaylistOrSearch, (count) => {
         if (this.onFetchingStatusChanged) {
           this.onFetchingStatusChanged({ isFetching: true, message: `Discovered ${count} track(s)...` })
         }
@@ -216,21 +216,45 @@ export class StashOrchestrator {
           item.progress = 0
           this.notifyUpdate()
 
-          const downloadedRawPath = await this.downloadEngine.download(
-            targetUrl,
-            track,
-            cacheDir,
-            item.quality,
-            resolvedFormat,
-            item.id,
-            (percent, speed, eta) => {
-              item.progress = percent
-              item.speed = speed
-              item.eta = eta
-              item.statusMessage = `Downloading: ${percent.toFixed(1)}%`
-              this.notifyUpdate()
-            }
-          )
+          let downloadedRawPath: string
+          try {
+            downloadedRawPath = await this.downloadEngine.download(
+              targetUrl,
+              track,
+              cacheDir,
+              item.quality,
+              resolvedFormat,
+              item.id,
+              (percent, speed, eta) => {
+                item.progress = percent
+                item.speed = speed
+                item.eta = eta
+                item.statusMessage = `Downloading: ${percent.toFixed(1)}%`
+                this.notifyUpdate()
+              }
+            )
+          } catch (err: any) {
+            console.warn(`Direct download failed for "${track.title}", attempting fallback stream search...`, err)
+            item.statusMessage = 'Searching alternative stream...'
+            this.notifyUpdate()
+
+            const fallbackQuery = `ytsearch1:${track.artists.join(' ')} ${track.title} audio`
+            downloadedRawPath = await this.downloadEngine.download(
+              fallbackQuery,
+              track,
+              cacheDir,
+              item.quality,
+              resolvedFormat,
+              item.id,
+              (percent, speed, eta) => {
+                item.progress = percent
+                item.speed = speed
+                item.eta = eta
+                item.statusMessage = `Downloading: ${percent.toFixed(1)}%`
+                this.notifyUpdate()
+              }
+            )
+          }
 
           // ── Phase 3: CONVERT ──
           item.state = 'CONVERTING'

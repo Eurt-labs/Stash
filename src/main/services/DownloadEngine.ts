@@ -23,7 +23,9 @@ export class DownloadEngine {
       '--no-download',
       '--no-warnings',
       '--no-check-certificates',
-      '--socket-timeout', '30'
+      '--socket-timeout', '30',
+      '--ignore-errors',
+      '--no-abort-on-error'
     ]
     
     if (flatPlaylist) {

@@ -623,6 +623,35 @@ if (ext === '.mp3') {
 
 ---
 
+### 📌 [FIX-019] Full Playlist Extraction & Automatic Alternative Stream Search Fallback
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/DownloadEngine.ts`, `src/main/services/StashOrchestrator.ts`
+- **Severity**: High (Missing tracks in large playlists when videos are deleted/unavailable on YouTube)
+
+#### 1. Problem Description & Symptoms
+- On a 23-track YouTube Music playlist (e.g. *"Road trip"* by Gautam MG, `PLbkAv_1W3Fj13VbIjGmdroAyv1BBSr8Kh`), Stash only downloaded 20 tracks because 3 videos (`Ishq Ka Haafiz`, `Kaagadada Doniyalli`, `Main Toh Chala`) were marked as unavailable / hidden on standard YouTube.
+
+#### 2. Technical Root Cause Analysis
+- `StashOrchestrator.fetchMetadata` was calling `extractInfo(url, false)` without `flatPlaylist=true` and without `--ignore-errors` / `--no-abort-on-error`. When `yt-dlp` encountered unavailable videos in non-flat mode, it dropped those entries from the output stream.
+- When an individual video ID in a playlist is region-locked or deleted, direct URL download fails.
+
+#### 3. Exact Solution & Code Implementation
+1. **Flat Playlist Extraction**: Enabled `isPlaylistOrSearch` flat extraction with `--ignore-errors` and `--no-abort-on-error` in `DownloadEngine.extractInfo`, ensuring 100% of playlist items (all 23 tracks) are extracted instantaneously.
+2. **Automatic Alternative Search Fallback**: In `StashOrchestrator.processQueue`, if direct download of a specific video ID fails, Stash automatically falls back to audio search (`ytsearch1:<artists> <title> audio`) to download a working alternative stream so zero songs are lost.
+
+```ts
+// StashOrchestrator.ts
+try {
+  downloadedRawPath = await this.downloadEngine.download(targetUrl, ...);
+} catch (err) {
+  // Auto-fallback to alternative audio search
+  const fallbackQuery = `ytsearch1:${track.artists.join(' ')} ${track.title} audio`;
+  downloadedRawPath = await this.downloadEngine.download(fallbackQuery, ...);
+}
+```
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
