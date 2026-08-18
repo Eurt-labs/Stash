@@ -97,12 +97,14 @@ export const App: React.FC = () => {
   // Sync theme palette
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    document.body.setAttribute('data-theme', theme)
     localStorage.setItem('stash_theme', theme)
   }, [theme])
 
   // Sync dark/light mode
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode)
+    document.body.setAttribute('data-mode', mode)
     localStorage.setItem('stash_mode', mode)
   }, [mode])
 
