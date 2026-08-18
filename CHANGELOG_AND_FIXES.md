@@ -665,6 +665,18 @@ try {
 
 ---
 
+### 📌 [FIX-021] Unbundled Slim Installer (85MB) & Minimal Monochromatic Windows Application Icon
+- **Date**: 2026-08-18
+- **Files Modified**: `electron-builder.json`, `app-resources/icon.png`, `app-resources/icon.ico`, `app-resources/stash_logo.png`
+- **Severity**: Packaging & Branding Refactor
+
+#### 1. Description & Enhancement
+- **Unbundled Large Binaries**: Removed `extraResources` bundling `ffmpeg.exe`, `ffprobe.exe`, and `yt-dlp.exe` (~200MB) from the installer.
+- **Shrunk Installer Size**: Installer reduced from **267 MB** down to **85.9 MB** (`Stash Setup 2.0.0.exe`).
+- **Minimal Monochromatic Icon**: Replaced old neon/flash 3D icon with the sleek, monochromatic white music note & downward arrow icon on a dark matte squircle for both `icon.png` (512x512) and `icon.ico` (256x256 multi-res Windows executable icon).
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

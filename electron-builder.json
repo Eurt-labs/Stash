@@ -7,18 +7,13 @@
   "files": [
     "dist",
     "dist-electron",
-    "app-resources/**/*"
-  ],
-  "extraResources": [
-    {
-      "from": "app-resources/windows",
-      "to": "bin",
-      "filter": ["**/*"]
-    }
+    "app-resources/icon.png",
+    "app-resources/icon.ico",
+    "app-resources/*.svg"
   ],
   "win": {
     "target": ["nsis"],
-    "icon": "app-resources/icon.png",
+    "icon": "app-resources/icon.ico",
     "signAndEditExecutable": false
   },
   "forceCodeSigning": false,

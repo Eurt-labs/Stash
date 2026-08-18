@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0b0d13" stroke="rgba(255,255,255,0.12)" stroke-width="10"/>
+  <g transform="translate(64, 64) scale(3.84)">
+    <!-- Note Head Loop -->
+    <circle cx="36" cy="62" r="14" stroke="#ffffff" stroke-width="5.5" fill="none"/>
+    <!-- Stem & Arch -->
+    <path d="M50 62 V28 C50 15 70 15 70 28 V56" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Arrowhead -->
+    <path d="M59 46 L70 56 L81 46" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
