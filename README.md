@@ -1,12 +1,12 @@
 <div align="center">
 
-![Stash Banner](app-resources/hero.svg)
+![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.0)
 
 # Stash Media Downloader
 
 **A fast, lightweight desktop application for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music.**
 
-Built with Electron, Vite, React, TypeScript, and Framer Motion.
+Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas &amp; SVG Shaders.
 
 [![GitHub Release](https://img.shields.io/github/v/release/Eurt-labs/Stash?style=flat-square&color=6366f1)](https://github.com/Eurt-labs/Stash/releases)
 [![License](https://img.shields.io/badge/license-MIT-emerald?style=flat-square)](LICENSE)
@@ -28,7 +28,7 @@ Stash processes downloads through a deterministic **5-phase sequential pipeline*
 
 <div align="center">
 
-![Stash Pipeline](app-resources/pipeline.svg)
+![Stash Pipeline](app-resources/pipeline.svg?raw=true&v=2.0.0)
 
 </div>
 
