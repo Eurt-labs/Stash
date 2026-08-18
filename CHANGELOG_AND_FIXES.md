@@ -710,6 +710,40 @@ try {
 
 ---
 
+### 📌 [ARCH-001] In-App Self-Healing Update Architecture & Multi-Tier Stream Resilience Pipeline
+- **Date**: 2026-08-18
+- **Files Documented**: `src/main/services/DependencyResolver.ts`, `src/main/services/DownloadEngine.ts`, `src/renderer/src/components/DependencyModal.tsx`
+- **Topic**: Long-Term Future-Proofing & Stream Stability Mechanics
+
+#### 1. Detailed Mechanism: Point 3 — In-App Self-Healing Update Engine
+How Stash fetches and updates `yt-dlp` in real-time without app reinstallations:
+1. **Trigger & IPC Communication**:
+   - The user opens Settings (`DependencyModal.tsx`) and clicks **"Update yt-dlp"**, or the system invokes `window.stashAPI.updateYtDlp()`.
+   - The Electron main process catches the IPC event and delegates to `DependencyResolver.updateYtDlp()`.
+2. **Atomic Upstream Handshake**:
+   - `DependencyResolver` executes `yt-dlp --update-to nightly` directly on the local executable (`~/.stash/bin/yt-dlp.exe`).
+   - `yt-dlp` queries GitHub's API at `https://api.github.com/repos/yt-dlp/yt-dlp-nightly-builds/releases/latest`.
+   - It downloads the newest pre-compiled binary package, verifies cryptographic SHA-256 integrity, replaces the binary atomically in place, and cleans up temporary update buffers.
+3. **Live Cache Invalidation & UI Feedback**:
+   - `DependencyResolver.cachedStatus` is immediately invalidated (`null`).
+   - The new version string (e.g. `nightly@2026.08.18.122307`) is parsed and returned to the React frontend.
+   - The UI badge updates dynamically to green with the new version number in real-time.
+
+#### 2. Detailed Mechanism: Point 4 — Multi-Tier Stream Resilience & Retry Pipeline
+How Stash protects against network drops, socket timeouts, geo-restrictions, and YouTube rate-limits:
+1. **Chunk-Level Fragment Retries (`--fragment-retries 5`)**:
+   - YouTube HLS and DASH streams deliver media in small 2-to-5 second segmented chunks (`.ts` or `.m4s`).
+   - If a momentary ISP packet drop or CDN hiccup occurs during a fragment download, rather than aborting the entire 1-hour video/audio stream, `yt-dlp` retries only that specific dropped chunk up to 5 times.
+2. **Connection-Level HTTP Retries (`--retries 5`)**:
+   - If YouTube's load balancer closes the initial HTTP connection, the engine executes up to 5 automatic reconnections with exponential backoff before throwing an error.
+3. **Unresponsive Socket Timeout (`--socket-timeout 30`)**:
+   - Prevents downloads from freezing indefinitely if a CDN edge node becomes silent or throttled. If zero bytes are received for 30 seconds, the socket is recycled and retried.
+4. **Geo-Bypass & Bot Mitigation (`--geo-bypass`, `--user-agent`)**:
+   - Automatically injects regional proxy headers to bypass country-specific copyright geoblocks.
+   - Forwards a modern Chrome 128 desktop User-Agent string to match legitimate human browsing traffic.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
