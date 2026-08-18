@@ -1,6 +1,7 @@
 import React from 'react'
 import { Settings, DownloadCloud, Sun, Moon } from 'lucide-react'
 import { DependencyStatus, AppUpdateStatus, ThemeMode } from '../../../shared/types'
+import { Logo } from './Logo'
 
 interface HeaderProps {
   depStatus: DependencyStatus | null
@@ -19,11 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="header-container">
       <div className="brand-section">
-        <img
-          src="/stash_logo.png"
-          alt="Stash Logo"
-          className="brand-logo"
-        />
+        <Logo size={38} />
         <div className="brand-info">
           <h1>Stash Downloader</h1>
           <p>Download, convert, and tag media from YouTube, YouTube Music, and more ~By eurt-labs</p>
@@ -47,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-secondary btn-icon-only"
           onClick={onToggleMode}
-          title={mode === 'dark' ? 'Switch to Light Liquid Glass' : 'Switch to Dark Liquid Glass'}
+          title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {mode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>

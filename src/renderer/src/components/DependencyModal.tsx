@@ -17,6 +17,7 @@ import {
   Moon
 } from 'lucide-react'
 import { DependencyStatus, AppUpdateStatus, ColorTheme, ThemeMode } from '../../../shared/types'
+import { Logo } from './Logo'
 
 interface SettingsModalProps {
   status: DependencyStatus | null
@@ -195,11 +196,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
 
           <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img
-                src="/stash_logo.png"
-                alt="Logo"
-                style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover' }}
-              />
+              <Logo size={36} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   Stash Media Downloader

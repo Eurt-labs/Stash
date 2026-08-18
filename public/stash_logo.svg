@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#0c0e14"/>
+  <rect x="6" y="6" width="500" height="500" rx="106" stroke="#ffffff" stroke-opacity="0.1" stroke-width="6"/>
+  <!-- Minimalist Monochromatic Stash Geometric 'S' Mark -->
+  <path d="M352 148H210C171.34 148 140 179.34 140 218C140 256.66 171.34 288 210 288H302C340.66 288 372 319.34 372 358C372 396.66 340.66 428 302 428H160" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Precision Downward Indicator -->
+  <path d="M256 220V320" stroke="#ffffff" stroke-width="32" stroke-linecap="round"/>
+  <polyline points="214 278 256 320 298 278" stroke="#ffffff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
