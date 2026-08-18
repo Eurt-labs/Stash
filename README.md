@@ -1,77 +1,150 @@
-# ⚡ Stash Media Downloader v2.0 (Electron Edition)
+<div align="center">
 
-![Stash Banner](app-resources/stash_app_banner.png)
+![Stash Banner](app-resources/hero.svg)
 
-![Rainbow Separator](https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139b6daec5c5.gif)
+# Stash Media Downloader
 
-Welcome to **Stash**—a high-performance, elegant media downloader and converter built with **Electron, Vite, React, TypeScript, and modern Vanilla CSS**. 
+**A fast, lightweight desktop application for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music.**
 
-Whether you want to format-shift your favorite music tracks, playlists, albums, or videos from YouTube, YouTube Music, and other media sources into clean, tagged local files, Stash delivers a seamless, native desktop experience.
+Built with Electron, Vite, React, TypeScript, and Framer Motion.
+
+[![GitHub Release](https://img.shields.io/github/v/release/Eurt-labs/Stash?style=flat-square&color=6366f1)](https://github.com/Eurt-labs/Stash/releases)
+[![License](https://img.shields.io/badge/license-MIT-emerald?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-3b82f6?style=flat-square)](#prerequisites--dependencies)
+
+</div>
 
 ---
 
-## 🚀 The 5-Phase Sequential Pipeline
+## ⚡ What is Stash?
 
-Stash runs a stable, sequential batch pipeline that downloads and converts media without choking your system:
+Stash is an open-source desktop tool that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local drive. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
 
-![Stash Flow](app-resources/stash_download_flow.png)
+---
 
-```mermaid
-flowchart TD
-    A["User pastes URL or artist query in UI"] --> B["StashOrchestrator.fetchMetadata()"]
-    B --> C["Phase 1: FETCH\n(Metadata Query via yt-dlp)"]
-    C --> D["Batch Queue Created\n(Track info, artwork URLs, formats)"]
-    D --> E["DownloadQueueRunner\n(Sequential processing)"]
-    
-    E --> F["Phase 2: DOWNLOAD\n(Raw stream via yt-dlp with live progress)"]
-    F --> G["Phase 3: CONVERT\n(Audio/Video transcoding via FFmpeg)"]
-    G --> H["Phase 4: TAG & MOVE\n(ID3v2.4 tags + embed cover art)"]
-    H --> I["Phase 5: CLEANUP\n(Deletes temp cache files)"]
+## 🔄 How It Works
+
+Stash processes downloads through a deterministic **5-phase sequential pipeline** to prevent system lockups during large playlist conversions:
+
+<div align="center">
+
+![Stash Pipeline](app-resources/pipeline.svg)
+
+</div>
+
+1. **Input & Parse**: Accepts direct URLs (video, playlist, album, artist) or plain-text artist searches.
+2. **Fetch Metadata**: Scrapes track titles, artists, album names, durations, and high-res thumbnail URLs via `yt-dlp`.
+3. **Download Stream**: Downloads the best available raw audio or video stream into a temporary working cache with live speed and ETA reporting.
+4. **Transcode (FFmpeg)**: Converts the raw stream into your chosen target format and bitrate preset (`High 320k`, `Mid 192k`, `Low 128k`).
+5. **Tag & Move**: Embeds ID3v2.4 metadata and cover artwork using `node-id3`, then moves the final file to your selected output directory and purges the temp cache.
+
+---
+
+## 🛠️ Prerequisites & Dependencies
+
+Stash relies on two core command-line tools under the hood:
+- **`yt-dlp`** — Stream extraction and metadata parser.
+- **`ffmpeg` / `ffprobe`** — Audio and video transcoding engine.
+
+### Automatic Windows Setup
+If you are running on Windows, Stash includes a helper script that downloads the latest official binaries directly into `app-resources/windows/`:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\download_dependencies.ps1
 ```
 
-### The 5 Phases:
-1. **FETCH**: Stash parses your link or artist query, querying metadata using `yt-dlp`.
-2. **DOWNLOAD**: Streams are downloaded sequentially using `yt-dlp` to extract the best audio or video streams into temporary cache.
-3. **CONVERT**: Transcoding is handled one-by-one using `ffmpeg` to target your selected format (MP3, AAC, FLAC, OPUS, WAV, MP4) and quality bitrate (High / Mid / Low).
-4. **TAG & MOVE**: Converted files are tagged with ID3v2.4 metadata (including high-resolution album artwork) and moved to your output folder.
-5. **CLEANUP**: Temp cache files are deleted automatically.
+### Manual Installation by Platform
+
+#### Windows
+```powershell
+# Using winget (Recommended)
+winget install yt-dlp.yt-dlp Gyan.FFmpeg
+
+# Or using Chocolatey
+choco install yt-dlp ffmpeg
+```
+
+#### macOS
+```bash
+# Using Homebrew
+brew install yt-dlp ffmpeg
+```
+
+#### Linux (Debian / Ubuntu / Arch / Fedora)
+```bash
+# Ubuntu / Debian
+sudo apt update && sudo apt install ffmpeg yt-dlp
+
+# Arch Linux
+sudo pacman -S ffmpeg yt-dlp
+
+# Fedora
+sudo dnf install ffmpeg yt-dlp
+```
 
 ---
 
-## 🛠️ Quick Start & Development
+## 🚀 Getting Started Locally
 
-### Prerequisites
-- **Node.js**: v18+ (Node.js v24 recommended)
-- **npm**: v9+
-- **Bundled Binaries**: `yt-dlp.exe`, `ffmpeg.exe`, and `ffprobe.exe` are already bundled in `app-resources/windows/`!
+### 1. Clone the repository
+```bash
+git clone https://github.com/Eurt-labs/Stash.git
+cd Stash
+```
 
-### 1. Install Dependencies
+### 2. Install Node dependencies
 ```bash
 npm install
 ```
 
-### 2. Run in Development Mode
+### 3. Run in development mode
 ```bash
 npm run dev
 ```
 
-### 3. Build & Package for Windows (.exe / .msi)
+### 4. Build for production (Windows `.exe` / `.msi`)
 ```bash
 npm run package:win
+```
+The compiled installer will be generated in the `release/` folder.
+
+---
+
+## ✨ Features
+
+- **Broad Platform Support**: Works with YouTube videos, Shorts, playlists, YouTube Music tracks, albums, artist channels, and plain-text search queries.
+- **Transcoding Options**:
+  - **Formats**: Auto-Detect, MP3, AAC, FLAC (lossless), OPUS, WAV, MP4 video.
+  - **Quality Presets**: High (320kbps / 1080p), Mid (192kbps / 720p), Low (128kbps / 360p).
+- **Automated Metadata & Cover Art**: Embeds ID3v2.4 tags (Title, Artist, Album, Year, Genre) and full-quality album artwork.
+- **7 Built-in Color Themes**: Linear Indigo, Emerald Mint, Sunset Rose, Ocean Sapphire, Amber Gold, Crimson Red, and OLED Monochrome with instant live switching.
+- **In-App Tool & Release Checker**: Checks for new `yt-dlp` binary updates and alerts you if a newer version of Stash is published on GitHub.
+- **Fluid Desktop UI**: Ambient animated SVG background paths powered by Framer Motion, with clean keyboard shortcuts and responsive scaling.
+
+---
+
+## 📁 Project Structure
+
+```text
+Stash/
+├── app-resources/          # Application logo, animated SVGs, and bundled binaries
+├── src/
+│   ├── main/               # Electron main process
+│   │   ├── services/       # Orchestrator, LinkParser, DownloadEngine, ConversionEngine, MetadataTagger
+│   │   ├── main.ts         # Main process window and IPC handlers
+│   │   └── preload.ts      # Context bridge exposing safe IPC API
+│   ├── renderer/           # React frontend UI
+│   │   ├── src/
+│   │   │   ├── components/ # Header, SettingsBar, LinkInputBar, BatchItem, TrackCard, SettingsModal
+│   │   │   ├── index.css   # Clean handcrafted dark design system
+│   │   │   └── App.tsx     # Root application component
+│   └── shared/             # Shared TypeScript types and interfaces
+├── electron-builder.json   # Windows NSIS / MSI installer packaging configuration
+├── vite.config.ts          # Vite + Electron plugin configuration
+└── package.json
 ```
 
 ---
 
-## 📦 Features
-- ⚡ **Multi-Platform Support**: YouTube Videos, Shorts, Playlists, YouTube Music Tracks/Albums/Playlists/Artists, and generic URLs.
-- 🎨 **State-of-the-Art UI**: Glassmorphic dark aesthetic, real-time download progress with speeds and ETAs, collapsible batches, and toast notifications.
-- 🎵 **Quality & Format Selection**:
-  - Formats: Auto-Detect, MP3, AAC, FLAC, OPUS, WAV, MP4.
-  - Presets: High (320kbps / 1080p), Mid (192kbps / 720p), Low (128kbps / 360p).
-- 🏷️ **Automated ID3v2.4 Tagging**: Embedded artist, album, title, year, genre, and high-res cover art.
-- 🛡️ **Built-in Tool Manager**: Built-in status checker and one-click `yt-dlp` updates.
-
----
-
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+This project is open source and available under the [MIT License](LICENSE).

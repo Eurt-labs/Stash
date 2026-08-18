@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pipeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c0e14" />
+      <stop offset="100%" stop-color="#111420" />
+    </linearGradient>
+
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181c2b" />
+      <stop offset="100%" stop-color="#121522" />
+    </linearGradient>
+
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+
+    <filter id="packetGlow">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <style>
+      @keyframes travelPacket {
+        0% { transform: translateX(0px); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateX(650px); opacity: 0; }
+      }
+      @keyframes dashMove {
+        to { stroke-dashoffset: -32; }
+      }
+      @keyframes nodePulse {
+        0%, 100% { border-color: rgba(255,255,255,0.08); }
+        50% { border-color: rgba(99, 102, 241, 0.4); }
+      }
+      .dash-line {
+        stroke-dasharray: 6,6;
+        animation: dashMove 1.5s linear infinite;
+      }
+      .data-packet {
+        animation: travelPacket 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      .mono-title { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      .sans-font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background Box -->
+  <rect width="900" height="220" rx="14" fill="url(#pipeBg)" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+
+  <!-- Section Title & Subtitle -->
+  <text x="32" y="34" class="sans-font" font-size="14" font-weight="700" fill="#f8fafc" letter-spacing="-0.01em">
+    Sequential 5-Phase Media Pipeline
+  </text>
+  <text x="32" y="52" class="sans-font" font-size="11.5" fill="#818cf8">
+    Deterministic single-task processing prevents thread starvation and ensures 100% stable transcoding
+  </text>
+
+  <!-- Main Connecting Animated Pipeline Line -->
+  <g transform="translate(100, 120)">
+    <!-- Base track line -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="rgba(255,255,255,0.08)" stroke-width="3" />
+    <!-- Animated dashed line -->
+    <line x1="0" y1="0" x2="700" y2="0" stroke="url(#lineGrad)" stroke-width="3" class="dash-line" />
+
+    <!-- Animated Data Packet Pulse -->
+    <circle cx="0" cy="0" r="5" fill="#60a5fa" filter="url(#packetGlow)" class="data-packet" />
+  </g>
+
+  <!-- 5 Pipeline Nodes -->
+  <!-- Node 1: Input / Parse -->
+  <g transform="translate(48, 80)">
+    <rect width="130" height="84" rx="10" fill="url(#nodeGrad)" stroke="rgba(99,102,241,0.3)" stroke-width="1.2" />
+    <rect x="10" y="10" width="22" height="18" rx="4" fill="rgba(99,102,241,0.15)" />
+    <text x="21" y="23" class="mono-title" font-size="10" font-weight="700" fill="#818cf8" text-anchor="middle">01</text>
+    <text x="38" y="24" class="sans-font" font-size="12.5" font-weight="700" fill="#f8fafc">Input Link</text>
+    <text x="12" y="48" class="sans-font" font-size="10.5" fill="#94a3b8">YouTube / Music</text>
+    <text x="12" y="64" class="sans-font" font-size="10.5" fill="#64748b">Search / Playlist</text>
+  </g>
+
+  <!-- Node 2: Fetch Metadata -->
+  <g transform="translate(218, 80)">
+    <rect width="130" height="84" rx="10" fill="url(#nodeGrad)" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+    <rect x="10" y="10" width="22" height="18" rx="4" fill="rgba(255,255,255,0.06)" />
+    <text x="21" y="23" class="mono-title" font-size="10" font-weight="700" fill="#94a3b8" text-anchor="middle">02</text>
+    <text x="38" y="24" class="sans-font" font-size="12.5" font-weight="700" fill="#f8fafc">Fetch Info</text>
+    <text x="12" y="48" class="sans-font" font-size="10.5" fill="#94a3b8">yt-dlp Dump JSON</text>
+    <text x="12" y="64" class="sans-font" font-size="10.5" fill="#64748b">Artwork URLs</text>
+  </g>
+
+  <!-- Node 3: Download Stream -->
+  <g transform="translate(388, 80)">
+    <rect width="130" height="84" rx="10" fill="url(#nodeGrad)" stroke="rgba(16,185,129,0.3)" stroke-width="1.2" />
+    <rect x="10" y="10" width="22" height="18" rx="4" fill="rgba(16,185,129,0.15)" />
+    <text x="21" y="23" class="mono-title" font-size="10" font-weight="700" fill="#34d399" text-anchor="middle">03</text>
+    <text x="38" y="24" class="sans-font" font-size="12.5" font-weight="700" fill="#f8fafc">Download</text>
+    <text x="12" y="48" class="sans-font" font-size="10.5" fill="#94a3b8">Raw Audio/Video</text>
+    <text x="12" y="64" class="sans-font" font-size="10.5" fill="#64748b">Live Speed &amp; ETA</text>
+  </g>
+
+  <!-- Node 4: Transcode FFmpeg -->
+  <g transform="translate(558, 80)">
+    <rect width="130" height="84" rx="10" fill="url(#nodeGrad)" stroke="rgba(245,158,11,0.3)" stroke-width="1.2" />
+    <rect x="10" y="10" width="22" height="18" rx="4" fill="rgba(245,158,11,0.15)" />
+    <text x="21" y="23" class="mono-title" font-size="10" font-weight="700" fill="#fbbf24" text-anchor="middle">04</text>
+    <text x="38" y="24" class="sans-font" font-size="12.5" font-weight="700" fill="#f8fafc">Transcode</text>
+    <text x="12" y="48" class="sans-font" font-size="10.5" fill="#94a3b8">FFmpeg 320k MP3</text>
+    <text x="12" y="64" class="sans-font" font-size="10.5" fill="#64748b">FLAC / AAC / OPUS</text>
+  </g>
+
+  <!-- Node 5: ID3 Tag & Save -->
+  <g transform="translate(728, 80)">
+    <rect width="124" height="84" rx="10" fill="url(#nodeGrad)" stroke="rgba(59,130,246,0.3)" stroke-width="1.2" />
+    <rect x="10" y="10" width="22" height="18" rx="4" fill="rgba(59,130,246,0.15)" />
+    <text x="21" y="23" class="mono-title" font-size="10" font-weight="700" fill="#60a5fa" text-anchor="middle">05</text>
+    <text x="38" y="24" class="sans-font" font-size="12.5" font-weight="700" fill="#f8fafc">Tag &amp; Save</text>
+    <text x="12" y="48" class="sans-font" font-size="10.5" fill="#94a3b8">ID3v2.4 Metadata</text>
+    <text x="12" y="64" class="sans-font" font-size="10.5" fill="#64748b">Embedded Art</text>
+  </g>
+</svg>

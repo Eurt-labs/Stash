@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c0e14" />
+      <stop offset="50%" stop-color="#111420" />
+      <stop offset="100%" stop-color="#090b10" />
+    </linearGradient>
+
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181c2b" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#121520" stop-opacity="0.9" />
+    </linearGradient>
+
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="pathGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.1" />
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="subtleGlow">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <style>
+      @keyframes floatPath1 {
+        0% { transform: translateY(0px) scaleY(1); opacity: 0.2; }
+        50% { transform: translateY(-15px) scaleY(1.08); opacity: 0.4; }
+        100% { transform: translateY(0px) scaleY(1); opacity: 0.2; }
+      }
+      @keyframes floatPath2 {
+        0% { transform: translateY(0px) scaleX(1); opacity: 0.15; }
+        50% { transform: translateY(18px) scaleX(1.05); opacity: 0.35; }
+        100% { transform: translateY(0px) scaleX(1); opacity: 0.15; }
+      }
+      @keyframes progressAnim {
+        0% { width: 12px; }
+        60% { width: 220px; }
+        90% { width: 270px; }
+        100% { width: 12px; }
+      }
+      @keyframes pulseDot {
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.4); opacity: 1; filter: drop-shadow(0 0 6px #10b981); }
+      }
+      @keyframes badgePulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
+      }
+      .path-anim-1 { animation: floatPath1 12s ease-in-out infinite; }
+      .path-anim-2 { animation: floatPath2 16s ease-in-out infinite; }
+      .progress-fill { animation: progressAnim 8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+      .pulse-dot { animation: pulseDot 2s ease-in-out infinite; transform-origin: center; }
+      .brand-glow { animation: badgePulse 4s ease-in-out infinite; }
+      .mono-text { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      .sans-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Container Box -->
+  <rect width="900" height="320" rx="16" fill="url(#bgGrad)" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+
+  <!-- Flowing Animated Background Paths -->
+  <g class="path-anim-1">
+    <path d="M-50,220 C150,120 280,300 520,180 C700,100 800,240 950,150" fill="none" stroke="url(#pathGrad)" stroke-width="2.5" />
+    <path d="M-80,180 C120,280 320,100 560,240 C720,160 820,290 980,190" fill="none" stroke="url(#pathGrad)" stroke-width="1.8" />
+  </g>
+  <g class="path-anim-2">
+    <path d="M-30,80 C180,220 380,40 600,160 C780,260 850,80 940,120" fill="none" stroke="url(#pathGrad)" stroke-width="2" />
+    <path d="M-60,130 C140,40 340,240 580,90 C760,200 840,50 960,100" fill="none" stroke="url(#pathGrad)" stroke-width="1.2" stroke-dasharray="6,6" />
+  </g>
+
+  <!-- Ambient Light Orbs -->
+  <circle cx="200" cy="100" r="140" fill="#6366f1" opacity="0.08" filter="url(#glow)" />
+  <circle cx="720" cy="220" r="120" fill="#10b981" opacity="0.05" filter="url(#glow)" />
+
+  <!-- Left Side: Brand & Identity -->
+  <g transform="translate(48, 48)">
+    <!-- App Logo Squircle Icon -->
+    <g class="brand-glow">
+      <rect x="0" y="0" width="64" height="64" rx="16" fill="#161a29" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+      <!-- Logo Graphic: Lightning bolt + Note + Arrow -->
+      <path d="M34,14 L20,34 L31,34 L27,50 L44,28 L33,28 Z" fill="url(#primaryGrad)" filter="url(#subtleGlow)" />
+      <circle cx="45" cy="42" r="5" fill="#34d399" />
+      <path d="M50,42 L50,22 C50,20 46,18 42,19" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+
+    <!-- Main Title & Subtitle -->
+    <text x="82" y="34" class="sans-text" font-size="28" font-weight="800" fill="#f8fafc" letter-spacing="-0.03em">
+      STASH
+    </text>
+    <rect x="186" y="16" width="62" height="22" rx="6" fill="rgba(99, 102, 241, 0.15)" stroke="rgba(99, 102, 241, 0.3)" stroke-width="1" />
+    <text x="217" y="31" class="mono-text" font-size="11" font-weight="700" fill="#a5b4fc" text-anchor="middle">
+      v2.0
+    </text>
+
+    <text x="82" y="55" class="sans-text" font-size="13" font-weight="500" fill="#94a3b8">
+      High-Speed Desktop Media Downloader &amp; Tag Transcoder
+    </text>
+
+    <!-- Description Paragraph -->
+    <text x="0" y="105" class="sans-text" font-size="13.5" fill="#cbd5e1" font-weight="400" line-height="1.5">
+      Download music, playlists, albums &amp; videos from YouTube &amp; YouTube Music.
+    </text>
+    <text x="0" y="128" class="sans-text" font-size="13.5" fill="#94a3b8" font-weight="400">
+      Transcode with FFmpeg to 320kbps MP3 / FLAC and auto-embed ID3 cover art.
+    </text>
+
+    <!-- Feature Pills -->
+    <g transform="translate(0, 162)">
+      <!-- Pill 1 -->
+      <rect x="0" y="0" width="112" height="28" rx="6" fill="#181c2b" stroke="rgba(255,255,255,0.08)" />
+      <circle cx="14" cy="14" r="4" fill="#6366f1" />
+      <text x="26" y="18" class="sans-text" font-size="11.5" font-weight="600" fill="#e2e8f0">YouTube Music</text>
+
+      <!-- Pill 2 -->
+      <rect x="120" y="0" width="105" height="28" rx="6" fill="#181c2b" stroke="rgba(255,255,255,0.08)" />
+      <circle cx="134" cy="14" r="4" fill="#10b981" />
+      <text x="146" y="18" class="sans-text" font-size="11.5" font-weight="600" fill="#e2e8f0">320k Transcode</text>
+
+      <!-- Pill 3 -->
+      <rect x="233" y="0" width="105" height="28" rx="6" fill="#181c2b" stroke="rgba(255,255,255,0.08)" />
+      <circle cx="247" cy="14" r="4" fill="#f59e0b" />
+      <text x="259" y="18" class="sans-text" font-size="11.5" font-weight="600" fill="#e2e8f0">ID3v2.4 Tags</text>
+
+      <!-- Pill 4 -->
+      <rect x="346" y="0" width="85" height="28" rx="6" fill="#181c2b" stroke="rgba(255,255,255,0.08)" />
+      <circle cx="360" cy="14" r="4" fill="#3b82f6" />
+      <text x="372" y="18" class="sans-text" font-size="11.5" font-weight="600" fill="#e2e8f0">Playlists</text>
+    </g>
+  </g>
+
+  <!-- Right Side: Live Mock Interactive Download Card -->
+  <g transform="translate(520, 42)">
+    <!-- Main Card Box -->
+    <rect width="332" height="236" rx="14" fill="url(#cardGrad)" stroke="rgba(255,255,255,0.1)" stroke-width="1.2" />
+
+    <!-- Card Header -->
+    <g transform="translate(18, 18)">
+      <circle cx="6" cy="6" r="5.5" fill="#ef4444" opacity="0.8" />
+      <circle cx="22" cy="6" r="5.5" fill="#f59e0b" opacity="0.8" />
+      <circle cx="38" cy="6" r="5.5" fill="#10b981" opacity="0.8" />
+      <text x="296" y="10" class="mono-text" font-size="10.5" fill="#64748b" text-anchor="end">BATCH #01</text>
+    </g>
+
+    <!-- Simulated Track Item Row -->
+    <g transform="translate(18, 48)">
+      <!-- Thumbnail Mock -->
+      <rect width="44" height="44" rx="8" fill="#1f2438" stroke="rgba(255,255,255,0.08)" />
+      <path d="M16,14 L30,22 L16,30 Z" fill="#6366f1" opacity="0.7" />
+
+      <!-- Title & Artist -->
+      <text x="56" y="18" class="sans-text" font-size="13" font-weight="600" fill="#f8fafc">
+        Starboy (feat. Daft Punk)
+      </text>
+      <text x="56" y="34" class="sans-text" font-size="11" fill="#818cf8">
+        The Weeknd • Starboy • 3:50
+      </text>
+    </g>
+
+    <!-- Badges Row -->
+    <g transform="translate(18, 106)">
+      <rect width="42" height="20" rx="4" fill="rgba(255,255,255,0.06)" />
+      <text x="21" y="14" class="mono-text" font-size="9.5" font-weight="600" fill="#e2e8f0" text-anchor="middle">MP3</text>
+
+      <rect x="48" y="0" width="56" height="20" rx="4" fill="rgba(255,255,255,0.06)" />
+      <text x="76" y="14" class="mono-text" font-size="9.5" font-weight="600" fill="#e2e8f0" text-anchor="middle">320kbps</text>
+
+      <rect x="110" y="0" width="70" height="20" rx="4" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.3)" />
+      <circle cx="120" cy="10" r="3" fill="#10b981" class="pulse-dot" />
+      <text x="146" y="14" class="mono-text" font-size="9.5" font-weight="600" fill="#34d399" text-anchor="middle">ENCODING</text>
+    </g>
+
+    <!-- Progress Bar & Speed Stats -->
+    <g transform="translate(18, 142)">
+      <rect width="296" height="6" rx="3" fill="rgba(255,255,255,0.08)" />
+      <rect class="progress-fill" width="220" height="6" rx="3" fill="url(#primaryGrad)" />
+
+      <!-- Progress Labels -->
+      <text x="0" y="24" class="mono-text" font-size="11" fill="#94a3b8">
+        ↓ 14.8 MB/s
+      </text>
+      <text x="296" y="24" class="mono-text" font-size="11" font-weight="600" fill="#a5b4fc" text-anchor="end">
+        84% • ETA 0:02
+      </text>
+    </g>
+
+    <!-- Output Folder Confirmation Tag -->
+    <g transform="translate(18, 190)">
+      <rect width="296" height="28" rx="6" fill="#131722" stroke="rgba(255,255,255,0.06)" />
+      <path d="M12,18 L12,10 L18,10 L20,12 L26,12 L26,18 Z" fill="none" stroke="#64748b" stroke-width="1.2" />
+      <text x="32" y="18" class="mono-text" font-size="10.5" fill="#64748b">
+        /Downloads/Stash/Music/Starboy.mp3
+      </text>
+    </g>
+  </g>
+</svg>
