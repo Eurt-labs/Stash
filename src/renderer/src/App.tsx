@@ -15,7 +15,7 @@ import { LinkInputBar } from './components/LinkInputBar'
 import { BatchItem } from './components/BatchItem'
 import { DependencyModal } from './components/DependencyModal'
 import { Toast, ToastItem } from './components/Toast'
-import { FloatingPaths } from './components/ui/background-paths'
+import { FloatingPaths } from './components/BackgroundPaths'
 import { ListMusic, Trash2 } from 'lucide-react'
 
 export const App: React.FC = () => {
