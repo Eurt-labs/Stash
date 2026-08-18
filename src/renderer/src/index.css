@@ -51,23 +51,23 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
-/* ── Light Mode System (Ultra-Translucent Glass for high artwork visibility) ── */
+/* ── Light Mode System (High-Contrast Frosted Liquid Glass & Deep Typography) ── */
 [data-mode='light'] {
-  --bg-main: transparent;
-  --glass-card: rgba(255, 255, 255, 0.28);
-  --glass-card-hover: rgba(255, 255, 255, 0.45);
-  --glass-card-subtle: rgba(255, 255, 255, 0.18);
-  --glass-input: rgba(255, 255, 255, 0.38);
-  --glass-elevated: rgba(255, 255, 255, 0.65);
+  --bg-main: #f8fafc;
+  --glass-card: rgba(255, 255, 255, 0.72);
+  --glass-card-hover: rgba(255, 255, 255, 0.88);
+  --glass-card-subtle: rgba(255, 255, 255, 0.5);
+  --glass-input: rgba(255, 255, 255, 0.85);
+  --glass-elevated: rgba(255, 255, 255, 0.94);
 
-  --border-subtle: rgba(255, 255, 255, 0.35);
-  --border-medium: rgba(0, 0, 0, 0.15);
-  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 8px 28px 0 rgba(15, 23, 42, 0.08);
-  --glass-shadow-sm: 0 2px 10px 0 rgba(15, 23, 42, 0.06);
+  --border-subtle: rgba(0, 0, 0, 0.09);
+  --border-medium: rgba(0, 0, 0, 0.18);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 10px 30px 0 rgba(15, 23, 42, 0.07);
+  --glass-shadow-sm: 0 2px 10px 0 rgba(15, 23, 42, 0.05);
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-primary: #090d16;
+  --text-secondary: #1e293b;
+  --text-muted: #475569;
   --text-inverse: #ffffff;
   --placeholder-color: #64748b;
 }
