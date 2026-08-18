@@ -744,6 +744,24 @@ How Stash protects against network drops, socket timeouts, geo-restrictions, and
 
 ---
 
+### 📌 [FIX-024] Automated On-Demand yt-dlp Nightly Direct Bootstrap for Unbundled Clean Builds
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/DependencyResolver.ts`, `src/main/services/StashOrchestrator.ts`
+- **Severity**: Critical (Seamless out-of-the-box operation on unbundled clean builds)
+
+#### 1. Problem Description & Symptoms
+- When a user installs Stash using the clean, unbundled installer (~85MB) without bundled binaries and without system PATH setup, `yt-dlp.exe` is initially absent on the user's computer.
+
+#### 2. Technical Root Cause Analysis
+- Without local bundling, `DependencyResolver` needs an automatic bootstrap mechanism to fetch the standalone executable directly via HTTPS rather than throwing an executable not found error.
+
+#### 3. Exact Solution & Code Implementation
+- Implemented `installYtDlpDirect()` in `DependencyResolver.ts`: Downloads `yt-dlp.exe` nightly directly from official GitHub releases to `~/.stash/bin/yt-dlp.exe` via Axios streaming.
+- Connected auto-bootstrap in `StashOrchestrator.ts`: Automatically initializes `yt-dlp` in the background on the user's first search/download with status notifications.
+- Updated `updateYtDlp()` to automatically trigger `installYtDlpDirect()` if the binary is not yet present on the machine.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

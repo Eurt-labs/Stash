@@ -15,6 +15,7 @@ import { DownloadEngine } from './DownloadEngine'
 import { ConversionEngine } from './ConversionEngine'
 import { MetadataTagger } from './MetadataTagger'
 import { FileManager } from './FileManager'
+import { DependencyResolver } from './DependencyResolver'
 
 export class StashOrchestrator {
   private outputDir: string = FileManager.getDefaultDownloadDir()
@@ -88,6 +89,14 @@ export class StashOrchestrator {
     }
 
     try {
+      const depStatus = await DependencyResolver.getDependencyStatus()
+      if (!depStatus.ytDlpInstalled) {
+        if (this.onFetchingStatusChanged) {
+          this.onFetchingStatusChanged({ isFetching: true, message: 'Initializing yt-dlp nightly engine...' })
+        }
+        await DependencyResolver.installYtDlpDirect()
+      }
+
       let fetchUrl = parsed.originalUrl
       const isPlaylistOrSearch = parsed.contentType === 'playlist' || parsed.contentType === 'album' || parsed.originalUrl.startsWith('ytsearch')
 

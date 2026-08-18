@@ -2,6 +2,7 @@ import { spawn, execFile } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import axios from 'axios'
 import { app } from 'electron'
 import { DependencyStatus } from '../../shared/types'
 
@@ -120,13 +121,61 @@ export class DependencyResolver {
   }
 
   /**
-   * Updates yt-dlp by running `yt-dlp -U` or refreshing the executable
+   * Downloads and initializes yt-dlp nightly binary directly into ~/.stash/bin/yt-dlp.exe
    */
-  public static updateYtDlp(): Promise<{ success: boolean; message: string }> {
+  public static async installYtDlpDirect(): Promise<{ success: boolean; message: string }> {
+    const userBinDir = path.join(os.homedir(), '.stash', 'bin')
+    if (!fs.existsSync(userBinDir)) {
+      try {
+        fs.mkdirSync(userBinDir, { recursive: true })
+      } catch (err) {
+        console.error('Failed to create ~/.stash/bin directory:', err)
+      }
+    }
+
+    const destPath = path.join(userBinDir, 'yt-dlp.exe')
+    const url = 'https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.exe'
+
+    try {
+      const response = await axios({
+        method: 'GET',
+        url,
+        responseType: 'stream',
+        timeout: 60000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+        }
+      })
+
+      const writer = fs.createWriteStream(destPath)
+      response.data.pipe(writer)
+
+      await new Promise<void>((resolve, reject) => {
+        writer.on('finish', () => resolve())
+        writer.on('error', (err) => reject(err))
+      })
+
+      this.cachedStatus = null
+      return { success: true, message: 'yt-dlp nightly has been successfully downloaded and initialized!' }
+    } catch (err: any) {
+      return { success: false, message: `Failed to download yt-dlp: ${err.message}` }
+    }
+  }
+
+  /**
+   * Updates yt-dlp by running `yt-dlp --update-to nightly` or downloading it directly if missing
+   */
+  public static async updateYtDlp(): Promise<{ success: boolean; message: string }> {
+    const status = await this.getDependencyStatus(true)
+
+    // If yt-dlp is not installed at all, perform a direct download bootstrap
+    if (!status.ytDlpInstalled) {
+      return this.installYtDlpDirect()
+    }
+
     return new Promise((resolve) => {
       const ytDlpPath = this.resolveExecutable('yt-dlp')
       execFile(ytDlpPath, ['--update-to', 'nightly'], { timeout: 60000 }, async (error, stdout, stderr) => {
-        // Invalidate cache so subsequent checks fetch the latest version string
         this.cachedStatus = null
 
         const output = `${stdout || ''} ${stderr || ''}`.trim()
@@ -142,7 +191,7 @@ export class DependencyResolver {
           } else if (isUpdated) {
             resolve({
               success: true,
-              message: output || 'yt-dlp has been updated to the latest version!'
+              message: output || 'yt-dlp has been updated to the latest nightly version!'
             })
           } else {
             resolve({
@@ -151,10 +200,9 @@ export class DependencyResolver {
             })
           }
         } else {
-          resolve({
-            success: false,
-            message: output || error.message || 'Update check encountered an error. Please verify internet connection.'
-          })
+          // If update failed, fallback to direct download bootstrap
+          const directResult = await this.installYtDlpDirect()
+          resolve(directResult)
         }
       })
     })
