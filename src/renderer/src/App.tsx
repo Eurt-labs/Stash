@@ -3,6 +3,7 @@ import {
   DownloadBatch,
   DownloadQuality,
   DownloadFormat,
+  ColorTheme,
   DependencyStatus,
   AppUpdateStatus,
   TrackInfo
@@ -20,6 +21,9 @@ export const App: React.FC = () => {
   const [outputDir, setOutputDir] = useState('')
   const [quality, setQuality] = useState<DownloadQuality>('HIGH')
   const [format, setFormat] = useState<DownloadFormat>('AUTO')
+  const [theme, setTheme] = useState<ColorTheme>(() => {
+    return (localStorage.getItem('stash_theme') as ColorTheme) || 'indigo'
+  })
 
   const [isFetching, setIsFetching] = useState(false)
   const [fetchingMessage, setFetchingMessage] = useState('')
@@ -84,6 +88,12 @@ export const App: React.FC = () => {
       unsubToast()
     }
   }, [])
+
+  // Sync theme with DOM attribute and localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('stash_theme', theme)
+  }, [theme])
 
   const handleFetch = async (url: string) => {
     try {
@@ -165,10 +175,12 @@ export const App: React.FC = () => {
           outputDir={outputDir}
           quality={quality}
           format={format}
+          theme={theme}
           onSelectDir={handleSelectDir}
           onOpenDir={handleOpenDir}
           onChangeQuality={handleChangeQuality}
           onChangeFormat={handleChangeFormat}
+          onChangeTheme={(t) => setTheme(t)}
         />
 
         <LinkInputBar isFetching={isFetching} fetchingMessage={fetchingMessage} onFetch={handleFetch} />

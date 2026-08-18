@@ -6,6 +6,8 @@ export type DownloadQuality = 'LOW' | 'MID' | 'HIGH'
 
 export type DownloadFormat = 'AUTO' | 'MP3' | 'AAC' | 'FLAC' | 'OPUS' | 'WAV' | 'MP4' | 'OTHER_VIDEO'
 
+export type ColorTheme = 'indigo' | 'emerald' | 'sunset' | 'sapphire' | 'amber' | 'crimson' | 'oled'
+
 export type DownloadState = 
   | 'IDLE' 
   | 'QUEUED' 
