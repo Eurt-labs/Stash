@@ -25,3 +25,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Bundled Binaries (downloaded via download_dependencies.ps1)
+app-resources/windows/
+
