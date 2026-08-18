@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, ShieldCheck, ShieldAlert, RefreshCw, Settings, DownloadCloud } from 'lucide-react'
+import { Settings, DownloadCloud } from 'lucide-react'
 import { DependencyStatus, AppUpdateStatus } from '../../../shared/types'
 
 interface HeaderProps {
@@ -8,9 +8,7 @@ interface HeaderProps {
   onOpenDepModal: () => void
 }
 
-export const Header: React.FC<HeaderProps> = ({ depStatus, appUpdate, onOpenDepModal }) => {
-  const allDepsOk = depStatus && depStatus.ytDlpInstalled && depStatus.ffmpegInstalled
-
+export const Header: React.FC<HeaderProps> = ({ appUpdate, onOpenDepModal }) => {
   return (
     <header className="header-container">
       <div className="brand-section">
@@ -18,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ depStatus, appUpdate, onOpenDepM
           src="/stash_logo.png"
           alt="Stash Logo"
           className="brand-logo"
-          style={{ width: '44px', height: '44px', borderRadius: '12px', objectFit: 'cover' }}
+          style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
         />
         <div className="brand-info">
           <h1>Stash Downloader</h1>
@@ -34,26 +32,17 @@ export const Header: React.FC<HeaderProps> = ({ depStatus, appUpdate, onOpenDepM
             title="A newer version of Stash is available on GitHub"
             style={{ animation: 'pulse-dot 2s infinite' }}
           >
-            <DownloadCloud size={16} />
+            <DownloadCloud size={15} />
             <span>Update v{appUpdate.latestVersion} Available!</span>
           </button>
         )}
-
-        <button
-          className={`btn ${allDepsOk ? 'btn-secondary' : 'btn-danger'}`}
-          onClick={onOpenDepModal}
-          title="Check & manage external tool dependencies and updates"
-        >
-          {allDepsOk ? <ShieldCheck size={16} color="#10b981" /> : <ShieldAlert size={16} color="#ef4444" />}
-          <span>{allDepsOk ? 'Tools Ready' : 'Tools Required'}</span>
-        </button>
 
         <button
           className="btn btn-secondary"
           onClick={onOpenDepModal}
           title="Settings, Themes & System Updates"
         >
-          <Settings size={16} />
+          <Settings size={15} />
           <span>Settings</span>
         </button>
       </div>
