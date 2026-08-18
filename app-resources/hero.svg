@@ -1,94 +1,116 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" width="100%" height="100%">
   <defs>
-    <!-- Monochromatic Subtle Background Gradient -->
-    <linearGradient id="monoBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#09090b" />
-      <stop offset="50%" stop-color="#0c0c0e" />
+    <!-- Seamless Monochromatic Background Gradient -->
+    <linearGradient id="monoHeroBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#08080a" />
+      <stop offset="50%" stop-color="#0d0d10" />
       <stop offset="100%" stop-color="#050507" />
     </linearGradient>
 
-    <linearGradient id="monoLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="monoLine" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.04" />
-      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.22" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04" />
     </linearGradient>
 
     <style>
-      @keyframes slowLineFloat {
-        0%, 100% { transform: translateY(0px); opacity: 0.2; }
-        50% { transform: translateY(-8px); opacity: 0.45; }
+      @keyframes slowPathFloat {
+        0%, 100% { transform: translateY(0px); opacity: 0.18; }
+        50% { transform: translateY(-6px); opacity: 0.38; }
       }
-      @keyframes logoGlowBreathe {
+      @keyframes logoGlow {
         0%, 100% { opacity: 0.9; }
         50% { opacity: 1; }
       }
-      .anim-line { animation: slowLineFloat 12s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-      .anim-logo { animation: logoGlowBreathe 8s ease-in-out infinite; }
-      .sans-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 800; }
-      .sans-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 500; }
-      .mono-pill { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-weight: 600; }
+      .anim-path { animation: slowPathFloat 12s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+      .anim-logo { animation: logoGlow 8s ease-in-out infinite; }
+      .sans-bold { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 800; }
+      .sans-med { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; }
+      .sans-reg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 400; }
+      .mono-code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-weight: 600; }
     </style>
   </defs>
 
-  <!-- Clean Background Base (Zero Boxy Frames) -->
-  <rect width="900" height="240" rx="12" fill="url(#monoBg)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+  <!-- Clean Background Base -->
+  <rect width="900" height="250" rx="12" fill="url(#monoHeroBg)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
 
-  <!-- Minimal Monochromatic Flowing Accent Paths -->
-  <g class="anim-line">
-    <path d="M-50,170 C220,90 480,210 720,130 C820,90 880,150 960,120" fill="none" stroke="url(#monoLineGrad)" stroke-width="1.5" />
-    <path d="M-50,195 C180,130 440,230 690,160 C800,130 870,180 960,150" fill="none" stroke="url(#monoLineGrad)" stroke-width="1" stroke-dasharray="4,8" />
+  <!-- Subtle Monochromatic Ambient Path -->
+  <g class="anim-path">
+    <path d="M-50,180 C200,100 450,220 700,140 C800,100 870,160 960,130" fill="none" stroke="url(#monoLine)" stroke-width="1.2" />
+    <path d="M-50,200 C180,140 420,240 680,170 C790,140 860,190 960,160" fill="none" stroke="url(#monoLine)" stroke-width="1" stroke-dasharray="3,6" />
   </g>
 
-  <!-- Centered Minimal Monochromatic Brand Layout -->
-  <g transform="translate(48, 44)">
-    <!-- App Continuous Logo Glyph (Minimal Monochromatic Note-to-Arrow) -->
-    <g class="anim-logo" transform="translate(0, 4)">
-      <rect width="52" height="52" rx="13" fill="#18181b" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" />
-      <g transform="translate(6, 6) scale(0.40)">
+  <!-- ══════════════════════════════════════════════════════════════════
+       LEFT: Minimalist Monochromatic Brand & Logo
+       ══════════════════════════════════════════════════════════════════ -->
+  <g transform="translate(48, 48)">
+    <!-- App Continuous Vector Logo Mark -->
+    <g class="anim-logo" transform="translate(0, 0)">
+      <rect width="56" height="56" rx="14" fill="#18181b" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" />
+      <g transform="translate(6, 6) scale(0.44)">
         <circle cx="36" cy="62" r="14" stroke="#ffffff" stroke-width="6" fill="none" />
         <path d="M50 62 V28 C50 15 70 15 70 28 V56" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
         <path d="M59 46 L70 56 L81 46" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
       </g>
     </g>
 
-    <!-- Main Title & Minimal Monochromatic Subtitle -->
-    <text x="68" y="32" class="sans-title" font-size="28" fill="#ffffff" letter-spacing="-0.03em">
+    <!-- Main Title -->
+    <text x="74" y="34" class="sans-bold" font-size="32" fill="#ffffff" letter-spacing="-0.03em">
       STASH
     </text>
-    <text x="68" y="52" class="sans-sub" font-size="13" fill="#a1a1aa" letter-spacing="-0.01em">
-      Minimalist High-Speed Media Downloader &amp; ID3 Tag Transcoder
+
+    <!-- Subtitle -->
+    <text x="74" y="54" class="sans-med" font-size="13" fill="#a1a1aa" letter-spacing="-0.01em">
+      High-Speed Desktop Media Downloader &amp; Tag Transcoder
     </text>
 
-    <!-- Minimal Monochromatic Feature Badges (Pills) -->
-    <g transform="translate(0, 84)">
-      <!-- Pill 1: 320k Transcode -->
-      <g transform="translate(0, 0)">
-        <rect width="180" height="26" rx="6" fill="#18181b" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
-        <text x="90" y="17" class="mono-pill" font-size="10.5" fill="#e4e4e7" text-anchor="middle">320kbps MP3 / FLAC / OPUS</text>
-      </g>
+    <!-- Monochromatic Specs Line -->
+    <text x="0" y="112" class="mono-code" font-size="11" fill="#71717a" letter-spacing="0.04em">
+      ELECTRON • REACT 18 • TYPESCRIPT • VITE
+    </text>
+    <text x="0" y="132" class="mono-code" font-size="10.5" fill="#52525b" letter-spacing="0.02em">
+      v2.0.0 • OPEN SOURCE • MIT LICENSE
+    </text>
+  </g>
 
-      <!-- Pill 2: ID3 Cover Art -->
-      <g transform="translate(190, 0)">
-        <rect width="170" height="26" rx="6" fill="#18181b" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
-        <text x="85" y="17" class="mono-pill" font-size="10.5" fill="#e4e4e7" text-anchor="middle">ID3v2.4 Cover Art Embed</text>
-      </g>
+  <!-- ══════════════════════════════════════════════════════════════════
+       RIGHT: Clean Vertical Flowchart Hierarchy (Zero Box Containers)
+       ══════════════════════════════════════════════════════════════════ -->
+  <g transform="translate(510, 36)">
+    <!-- Vertical Connecting Tree Line -->
+    <line x1="12" y1="20" x2="12" y2="160" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
 
-      <!-- Pill 3: yt-dlp & FFmpeg Native -->
-      <g transform="translate(370, 0)">
-        <rect width="175" height="26" rx="6" fill="#18181b" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
-        <text x="87.5" y="17" class="mono-pill" font-size="10.5" fill="#e4e4e7" text-anchor="middle">Native yt-dlp &amp; FFmpeg</text>
-      </g>
-
-      <!-- Pill 4: Liquid Glass UI -->
-      <g transform="translate(555, 0)">
-        <rect width="145" height="26" rx="6" fill="#18181b" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
-        <text x="72.5" y="17" class="mono-pill" font-size="10.5" fill="#e4e4e7" text-anchor="middle">Liquid Glass UI</text>
-      </g>
+    <!-- Node 1: 320kbps Audio -->
+    <g transform="translate(0, 14)">
+      <!-- Branch tick -->
+      <line x1="12" y1="6" x2="26" y2="6" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+      <circle cx="12" cy="6" r="3.5" fill="#ffffff" />
+      <text x="34" y="10" class="mono-code" font-size="12" fill="#ffffff">320kbps Audio Transcoding</text>
+      <text x="34" y="24" class="sans-reg" font-size="10.5" fill="#71717a">MP3 • FLAC • OPUS • AAC • WAV</text>
     </g>
 
-    <!-- Clean Tech Specs Footer Line -->
-    <text x="0" y="142" class="mono-pill" font-size="11" fill="#71717a">
-      ELECTRON 30 • REACT 18 • TYPESCRIPT • VITE • HARDWARE-ACCELERATED
-    </text>
+    <!-- Node 2: ID3 Cover Art -->
+    <g transform="translate(0, 60)">
+      <line x1="12" y1="6" x2="26" y2="6" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+      <circle cx="12" cy="6" r="3.5" fill="#ffffff" />
+      <text x="34" y="10" class="mono-code" font-size="12" fill="#ffffff">ID3v2.4 Cover Art &amp; Tags</text>
+      <text x="34" y="24" class="sans-reg" font-size="10.5" fill="#71717a">Automated high-res artwork embedding</text>
+    </g>
+
+    <!-- Node 3: Native yt-dlp & FFmpeg -->
+    <g transform="translate(0, 106)">
+      <line x1="12" y1="6" x2="26" y2="6" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+      <circle cx="12" cy="6" r="3.5" fill="#ffffff" />
+      <text x="34" y="10" class="mono-code" font-size="12" fill="#ffffff">Native yt-dlp &amp; FFmpeg</text>
+      <text x="34" y="24" class="sans-reg" font-size="10.5" fill="#71717a">Parallel stream extraction &amp; queue</text>
+    </g>
+
+    <!-- Node 4: Liquid Glass UI -->
+    <g transform="translate(0, 152)">
+      <line x1="12" y1="6" x2="26" y2="6" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+      <circle cx="12" cy="6" r="3.5" fill="#ffffff" />
+      <text x="34" y="10" class="mono-code" font-size="12" fill="#ffffff">Liquid Glass Theming</text>
+      <text x="34" y="24" class="sans-reg" font-size="10.5" fill="#71717a">Translucent hardware-accelerated shaders</text>
+    </g>
   </g>
 </svg>

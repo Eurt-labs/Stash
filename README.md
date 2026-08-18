@@ -1,6 +1,6 @@
 <div align="center">
 
-![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.0)
+![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.1)
 
 # Stash Media Downloader
 
@@ -28,7 +28,7 @@ Stash processes downloads through a deterministic **5-phase sequential pipeline*
 
 <div align="center">
 
-![Stash Pipeline](app-resources/pipeline.svg?raw=true&v=2.0.0)
+![Stash Pipeline](app-resources/pipeline.svg?raw=true&v=2.0.1)
 
 </div>
 
