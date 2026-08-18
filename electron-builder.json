@@ -2,7 +2,7 @@
   "appId": "com.eurtlabs.stash",
   "productName": "Stash",
   "directories": {
-    "output": "release"
+    "output": "dist-release"
   },
   "files": [
     "dist",
