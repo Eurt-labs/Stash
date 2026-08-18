@@ -2,10 +2,8 @@
    STASH - LIQUID GLASS DESIGN SYSTEM & THEME ARCHITECTURE
    ══════════════════════════════════════════════════════════════════ */
 
-:root,
-html[data-mode='dark'],
-body[data-mode='dark'] {
-  /* Dark Mode Liquid Glass Surfaces */
+:root {
+  /* Default Dark Mode Surfaces & Geometry */
   --bg-main: #080a10;
   --glass-card: rgba(17, 21, 33, 0.72);
   --glass-card-hover: rgba(24, 30, 48, 0.85);
@@ -27,7 +25,7 @@ body[data-mode='dark'] {
   --text-inverse: #080a10;
   --placeholder-color: #64748b;
 
-  /* Default Primary: Linear Indigo */
+  /* Default Primary: Indigo */
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --primary-light: #818cf8;
@@ -53,9 +51,7 @@ body[data-mode='dark'] {
   --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
-/* ── Light Mode System ── */
-html[data-mode='light'],
-body[data-mode='light'],
+/* ── Light Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
 [data-mode='light'] {
   --bg-main: #f1f5f9;
   --glass-card: rgba(255, 255, 255, 0.78);
@@ -74,84 +70,101 @@ body[data-mode='light'],
   --text-muted: #8493a8;
   --text-inverse: #ffffff;
   --placeholder-color: #94a3b8;
-
-  --primary-muted: rgba(99, 102, 241, 0.14);
-  --primary-glow: rgba(99, 102, 241, 0.25);
 }
 
-/* ── Vibrant Color Theme Palettes (Works in Both Dark & Light) ── */
-[data-theme='indigo'],
-html[data-theme='indigo'] {
+/* ── Dark Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
+[data-mode='dark'] {
+  --bg-main: #080a10;
+  --glass-card: rgba(17, 21, 33, 0.72);
+  --glass-card-hover: rgba(24, 30, 48, 0.85);
+  --glass-card-subtle: rgba(255, 255, 255, 0.03);
+  --glass-input: rgba(10, 13, 21, 0.8);
+  --glass-elevated: rgba(22, 27, 44, 0.9);
+
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-medium: rgba(255, 255, 255, 0.16);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 12px 36px 0 rgba(0, 0, 0, 0.5);
+  --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #080a10;
+  --placeholder-color: #64748b;
+}
+
+/* ── Color Theme Palettes (Active in Both Dark and Light Modes) ── */
+[data-theme='indigo'] {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --primary-light: #818cf8;
-  --primary-muted: rgba(99, 102, 241, 0.2);
+  --primary-muted: rgba(99, 102, 241, 0.22);
   --primary-glow: rgba(99, 102, 241, 0.45);
   --border-focus: #6366f1;
 }
 
-[data-theme='emerald'],
-html[data-theme='emerald'] {
+[data-theme='emerald'] {
   --primary: #10b981;
   --primary-hover: #059669;
   --primary-light: #34d399;
-  --primary-muted: rgba(16, 185, 129, 0.2);
+  --primary-muted: rgba(16, 185, 129, 0.22);
   --primary-glow: rgba(16, 185, 129, 0.45);
   --border-focus: #10b981;
 }
 
-[data-theme='sunset'],
-html[data-theme='sunset'] {
+[data-theme='sunset'] {
   --primary: #f43f5e;
   --primary-hover: #e11d48;
   --primary-light: #fb7185;
-  --primary-muted: rgba(244, 63, 94, 0.2);
+  --primary-muted: rgba(244, 63, 94, 0.22);
   --primary-glow: rgba(244, 63, 94, 0.45);
   --border-focus: #f43f5e;
 }
 
-[data-theme='sapphire'],
-html[data-theme='sapphire'] {
+[data-theme='sapphire'] {
   --primary: #3b82f6;
   --primary-hover: #2563eb;
   --primary-light: #60a5fa;
-  --primary-muted: rgba(59, 130, 246, 0.2);
+  --primary-muted: rgba(59, 130, 246, 0.22);
   --primary-glow: rgba(59, 130, 246, 0.45);
   --border-focus: #3b82f6;
 }
 
-[data-theme='amber'],
-html[data-theme='amber'] {
+[data-theme='amber'] {
   --primary: #f59e0b;
   --primary-hover: #d97706;
   --primary-light: #fbbf24;
-  --primary-muted: rgba(245, 158, 11, 0.2);
+  --primary-muted: rgba(245, 158, 11, 0.22);
   --primary-glow: rgba(245, 158, 11, 0.45);
   --border-focus: #f59e0b;
 }
 
-[data-theme='crimson'],
-html[data-theme='crimson'] {
+[data-theme='crimson'] {
   --primary: #ef4444;
   --primary-hover: #dc2626;
   --primary-light: #f87171;
-  --primary-muted: rgba(239, 68, 68, 0.2);
+  --primary-muted: rgba(239, 68, 68, 0.22);
   --primary-glow: rgba(239, 68, 68, 0.45);
   --border-focus: #ef4444;
 }
 
-[data-theme='oled'],
-html[data-theme='oled'] {
-  --bg-main: #000000;
-  --glass-card: rgba(14, 14, 16, 0.88);
-  --glass-card-hover: rgba(22, 22, 26, 0.94);
-  --glass-input: rgba(6, 6, 8, 0.95);
+[data-theme='oled'] {
   --primary: #ffffff;
   --primary-hover: #e2e8f0;
   --primary-light: #f8fafc;
-  --primary-muted: rgba(255, 255, 255, 0.16);
-  --primary-glow: rgba(255, 255, 255, 0.3);
+  --primary-muted: rgba(255, 255, 255, 0.18);
+  --primary-glow: rgba(255, 255, 255, 0.35);
   --border-focus: #ffffff;
+}
+
+[data-mode='light'][data-theme='oled'],
+[data-theme='oled'][data-mode='light'] {
+  --primary: #0f172a;
+  --primary-hover: #1e293b;
+  --primary-light: #334155;
+  --primary-muted: rgba(15, 23, 42, 0.15);
+  --primary-glow: rgba(15, 23, 42, 0.25);
+  --border-focus: #0f172a;
 }
 
 * {
@@ -251,16 +264,6 @@ html, body {
   gap: 12px;
 }
 
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  border: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
 .brand-info h1 {
   font-size: 17px;
   font-weight: 700;
@@ -306,6 +309,10 @@ html, body {
 
 [data-theme='oled'] .btn-primary {
   color: #000000;
+}
+
+[data-mode='light'][data-theme='oled'] .btn-primary {
+  color: #ffffff;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -497,7 +504,7 @@ html, body {
 
 .count-badge {
   background: var(--primary-muted);
-  color: var(--primary-light);
+  color: var(--primary);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 11px;
