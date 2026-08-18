@@ -17,9 +17,11 @@
     }
   ],
   "win": {
-    "target": ["nsis", "msi"],
-    "icon": "app-resources/icon.png"
+    "target": ["nsis"],
+    "icon": "app-resources/icon.png",
+    "signAndEditExecutable": false
   },
+  "forceCodeSigning": false,
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,

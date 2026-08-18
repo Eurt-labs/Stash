@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "package:win": "npm run build && electron-builder --win"
+    "package:win": "npm run build && electron-builder --win -c.win.signAndEditExecutable=false -c.forceCodeSigning=false"
   },
   "dependencies": {
     "axios": "^1.7.9",
