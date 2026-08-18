@@ -34,13 +34,13 @@ interface SettingsModalProps {
 }
 
 const THEME_OPTIONS: Array<{ id: ColorTheme; label: string; dotGradient: string }> = [
-  { id: 'indigo', label: 'Linear Indigo', dotGradient: '#6366f1' },
-  { id: 'emerald', label: 'Emerald Mint', dotGradient: '#10b981' },
-  { id: 'sunset', label: 'Sunset Rose', dotGradient: '#f43f5e' },
-  { id: 'sapphire', label: 'Ocean Sapphire', dotGradient: '#3b82f6' },
-  { id: 'amber', label: 'Amber Gold', dotGradient: '#f59e0b' },
-  { id: 'crimson', label: 'Crimson Red', dotGradient: '#ef4444' },
-  { id: 'oled', label: 'OLED Monochrome', dotGradient: '#ffffff' }
+  { id: 'indigo', label: 'Indigo', dotGradient: '#6366f1' },
+  { id: 'emerald', label: 'Green', dotGradient: '#10b981' },
+  { id: 'sunset', label: 'Pink', dotGradient: '#f43f5e' },
+  { id: 'sapphire', label: 'Blue', dotGradient: '#3b82f6' },
+  { id: 'amber', label: 'Yellow', dotGradient: '#f59e0b' },
+  { id: 'crimson', label: 'Red', dotGradient: '#ef4444' },
+  { id: 'oled', label: 'Monochrome', dotGradient: '#ffffff' }
 ]
 
 export const DependencyModal: React.FC<SettingsModalProps> = ({
@@ -123,24 +123,30 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             {/* Mode Pills (Dark / Light) */}
             <div style={{ display: 'flex', gap: '4px', background: 'var(--glass-input)', padding: '3px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
               <button
+                type="button"
                 className="btn btn-icon-only"
                 style={{
-                  padding: '4px 10px',
-                  fontSize: '11px',
+                  padding: '4px 12px',
+                  fontSize: '11.5px',
+                  borderRadius: 'var(--radius-xs)',
                   background: mode === 'dark' ? 'var(--primary)' : 'transparent',
-                  color: mode === 'dark' ? '#ffffff' : 'var(--text-secondary)'
+                  color: mode === 'dark' ? '#ffffff' : 'var(--text-secondary)',
+                  border: 'none'
                 }}
                 onClick={() => onChangeMode('dark')}
               >
                 <Moon size={12} /> Dark
               </button>
               <button
+                type="button"
                 className="btn btn-icon-only"
                 style={{
-                  padding: '4px 10px',
-                  fontSize: '11px',
+                  padding: '4px 12px',
+                  fontSize: '11.5px',
+                  borderRadius: 'var(--radius-xs)',
                   background: mode === 'light' ? 'var(--primary)' : 'transparent',
-                  color: mode === 'light' ? '#ffffff' : 'var(--text-secondary)'
+                  color: mode === 'light' ? '#ffffff' : 'var(--text-secondary)',
+                  border: 'none'
                 }}
                 onClick={() => onChangeMode('light')}
               >
