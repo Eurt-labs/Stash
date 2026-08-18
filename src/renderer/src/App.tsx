@@ -166,7 +166,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-container" style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Animated Flowing SVG Background Paths */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.75 }}>
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 1 }}>
         <FloatingPaths />
       </div>
 

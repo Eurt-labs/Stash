@@ -31,9 +31,9 @@ export function FloatingPaths() {
     window.addEventListener("resize", resize);
     resize();
 
-    // 6 smooth ambient flowing bezier waves
+    // Layered flowing geometric ribbon paths
     const render = () => {
-      step += 0.003;
+      step += 0.004;
       ctx.clearRect(0, 0, width, height);
 
       // Get current theme color from computed style
@@ -42,27 +42,69 @@ export function FloatingPaths() {
           .getPropertyValue("--primary")
           .trim() || "#6366f1";
 
-      ctx.lineWidth = 1.2;
+      // 1. Subtle radial ambient glow at the top center
+      const gradient = ctx.createRadialGradient(
+        width * 0.5,
+        height * 0.15,
+        10,
+        width * 0.5,
+        height * 0.15,
+        Math.max(width, height) * 0.65
+      );
+      gradient.addColorStop(0, primaryColor);
+      gradient.addColorStop(1, "transparent");
 
-      for (let i = 0; i < 6; i++) {
-        const offset = i * 0.5;
-        const y1 = height * 0.25 + Math.sin(step + offset) * 50 + i * 35;
-        const y2 = height * 0.65 + Math.cos(step * 0.8 + offset) * 70;
-        const y3 = height * 0.35 + Math.sin(step * 1.1 + offset) * 60;
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+
+      // 2. 18 Vibrant Layered Flowing Path Ribbons (Two opposing waves)
+      const lineCount = 18;
+      for (let i = 0; i < lineCount; i++) {
+        const factor = i / lineCount;
+        const offset = i * 0.35;
+
+        // Wave 1: Flowing top-left to bottom-right
+        const y1_a = height * 0.15 + Math.sin(step + offset) * 55 + i * 24;
+        const y2_a = height * 0.55 + Math.cos(step * 0.85 + offset) * 75 + i * 12;
+        const y3_a = height * 0.35 + Math.sin(step * 1.15 + offset) * 65 + i * 18;
 
         ctx.beginPath();
-        ctx.moveTo(-50, y1);
+        ctx.moveTo(-60, y1_a);
         ctx.bezierCurveTo(
-          width * 0.32,
-          y1 + Math.cos(step + i) * 45,
-          width * 0.68,
-          y2 + Math.sin(step + i) * 55,
-          width + 50,
-          y3
+          width * 0.3,
+          y1_a + Math.cos(step + i * 0.2) * 50,
+          width * 0.65,
+          y2_a + Math.sin(step + i * 0.2) * 60,
+          width + 60,
+          y3_a
         );
 
         ctx.strokeStyle = primaryColor;
-        ctx.globalAlpha = 0.035 + (i / 6) * 0.045;
+        ctx.lineWidth = 1.2 + (i % 3) * 0.4;
+        ctx.globalAlpha = 0.12 + factor * 0.28; // clearly visible opacity (12% to 40%)
+        ctx.stroke();
+
+        // Wave 2: Opposing counter-wave flowing bottom-left to top-right
+        const y1_b = height * 0.85 - Math.cos(step * 0.9 + offset) * 50 - i * 22;
+        const y2_b = height * 0.45 - Math.sin(step * 0.75 + offset) * 70 - i * 14;
+        const y3_b = height * 0.65 - Math.cos(step * 1.05 + offset) * 60 - i * 16;
+
+        ctx.beginPath();
+        ctx.moveTo(-60, y1_b);
+        ctx.bezierCurveTo(
+          width * 0.35,
+          y1_b - Math.sin(step + i * 0.3) * 45,
+          width * 0.7,
+          y2_b - Math.cos(step + i * 0.3) * 55,
+          width + 60,
+          y3_b
+        );
+
+        ctx.lineWidth = 1.0 + (i % 2) * 0.5;
+        ctx.globalAlpha = 0.08 + factor * 0.22;
         ctx.stroke();
       }
 
