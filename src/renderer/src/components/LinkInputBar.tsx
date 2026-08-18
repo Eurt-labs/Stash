@@ -31,7 +31,7 @@ export const LinkInputBar: React.FC<LinkInputBarProps> = ({ isFetching, fetching
 
   return (
     <div className="search-bar-card">
-      <Search size={20} color="#6366f1" />
+      <Search size={18} color="var(--primary)" />
       <form onSubmit={handleSubmit} style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '10px' }}>
         <input
           type="text"

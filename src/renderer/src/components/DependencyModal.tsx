@@ -31,13 +31,13 @@ interface SettingsModalProps {
 }
 
 const THEME_OPTIONS: Array<{ id: ColorTheme; label: string; dotGradient: string }> = [
-  { id: 'indigo', label: 'Neon Indigo', dotGradient: 'linear-gradient(135deg, #6366f1, #a855f7)' },
-  { id: 'emerald', label: 'Cyber Emerald', dotGradient: 'linear-gradient(135deg, #10b981, #06b6d4)' },
-  { id: 'sunset', label: 'Sunset Rose', dotGradient: 'linear-gradient(135deg, #f43f5e, #ec4899)' },
-  { id: 'sapphire', label: 'Ocean Sapphire', dotGradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
-  { id: 'amber', label: 'Midnight Amber', dotGradient: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
-  { id: 'crimson', label: 'Blood Crimson', dotGradient: 'linear-gradient(135deg, #ef4444, #f97316)' },
-  { id: 'oled', label: 'OLED Minimal', dotGradient: 'linear-gradient(135deg, #ffffff, #64748b)' }
+  { id: 'indigo', label: 'Linear Indigo', dotGradient: '#6366f1' },
+  { id: 'emerald', label: 'Emerald Mint', dotGradient: '#10b981' },
+  { id: 'sunset', label: 'Sunset Rose', dotGradient: '#f43f5e' },
+  { id: 'sapphire', label: 'Ocean Sapphire', dotGradient: '#3b82f6' },
+  { id: 'amber', label: 'Amber Gold', dotGradient: '#f59e0b' },
+  { id: 'crimson', label: 'Crimson Red', dotGradient: '#ef4444' },
+  { id: 'oled', label: 'OLED Monochrome', dotGradient: '#ffffff' }
 ]
 
 export const DependencyModal: React.FC<SettingsModalProps> = ({

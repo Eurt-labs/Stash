@@ -49,7 +49,7 @@ export const BatchItem: React.FC<BatchItemProps> = ({
       <div className="batch-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="batch-info">
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-          <ListMusic size={18} color="#6366f1" />
+          <ListMusic size={18} color="var(--primary)" />
           <span className="batch-title">{batch.name}</span>
           <div className="batch-meta">
             <span className="count-badge">

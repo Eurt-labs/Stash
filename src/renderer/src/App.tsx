@@ -187,7 +187,7 @@ export const App: React.FC = () => {
         <div>
           <div className="batch-section-header">
             <h2 className="section-title">
-              <ListMusic size={18} color="#6366f1" />
+              <ListMusic size={18} color="var(--primary)" />
               <span>Download Queue</span>
               <span className="count-badge">{batchList.length} Batches</span>
             </h2>
