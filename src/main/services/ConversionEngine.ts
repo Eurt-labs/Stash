@@ -137,26 +137,27 @@ export class ConversionEngine {
   }
 
   private getAudioCodecAndBitrate(format: DownloadFormat, quality: DownloadQuality): { codec: string; bitrate?: string } {
+    const isHighOrAbove = quality === '4K' || quality === '2K' || quality === 'HIGH'
     switch (format) {
       case 'MP3': {
-        const kbps = quality === 'HIGH' ? '320k' : (quality === 'MID' ? '192k' : '128k')
+        const kbps = isHighOrAbove ? '320k' : (quality === 'MID' ? '192k' : '128k')
         return { codec: 'libmp3lame', bitrate: kbps }
       }
       case 'AAC': {
-        const kbps = quality === 'HIGH' ? '256k' : (quality === 'MID' ? '192k' : '128k')
+        const kbps = isHighOrAbove ? '256k' : (quality === 'MID' ? '192k' : '128k')
         return { codec: 'aac', bitrate: kbps }
       }
       case 'FLAC':
         return { codec: 'flac' }
       case 'OPUS': {
-        const kbps = quality === 'HIGH' ? '256k' : (quality === 'MID' ? '160k' : '96k')
+        const kbps = isHighOrAbove ? '256k' : (quality === 'MID' ? '160k' : '96k')
         return { codec: 'libopus', bitrate: kbps }
       }
       case 'WAV':
         return { codec: 'pcm_s16le' }
       case 'AUTO':
       default: {
-        const kbps = quality === 'HIGH' ? '320k' : (quality === 'MID' ? '192k' : '128k')
+        const kbps = isHighOrAbove ? '320k' : (quality === 'MID' ? '192k' : '128k')
         return { codec: 'libmp3lame', bitrate: kbps }
       }
     }

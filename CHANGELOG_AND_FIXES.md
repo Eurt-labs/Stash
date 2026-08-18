@@ -549,6 +549,26 @@ if (ext === '.mp3') {
 
 ---
 
+### 📌 [FIX-015] 4K Ultra HD (2160p) & 2K Quad HD (1440p) Quality Presets Support
+- **Date**: 2026-08-18
+- **Files Modified**: `src/shared/types.ts`, `src/renderer/src/components/SettingsBar.tsx`, `src/main/services/DownloadEngine.ts`, `src/main/services/ConversionEngine.ts`
+- **Severity**: Feature Addition & Enhancement
+
+#### 1. Description & Enhancement
+- Added explicit options in the Quality Preset selector for **4K Ultra HD (2160p)** and **2K Quad HD (1440p)** alongside 1080p, 720p, and 360p.
+
+#### 2. Technical Architecture & Stream Selectors
+- Updated `DownloadQuality` union type to: `'4K' | '2K' | 'HIGH' | 'MID' | 'LOW'`.
+- Configured format selection in `DownloadEngine.ts`:
+  - **`4K` (Ultra HD / 2160p)**: `-f "bv*+ba/b"` *(fetches maximum available resolution up to 4K / 8K + best audio)*.
+  - **`2K` (Quad HD / 1440p)**: `-f "bv*[height<=1440]+ba/b[height<=1440]/bv*+ba/b"`.
+  - **`HIGH` (1080p / 320kbps)**: `-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b"`.
+  - **`MID` (720p / 192kbps)**: `-f "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b"`.
+  - **`LOW` (360p / 128kbps)**: `-f "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b"`.
+- Updated audio transcode matrix in `ConversionEngine.ts` to map `4K`, `2K`, and `HIGH` presets to 320kbps maximum fidelity audio.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

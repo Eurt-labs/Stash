@@ -120,8 +120,12 @@ export class DownloadEngine {
         args.push('-f', 'bv*[height<=480]+ba/b[height<=480]/bv*+ba/b')
       } else if (quality === 'MID') {
         args.push('-f', 'bv*[height<=720]+ba/b[height<=720]/bv*+ba/b')
+      } else if (quality === 'HIGH') {
+        args.push('-f', 'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b')
+      } else if (quality === '2K') {
+        args.push('-f', 'bv*[height<=1440]+ba/b[height<=1440]/bv*+ba/b')
       } else {
-        // HIGH: Best available resolution (4K / 1440p / 1080p 60fps) + best audio
+        // 4K: Ultra-HD 4K (up to 2160p / 4320p 8K 60fps) + best audio stream
         args.push('-f', 'bv*+ba/b')
       }
       args.push('--merge-output-format', 'mp4')

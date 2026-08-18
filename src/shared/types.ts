@@ -2,7 +2,7 @@ export type Platform = 'youtube' | 'youtube_music' | 'other'
 
 export type ContentType = 'track' | 'playlist' | 'album' | 'video'
 
-export type DownloadQuality = 'LOW' | 'MID' | 'HIGH'
+export type DownloadQuality = '4K' | '2K' | 'HIGH' | 'MID' | 'LOW'
 
 export type DownloadFormat = 'AUTO' | 'MP3' | 'AAC' | 'FLAC' | 'OPUS' | 'WAV' | 'MP4' | 'OTHER_VIDEO'
 

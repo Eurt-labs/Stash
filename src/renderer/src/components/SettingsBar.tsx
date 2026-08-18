@@ -51,9 +51,11 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
           value={quality}
           onChange={(e) => onChangeQuality(e.target.value as DownloadQuality)}
         >
-          <option value="HIGH">High (320kbps / 1080p)</option>
-          <option value="MID">Mid (192kbps / 720p)</option>
-          <option value="LOW">Low (128kbps / 360p)</option>
+          <option value="4K">4K Ultra HD (2160p)</option>
+          <option value="2K">2K Quad HD (1440p)</option>
+          <option value="HIGH">High (1080p / 320kbps)</option>
+          <option value="MID">Mid (720p / 192kbps)</option>
+          <option value="LOW">Low (360p / 128kbps)</option>
         </select>
       </div>
 
