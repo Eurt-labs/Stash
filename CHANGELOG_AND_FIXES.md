@@ -512,6 +512,43 @@ if (format === 'MP4' || format === 'OTHER_VIDEO') {
 
 ---
 
+### 📌 [FIX-014] Universal Multi-Format Metadata & Baseline JPEG Cover Art Tagging Engine
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/MetadataTagger.ts`
+- **Severity**: High (Missing metadata and thumbnail artwork across downloaded files)
+
+#### 1. Problem Description & Symptoms
+- Downloaded audio files (such as `Akshath - nadaaniyan.flac` and `.mp3`) had missing cover art thumbnails or missing metadata tags (artist, album, title) when opened in Windows Media Player and Windows File Explorer.
+
+#### 2. Technical Root Cause Analysis
+- `MetadataTagger.ts` previously only had logic for `.mp3`, completely ignoring `.flac`, `.m4a`, `.aac`, `.opus`, `.ogg`, `.wav`, and `.mp4`.
+- In MP3 tagging, YouTube provides thumbnails in WebP or AVIF formats. Windows Media Player, Groove Music, and Windows Shell thumbnail handlers cannot decode WebP as embedded ID3 album artwork; they strictly require **standard Baseline JPEG or PNG**.
+
+#### 3. Exact Solution & Code Implementation
+- Replaced the single-format tagger with a **Universal Multi-Format Tagging Engine** utilizing native FFmpeg and NodeID3:
+  1. **Automated Artwork Conversion**: Downloaded artwork is normalized through FFmpeg into clean, high-resolution Baseline JPEG (`cover.jpg`).
+  2. **MP3**: Tagged with standard ID3v2.3 tags and JPEG picture blocks with FFmpeg fallback.
+  3. **FLAC**: Tagged with Vorbis comments and embedded `attached_pic` stream.
+  4. **M4A / AAC**: Tagged with iTunes atoms and cover art metadata.
+  5. **OPUS / OGG / WAV / MP4**: Tagged with standardized title, artist, album, and date metadata.
+
+```ts
+// MetadataTagger.ts
+if (ext === '.mp3') {
+  await this.tagMp3(filePath, trackInfo, coverBuffer, coverJpgPath);
+} else if (ext === '.flac') {
+  await this.tagFlac(filePath, trackInfo, coverJpgPath);
+} else if (ext === '.m4a' || ext === '.aac') {
+  await this.tagM4a(filePath, trackInfo, coverJpgPath);
+} else if (ext === '.opus' || ext === '.ogg' || ext === '.wav') {
+  await this.tagAudioGeneric(filePath, trackInfo);
+} else if (ext === '.mp4' || ext === '.mkv') {
+  await this.tagVideo(filePath, trackInfo);
+}
+```
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
