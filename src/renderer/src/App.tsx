@@ -175,12 +175,10 @@ export const App: React.FC = () => {
           outputDir={outputDir}
           quality={quality}
           format={format}
-          theme={theme}
           onSelectDir={handleSelectDir}
           onOpenDir={handleOpenDir}
           onChangeQuality={handleChangeQuality}
           onChangeFormat={handleChangeFormat}
-          onChangeTheme={(t) => setTheme(t)}
         />
 
         <LinkInputBar isFetching={isFetching} fetchingMessage={fetchingMessage} onFetch={handleFetch} />
@@ -236,7 +234,9 @@ export const App: React.FC = () => {
         isOpen={isDepModalOpen}
         status={depStatus}
         appUpdate={appUpdate}
+        theme={theme}
         onClose={() => setIsDepModalOpen(false)}
+        onChangeTheme={(t) => setTheme(t)}
         onRefresh={handleRefreshDeps}
         onUpdateYtDlp={() => window.stashAPI.updateYtDlp()}
         onCheckAppUpdate={handleCheckAppUpdate}

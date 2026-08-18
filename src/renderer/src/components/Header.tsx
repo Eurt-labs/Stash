@@ -1,7 +1,6 @@
 import React from 'react'
-import { Sparkles, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react'
+import { Sparkles, ShieldCheck, ShieldAlert, RefreshCw, Settings, DownloadCloud } from 'lucide-react'
 import { DependencyStatus, AppUpdateStatus } from '../../../shared/types'
-import { DownloadCloud } from 'lucide-react'
 
 interface HeaderProps {
   depStatus: DependencyStatus | null
@@ -47,6 +46,15 @@ export const Header: React.FC<HeaderProps> = ({ depStatus, appUpdate, onOpenDepM
         >
           {allDepsOk ? <ShieldCheck size={16} color="#10b981" /> : <ShieldAlert size={16} color="#ef4444" />}
           <span>{allDepsOk ? 'Tools Ready' : 'Tools Required'}</span>
+        </button>
+
+        <button
+          className="btn btn-secondary"
+          onClick={onOpenDepModal}
+          title="Settings, Themes & System Updates"
+        >
+          <Settings size={16} />
+          <span>Settings</span>
         </button>
       </div>
     </header>

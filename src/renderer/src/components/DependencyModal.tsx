@@ -11,26 +11,42 @@ import {
   Sparkles,
   ExternalLink,
   Github,
-  DownloadCloud
+  DownloadCloud,
+  Palette,
+  Sliders
 } from 'lucide-react'
-import { DependencyStatus, AppUpdateStatus } from '../../../shared/types'
+import { DependencyStatus, AppUpdateStatus, ColorTheme } from '../../../shared/types'
 
-interface DependencyModalProps {
+interface SettingsModalProps {
   status: DependencyStatus | null
   appUpdate: AppUpdateStatus | null
+  theme: ColorTheme
   isOpen: boolean
   onClose: () => void
+  onChangeTheme: (t: ColorTheme) => void
   onRefresh: () => Promise<void>
   onUpdateYtDlp: () => Promise<{ success: boolean; message: string }>
   onCheckAppUpdate: () => Promise<AppUpdateStatus>
   onOpenUrl: (url: string) => void
 }
 
-export const DependencyModal: React.FC<DependencyModalProps> = ({
+const THEME_OPTIONS: Array<{ id: ColorTheme; label: string; dotGradient: string }> = [
+  { id: 'indigo', label: 'Neon Indigo', dotGradient: 'linear-gradient(135deg, #6366f1, #a855f7)' },
+  { id: 'emerald', label: 'Cyber Emerald', dotGradient: 'linear-gradient(135deg, #10b981, #06b6d4)' },
+  { id: 'sunset', label: 'Sunset Rose', dotGradient: 'linear-gradient(135deg, #f43f5e, #ec4899)' },
+  { id: 'sapphire', label: 'Ocean Sapphire', dotGradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
+  { id: 'amber', label: 'Midnight Amber', dotGradient: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
+  { id: 'crimson', label: 'Blood Crimson', dotGradient: 'linear-gradient(135deg, #ef4444, #f97316)' },
+  { id: 'oled', label: 'OLED Minimal', dotGradient: 'linear-gradient(135deg, #ffffff, #64748b)' }
+]
+
+export const DependencyModal: React.FC<SettingsModalProps> = ({
   status,
   appUpdate,
+  theme,
   isOpen,
   onClose,
+  onChangeTheme,
   onRefresh,
   onUpdateYtDlp,
   onCheckAppUpdate,
@@ -78,20 +94,54 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: '580px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>System & Updates</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sliders size={20} color="var(--primary)" />
+            <h2>Settings & Updates</h2>
+          </div>
           <button className="btn btn-outline btn-icon-only" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
 
-        {/* ── Section 1: Stash Application Version & GitHub Update Check ── */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        {/* ── Section 1: Color Theme Customization ── */}
+        <div style={{ marginBottom: '22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+            <Palette size={14} color="var(--primary)" />
             <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-              Stash Application (GitHub)
+              Color Theme Palette
             </span>
+          </div>
+
+          <div className="theme-swatches-grid">
+            {THEME_OPTIONS.map((t) => (
+              <div
+                key={t.id}
+                className={`theme-swatch-card ${theme === t.id ? 'active' : ''}`}
+                onClick={() => onChangeTheme(t.id)}
+              >
+                <div className="theme-preview-dot" style={{ background: t.dotGradient }} />
+                <span className="theme-swatch-label">{t.label}</span>
+                {theme === t.id && (
+                  <span style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '10px', color: 'var(--primary)' }}>
+                    ✓
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Section 2: Stash Application Version & GitHub Update Check ── */}
+        <div style={{ marginBottom: '22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Github size={14} color="var(--primary)" />
+              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+                Stash Application (GitHub)
+              </span>
+            </div>
             <button
               className="btn btn-outline"
               style={{ padding: '4px 8px', fontSize: '11px' }}
@@ -102,22 +152,13 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
             </button>
           </div>
 
-          <div className="dep-item" style={{ background: 'rgba(99, 102, 241, 0.06)', borderColor: 'rgba(99, 102, 241, 0.2)' }}>
+          <div className="dep-item" style={{ background: 'rgba(255, 255, 255, 0.02)', borderColor: 'var(--border-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white'
-                }}
-              >
-                <Sparkles size={18} />
-              </div>
+              <img
+                src="/stash_logo.png"
+                alt="Logo"
+                style={{ width: '38px', height: '38px', borderRadius: '10px', objectFit: 'cover' }}
+              />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   Stash Media Downloader
@@ -144,7 +185,7 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
             )}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
             <button
               className="btn btn-secondary"
               style={{ fontSize: '12px', padding: '6px 12px' }}
@@ -167,7 +208,7 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
           </div>
         </div>
 
-        {/* ── Section 2: External Tool Dependencies (yt-dlp & FFmpeg) ── */}
+        {/* ── Section 3: External Tool Dependencies (yt-dlp & FFmpeg) ── */}
         <div>
           <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
             Core Engine & Binaries
@@ -176,7 +217,7 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
           {/* yt-dlp Status */}
           <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Cpu size={22} color="#6366f1" />
+              <Cpu size={22} color="var(--primary)" />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '14px' }}>yt-dlp Engine</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -198,7 +239,7 @@ export const DependencyModal: React.FC<DependencyModalProps> = ({
           {/* FFmpeg Status */}
           <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Film size={22} color="#10b981" />
+              <Film size={22} color="var(--secondary)" />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '14px' }}>FFmpeg Transcoder</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
