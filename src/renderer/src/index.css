@@ -51,39 +51,39 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
-/* ── Light Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
+/* ── Light Mode System (Ultra-Translucent Glass for high artwork visibility) ── */
 [data-mode='light'] {
-  --bg-main: #f1f5f9;
-  --glass-card: rgba(255, 255, 255, 0.58);
-  --glass-card-hover: rgba(255, 255, 255, 0.78);
-  --glass-card-subtle: rgba(255, 255, 255, 0.45);
-  --glass-input: rgba(255, 255, 255, 0.72);
-  --glass-elevated: rgba(255, 255, 255, 0.9);
+  --bg-main: transparent;
+  --glass-card: rgba(255, 255, 255, 0.28);
+  --glass-card-hover: rgba(255, 255, 255, 0.45);
+  --glass-card-subtle: rgba(255, 255, 255, 0.18);
+  --glass-input: rgba(255, 255, 255, 0.38);
+  --glass-elevated: rgba(255, 255, 255, 0.65);
 
-  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.35);
   --border-medium: rgba(0, 0, 0, 0.15);
-  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 10px 30px 0 rgba(15, 23, 42, 0.08);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 8px 28px 0 rgba(15, 23, 42, 0.08);
   --glass-shadow-sm: 0 2px 10px 0 rgba(15, 23, 42, 0.06);
 
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #8493a8;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
   --text-inverse: #ffffff;
-  --placeholder-color: #94a3b8;
+  --placeholder-color: #64748b;
 }
 
-/* ── Dark Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
+/* ── Dark Mode System (Ultra-Translucent Glass for high artwork visibility) ── */
 [data-mode='dark'] {
-  --bg-main: #07090e;
-  --glass-card: rgba(13, 17, 28, 0.42);
-  --glass-card-hover: rgba(20, 26, 42, 0.6);
-  --glass-card-subtle: rgba(255, 255, 255, 0.035);
-  --glass-input: rgba(9, 12, 20, 0.5);
-  --glass-elevated: rgba(18, 23, 38, 0.75);
+  --bg-main: transparent;
+  --glass-card: rgba(10, 14, 24, 0.32);
+  --glass-card-hover: rgba(16, 22, 38, 0.52);
+  --glass-card-subtle: rgba(255, 255, 255, 0.04);
+  --glass-input: rgba(7, 10, 18, 0.42);
+  --glass-elevated: rgba(14, 18, 30, 0.68);
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.15);
-  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.14), 0 12px 36px 0 rgba(0, 0, 0, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.18);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 12px 36px 0 rgba(0, 0, 0, 0.45);
   --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
 
   --text-primary: #f8fafc;
