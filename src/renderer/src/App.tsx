@@ -182,7 +182,6 @@ export const App: React.FC = () => {
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
         <Header
-          depStatus={depStatus}
           appUpdate={appUpdate}
           mode={mode}
           onToggleMode={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}

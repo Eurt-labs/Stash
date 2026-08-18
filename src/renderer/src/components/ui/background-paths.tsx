@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { Button } from "./button";
 
 export function FloatingPaths() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -143,49 +142,5 @@ export function FloatingPaths() {
         zIndex: 0,
       }}
     />
-  );
-}
-
-export function BackgroundPaths({
-  title = "Background Paths",
-}: {
-  title?: string;
-}) {
-  const words = title.split(" ");
-
-  return (
-    <div style={{ position: 'relative', minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      <FloatingPaths />
-
-      <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '0 16px' }}>
-        <div>
-          <h1 style={{ fontSize: '4rem', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.05em' }}>
-            {words.map((word, wordIndex) => (
-              <span
-                key={wordIndex}
-                style={{ display: 'inline-block', marginRight: '1rem' }}
-              >
-                {word.split("").map((letter, letterIndex) => (
-                  <span
-                    key={`${wordIndex}-${letterIndex}`}
-                    style={{ display: 'inline-block' }}
-                  >
-                    {letter}
-                  </span>
-                ))}
-              </span>
-            ))}
-          </h1>
-
-          <Button
-            variant="ghost"
-            style={{ fontSize: '1rem', fontWeight: 600, padding: '1.5rem 2rem', borderRadius: '1rem' }}
-          >
-            <span>Discover Excellence</span>
-            <span style={{ marginLeft: '0.75rem' }}>→</span>
-          </Button>
-        </div>
-      </div>
-    </div>
   );
 }

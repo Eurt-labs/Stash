@@ -1,10 +1,9 @@
 import React from 'react'
 import { Settings, DownloadCloud, Sun, Moon } from 'lucide-react'
-import { DependencyStatus, AppUpdateStatus, ThemeMode } from '../../../shared/types'
+import { AppUpdateStatus, ThemeMode } from '../../../shared/types'
 import { Logo } from './Logo'
 
 interface HeaderProps {
-  depStatus: DependencyStatus | null
   appUpdate: AppUpdateStatus | null
   mode: ThemeMode
   onToggleMode: () => void

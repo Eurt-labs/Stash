@@ -30,34 +30,40 @@ export const Logo: React.FC<LogoProps> = ({ size = 36, className = '' }) => {
         viewBox="0 0 100 100"
         fill="none"
       >
-        {/* Lightning Bolt (Left) */}
+        {/* 1. Lightning Bolt (Left) */}
         <path
-          d="M40 16 L20 48 H36 L26 74 L50 42 H36 L44 16 Z"
+          d="M38 18 L18 48 H34 L24 74 L48 42 H34 L42 18 Z"
           stroke="#ffffff"
           strokeWidth="5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* Music Note (Right) */}
+        {/* 2. Harmonious Musical Note (Right) */}
         <path
-          d="M48 24 L74 16 V48"
+          d="M48 26 L72 18 V56"
           stroke="#ffffff"
           strokeWidth="5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <circle
-          cx="62"
-          cy="52"
-          r="10"
+          cx="60"
+          cy="56"
+          r="12"
           stroke="#ffffff"
           strokeWidth="5"
         />
 
-        {/* Download Arrow (Bottom) */}
+        {/* 3. Precision Download Arrow (Bottom) */}
         <path
-          d="M50 56 V80 M38 68 L50 80 L62 68"
+          d="M48 58 V82"
+          stroke="#ffffff"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M36 70 L48 82 L60 70"
           stroke="#ffffff"
           strokeWidth="5"
           strokeLinecap="round"
