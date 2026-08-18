@@ -464,12 +464,49 @@ const args = [
   '--no-warnings',
   '--socket-timeout', '30',
   '--retries', '5',
-  '--fragment-retries', '5',
-  '--extractor-args', 'youtube:player_client=web,android'
+  '--fragment-retries', '5'
 ];
 
 if (fs.existsSync(ffmpegPath)) {
   args.push('--ffmpeg-location', path.dirname(ffmpegPath));
+}
+```
+
+---
+
+### 📌 [FIX-013] High Quality Video Degradation to 360p & SABR Stream Resolution
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/DownloadEngine.ts`, `app-resources/windows/yt-dlp.exe`
+- **Severity**: High (Downloads defaulting to low 360p resolution despite High preset selected)
+
+#### 1. Problem Description & Symptoms
+- When downloading videos with the `High (320kbps / 1080p)` preset selected, the app downloaded low-resolution 360p video (`format 18`) instead of crisp 1080p / 1440p / 4K.
+
+#### 2. Technical Root Cause Analysis
+- YouTube activated server-side SABR streaming experiments on legacy Android extractor clients (`android`, `android_vr`), stripping direct URLs from 1080p and 4K video streams unless signed with GVS PO tokens.
+- When `player_client=android` was forced, `yt-dlp` skipped all unavailable DASH streams and fell back to YouTube's single pre-merged progressive stream: `format 18` (360p).
+- Additionally, the format string was capped with `[height<=1080]`, preventing ultra-high resolution formats.
+
+#### 3. Exact Solution & Code Implementation
+- Updated bundled `yt-dlp` to `nightly@2026.08.18.122307`, introducing the `visionos` extraction engine which provides full 4K, 1440p, 1080p 60fps streams with direct verified URLs.
+- Refactored video format selectors in `DownloadEngine.ts`:
+  - `HIGH`: `-f "bv*+ba/b"` (fetches full highest resolution available up to 4K / 2160p + best audio).
+  - `MID`: `-f "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b"` (720p).
+  - `LOW`: `-f "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b"` (480p / 360p).
+- Removed restrictive player client flags, allowing `yt-dlp`'s modern adaptive engine to negotiate the highest stream rate.
+
+```ts
+// DownloadEngine.ts
+if (format === 'MP4' || format === 'OTHER_VIDEO') {
+  if (quality === 'LOW') {
+    args.push('-f', 'bv*[height<=480]+ba/b[height<=480]/bv*+ba/b');
+  } else if (quality === 'MID') {
+    args.push('-f', 'bv*[height<=720]+ba/b[height<=720]/bv*+ba/b');
+  } else {
+    // HIGH: Highest available resolution (4K, 1440p, 1080p 60fps) + best audio
+    args.push('-f', 'bv*+ba/b');
+  }
+  args.push('--merge-output-format', 'mp4');
 }
 ```
 

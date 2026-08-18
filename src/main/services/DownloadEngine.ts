@@ -23,8 +23,7 @@ export class DownloadEngine {
       '--no-download',
       '--no-warnings',
       '--no-check-certificates',
-      '--socket-timeout', '30',
-      '--extractor-args', 'youtube:player_client=web,android'
+      '--socket-timeout', '30'
     ]
     
     if (flatPlaylist) {
@@ -107,8 +106,7 @@ export class DownloadEngine {
       '--fragment-retries', '5',
       '--fixup', 'never',
       '--newline',
-      '--no-playlist',
-      '--extractor-args', 'youtube:player_client=web,android'
+      '--no-playlist'
     ]
 
     // Pass ffmpeg directory location so yt-dlp can locate ffmpeg on all environments
@@ -118,10 +116,14 @@ export class DownloadEngine {
     }
 
     if (format === 'MP4' || format === 'OTHER_VIDEO') {
-      let heightLimit = 1080
-      if (quality === 'LOW') heightLimit = 360
-      if (quality === 'MID') heightLimit = 720
-      args.push('-f', `bv*[height<=${heightLimit}]+ba/b[height<=${heightLimit}]/bv*+ba/b`)
+      if (quality === 'LOW') {
+        args.push('-f', 'bv*[height<=480]+ba/b[height<=480]/bv*+ba/b')
+      } else if (quality === 'MID') {
+        args.push('-f', 'bv*[height<=720]+ba/b[height<=720]/bv*+ba/b')
+      } else {
+        // HIGH: Best available resolution (4K / 1440p / 1080p 60fps) + best audio
+        args.push('-f', 'bv*+ba/b')
+      }
       args.push('--merge-output-format', 'mp4')
     } else {
       // Audio: fetch best audio stream without forced early conversion; ConversionEngine handles 320k transcode in Phase 3
