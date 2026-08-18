@@ -21,6 +21,72 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
   onChangeQuality,
   onChangeFormat
 }) => {
+  const isLossless = format === 'FLAC' || format === 'WAV'
+  const isAudioOnly = format === 'MP3' || format === 'AAC' || format === 'OPUS'
+  const isVideo = format === 'MP4' || format === 'OTHER_VIDEO'
+
+  const renderQualitySelect = () => {
+    if (isLossless) {
+      return (
+        <select
+          className="select-box"
+          value="HIGH"
+          disabled
+          style={{ opacity: 0.85, cursor: 'not-allowed' }}
+          title="Lossless audio encodes at maximum bit-perfect fidelity automatically"
+        >
+          <option value="HIGH">Lossless (Bit-Perfect / Maximum)</option>
+        </select>
+      )
+    }
+
+    if (isAudioOnly) {
+      const activeQuality = quality === '4K' || quality === '2K' ? 'HIGH' : quality
+      return (
+        <select
+          className="select-box"
+          value={activeQuality}
+          onChange={(e) => onChangeQuality(e.target.value as DownloadQuality)}
+        >
+          <option value="HIGH">High (320kbps)</option>
+          <option value="MID">Mid (192kbps)</option>
+          <option value="LOW">Low (128kbps)</option>
+        </select>
+      )
+    }
+
+    if (isVideo) {
+      return (
+        <select
+          className="select-box"
+          value={quality}
+          onChange={(e) => onChangeQuality(e.target.value as DownloadQuality)}
+        >
+          <option value="4K">4K Ultra HD (2160p)</option>
+          <option value="2K">2K Quad HD (1440p)</option>
+          <option value="HIGH">1080p Full HD</option>
+          <option value="MID">720p HD</option>
+          <option value="LOW">360p Compact</option>
+        </select>
+      )
+    }
+
+    // Default / AUTO mode
+    return (
+      <select
+        className="select-box"
+        value={quality}
+        onChange={(e) => onChangeQuality(e.target.value as DownloadQuality)}
+      >
+        <option value="4K">4K Ultra HD (2160p / 320kbps)</option>
+        <option value="2K">2K Quad HD (1440p / 320kbps)</option>
+        <option value="HIGH">High (1080p / 320kbps)</option>
+        <option value="MID">Mid (720p / 192kbps)</option>
+        <option value="LOW">Low (360p / 128kbps)</option>
+      </select>
+    )
+  }
+
   return (
     <div className="controls-grid">
       {/* Output Folder Picker */}
@@ -46,17 +112,7 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
         <label className="control-label">
           <Sliders size={14} /> Quality Preset
         </label>
-        <select
-          className="select-box"
-          value={quality}
-          onChange={(e) => onChangeQuality(e.target.value as DownloadQuality)}
-        >
-          <option value="4K">4K Ultra HD (2160p)</option>
-          <option value="2K">2K Quad HD (1440p)</option>
-          <option value="HIGH">High (1080p / 320kbps)</option>
-          <option value="MID">Mid (720p / 192kbps)</option>
-          <option value="LOW">Low (360p / 128kbps)</option>
-        </select>
+        {renderQualitySelect()}
       </div>
 
       {/* Format Selector */}

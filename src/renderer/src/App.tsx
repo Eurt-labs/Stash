@@ -152,6 +152,18 @@ export const App: React.FC = () => {
   const handleChangeFormat = async (f: DownloadFormat) => {
     setFormat(f)
     await window.stashAPI.setFormat(f)
+
+    if (f === 'FLAC' || f === 'WAV') {
+      if (quality !== 'HIGH') {
+        setQuality('HIGH')
+        await window.stashAPI.setQuality('HIGH')
+      }
+    } else if (f === 'MP3' || f === 'AAC' || f === 'OPUS') {
+      if (quality === '4K' || quality === '2K') {
+        setQuality('HIGH')
+        await window.stashAPI.setQuality('HIGH')
+      }
+    }
   }
 
   const handleClearCompleted = async () => {

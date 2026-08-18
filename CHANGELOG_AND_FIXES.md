@@ -569,6 +569,28 @@ if (ext === '.mp3') {
 
 ---
 
+### 📌 [FIX-016] Dynamic Context-Aware Quality Preset Selector & FLAC Lossless Auto-Lock
+- **Date**: 2026-08-18
+- **Files Modified**: `src/renderer/src/components/SettingsBar.tsx`, `src/renderer/src/App.tsx`
+- **Severity**: UX / Design Refinement
+
+#### 1. Problem Description & Symptoms
+- When selecting an audio format (`MP3`, `AAC`, `FLAC`, etc.), video-only resolution presets (`4K Ultra HD`, `2K Quad HD`) remained visible in the Quality Preset selector.
+- When selecting `FLAC` or `WAV`, the quality dropdown offered irrelevant bitrate choices despite FLAC and WAV being bit-perfect, lossless audio formats.
+
+#### 2. Technical Root Cause Analysis
+- The Quality Preset `<select>` rendered a single static option list regardless of the active `targetFormat`.
+
+#### 3. Exact Solution & Code Implementation
+- Made `SettingsBar.tsx` dynamically adapt options based on `targetFormat`:
+  1. **Lossless Audio (`FLAC`, `WAV`)**: Automatically locks to disabled `Lossless (Bit-Perfect / Maximum)` indicator.
+  2. **Lossy Audio (`MP3`, `AAC`, `OPUS`)**: Displays clean audio-only bitrates: `High (320kbps)`, `Mid (192kbps)`, `Low (128kbps)`. (Removes 4K/2K).
+  3. **Video (`MP4`)**: Displays full resolution hierarchy: `4K Ultra HD (2160p)`, `2K Quad HD (1440p)`, `1080p Full HD`, `720p HD`, `360p Compact`.
+  4. **Auto-Detect (`AUTO`)**: Displays unified multi-stream presets.
+- Added automatic state normalization in `App.tsx` when switching between video and audio formats.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
