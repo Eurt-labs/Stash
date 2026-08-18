@@ -178,18 +178,18 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {/* 1. Dedicated Artist Artwork Backdrop */}
-      {isArtistTheme && (
+      {/* 1. Dedicated Artist Artwork Backdrop (Clean Artwork with Zero Line Clutter) */}
+      {isArtistTheme ? (
         <div
           className="artist-backdrop"
           style={{
             backgroundImage: `url('./artists/${theme}.svg')`
           }}
         />
+      ) : (
+        /* 2. Animated Liquid Glass Shader & Flowing Ribbon Paths for Core Color Palettes */
+        <FloatingPaths theme={theme} mode={mode} />
       )}
-
-      {/* 2. Animated Liquid Glass Shader & Flowing Paths */}
-      <FloatingPaths theme={theme} mode={mode} />
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
         <Header

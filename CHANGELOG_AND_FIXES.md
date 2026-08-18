@@ -367,6 +367,33 @@ export const FloatingPaths: React.FC<FloatingPathsProps> = ({ theme = 'indigo', 
 
 ---
 
+### 📌 [FIX-009] Canvas Wave Line Suppression on Artist Backdrops
+- **Date**: 2026-08-18
+- **Files Modified**: `src/renderer/src/App.tsx`
+- **Severity**: Low (Visual clarity & uncluttered artwork presentation)
+
+#### 1. Problem Description & Symptoms
+- When an Artist Signature Style was active, the generic procedural animated wave ribbons from the `<FloatingPaths>` canvas rendered on top of the artist's vector artwork (e.g. cutting through Taylor Swift's crescent moon and constellation lines), causing visual clutter.
+
+#### 2. Technical Root Cause Analysis
+- Both `<FloatingPaths>` and `<div className="artist-backdrop" />` were rendered simultaneously in `App.tsx` regardless of whether `isArtistTheme` was true or false.
+
+#### 3. Exact Solution & Code Implementation
+- Updated `App.tsx` with a conditional render branch:
+  - When `isArtistTheme` is `true`: Exclusively render `<div className="artist-backdrop" />` with zero overlapping wave lines.
+  - When `isArtistTheme` is `false`: Render the hardware-accelerated `<FloatingPaths theme={theme} mode={mode} />` liquid wave canvas for the clean core color palettes.
+
+```tsx
+// App.tsx
+{isArtistTheme ? (
+  <div className="artist-backdrop" style={{ backgroundImage: `url('./artists/${theme}.svg')` }} />
+) : (
+  <FloatingPaths theme={theme} mode={mode} />
+)}
+```
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
