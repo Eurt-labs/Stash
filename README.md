@@ -1,10 +1,10 @@
 <div align="center">
 
-![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.2)
+![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.3)
 
 # Stash Media Downloader
 
-**A fast, lightweight cross-platform application for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music across Desktop and Android.**
+**A fast, lightweight media downloader for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music.**
 
 Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas &amp; SVG Shaders.
 
@@ -18,7 +18,7 @@ Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas
 
 ## ⚡ What is Stash?
 
-Stash is an open-source cross-platform tool that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
+Stash is an open-source media downloader that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
 
 ---
 
