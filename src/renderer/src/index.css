@@ -1,35 +1,35 @@
 /* ══════════════════════════════════════════════════════════════════
-   STASH - LIQUID GLASS DESIGN SYSTEM & THEME ARCHITECTURE
+   STASH - TRANSLUCENT LIQUID GLASS DESIGN SYSTEM & THEME SUITE
    ══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Default Dark Mode Surfaces & Geometry */
-  --bg-main: #080a10;
-  --glass-card: rgba(17, 21, 33, 0.72);
-  --glass-card-hover: rgba(24, 30, 48, 0.85);
-  --glass-card-subtle: rgba(255, 255, 255, 0.03);
-  --glass-input: rgba(10, 13, 21, 0.8);
-  --glass-elevated: rgba(22, 27, 44, 0.9);
+  /* Default Dark Mode Surfaces & Geometry (Ultra-Translucent Liquid Glass) */
+  --bg-main: #07090e;
+  --glass-card: rgba(13, 17, 28, 0.42);
+  --glass-card-hover: rgba(20, 26, 42, 0.6);
+  --glass-card-subtle: rgba(255, 255, 255, 0.035);
+  --glass-input: rgba(9, 12, 20, 0.5);
+  --glass-elevated: rgba(18, 23, 38, 0.75);
 
   /* Glass Borders & Specular Reflections */
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-medium: rgba(255, 255, 255, 0.16);
-  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 12px 36px 0 rgba(0, 0, 0, 0.5);
-  --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
-  --glass-blur: blur(24px) saturate(190%);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.14), 0 12px 36px 0 rgba(0, 0, 0, 0.45);
+  --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+  --glass-blur: blur(28px) saturate(200%);
 
   /* Dark Mode Typography */
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --text-inverse: #080a10;
+  --text-inverse: #07090e;
   --placeholder-color: #64748b;
 
   /* Default Primary: Indigo */
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --primary-light: #818cf8;
-  --primary-muted: rgba(99, 102, 241, 0.2);
+  --primary-muted: rgba(99, 102, 241, 0.22);
   --primary-glow: rgba(99, 102, 241, 0.45);
   --border-focus: #6366f1;
 
@@ -54,11 +54,11 @@
 /* ── Light Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
 [data-mode='light'] {
   --bg-main: #f1f5f9;
-  --glass-card: rgba(255, 255, 255, 0.78);
-  --glass-card-hover: rgba(255, 255, 255, 0.92);
-  --glass-card-subtle: rgba(255, 255, 255, 0.5);
-  --glass-input: rgba(255, 255, 255, 0.9);
-  --glass-elevated: rgba(255, 255, 255, 0.96);
+  --glass-card: rgba(255, 255, 255, 0.58);
+  --glass-card-hover: rgba(255, 255, 255, 0.78);
+  --glass-card-subtle: rgba(255, 255, 255, 0.45);
+  --glass-input: rgba(255, 255, 255, 0.72);
+  --glass-elevated: rgba(255, 255, 255, 0.9);
 
   --border-subtle: rgba(0, 0, 0, 0.08);
   --border-medium: rgba(0, 0, 0, 0.15);
@@ -74,26 +74,28 @@
 
 /* ── Dark Mode System (Surfaces & Typography only, does NOT touch --primary) ── */
 [data-mode='dark'] {
-  --bg-main: #080a10;
-  --glass-card: rgba(17, 21, 33, 0.72);
-  --glass-card-hover: rgba(24, 30, 48, 0.85);
-  --glass-card-subtle: rgba(255, 255, 255, 0.03);
-  --glass-input: rgba(10, 13, 21, 0.8);
-  --glass-elevated: rgba(22, 27, 44, 0.9);
+  --bg-main: #07090e;
+  --glass-card: rgba(13, 17, 28, 0.42);
+  --glass-card-hover: rgba(20, 26, 42, 0.6);
+  --glass-card-subtle: rgba(255, 255, 255, 0.035);
+  --glass-input: rgba(9, 12, 20, 0.5);
+  --glass-elevated: rgba(18, 23, 38, 0.75);
 
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-medium: rgba(255, 255, 255, 0.16);
-  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 12px 36px 0 rgba(0, 0, 0, 0.5);
-  --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --glass-specular: inset 0 1px 1px 0 rgba(255, 255, 255, 0.14), 0 12px 36px 0 rgba(0, 0, 0, 0.45);
+  --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --text-inverse: #080a10;
+  --text-inverse: #07090e;
   --placeholder-color: #64748b;
 }
 
-/* ── Color Theme Palettes (Active in Both Dark and Light Modes) ── */
+/* ══════════════════════════════════════════════════════════════════
+   STANDARD COLOR PALETTES
+   ══════════════════════════════════════════════════════════════════ */
 [data-theme='indigo'] {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -167,6 +169,70 @@
   --border-focus: #0f172a;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   ARTIST SIGNATURE ART STYLES
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The Weeknd (After Hours / Dawn FM Crimson Neon) */
+[data-theme='weeknd'] {
+  --primary: #ff1e42;
+  --primary-hover: #e01030;
+  --primary-light: #ff4d6a;
+  --primary-muted: rgba(255, 30, 66, 0.24);
+  --primary-glow: rgba(255, 30, 66, 0.5);
+  --border-focus: #ff1e42;
+}
+
+/* Taylor Swift (Midnights / 1989 Luminous Lavender) */
+[data-theme='taylor'] {
+  --primary: #9061f9;
+  --primary-hover: #7e3af2;
+  --primary-light: #ac8af8;
+  --primary-muted: rgba(144, 97, 249, 0.24);
+  --primary-glow: rgba(144, 97, 249, 0.5);
+  --border-focus: #9061f9;
+}
+
+/* Billie Eilish (Hit Me Hard and Soft Cobalt Cyan) */
+[data-theme='billie'] {
+  --primary: #06b6d4;
+  --primary-hover: #0891b2;
+  --primary-light: #22d3ee;
+  --primary-muted: rgba(6, 182, 212, 0.24);
+  --primary-glow: rgba(6, 182, 212, 0.5);
+  --border-focus: #06b6d4;
+}
+
+/* Daft Punk (Random Access Memories Golden Chrome) */
+[data-theme='daftpunk'] {
+  --primary: #fbbf24;
+  --primary-hover: #f59e0b;
+  --primary-light: #fde047;
+  --primary-muted: rgba(251, 191, 36, 0.24);
+  --primary-glow: rgba(251, 191, 36, 0.5);
+  --border-focus: #fbbf24;
+}
+
+/* Travis Scott (Utopia / Astroworld Neon Desert Mint) */
+[data-theme='travis'] {
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --primary-light: #34d399;
+  --primary-muted: rgba(16, 185, 129, 0.24);
+  --primary-glow: rgba(16, 185, 129, 0.5);
+  --border-focus: #10b981;
+}
+
+/* Lana Del Rey (Ultraviolence / Born to Die Vintage Rose Quartz) */
+[data-theme='lana'] {
+  --primary: #f472b6;
+  --primary-hover: #ec4899;
+  --primary-light: #f9a8d4;
+  --primary-muted: rgba(244, 114, 182, 0.24);
+  --primary-glow: rgba(244, 114, 182, 0.5);
+  --border-focus: #f472b6;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -229,7 +295,7 @@ html, body {
   gap: 16px;
 }
 
-/* ── Liquid Glass Card Foundation ── */
+/* ── Liquid Glass Card Foundation (Translucent Layering) ── */
 .glass-panel,
 .card,
 .search-bar-card,
@@ -410,13 +476,18 @@ html, body {
   align-items: center;
   gap: 6px;
   background: var(--glass-input);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 3px 6px 3px 12px;
   min-height: 38px;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.path-picker-box .btn-icon-only {
+  color: var(--primary);
+  background: var(--primary-muted);
 }
 
 .path-text {
@@ -431,8 +502,8 @@ html, body {
 
 .select-box {
   background: var(--glass-input);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -468,6 +539,12 @@ html, body {
 .search-bar-card:focus-within {
   border-color: var(--primary);
   box-shadow: var(--glass-specular), 0 0 0 2px var(--primary-muted);
+}
+
+.search-icon-wrapper {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
@@ -587,7 +664,7 @@ html, body {
 
 .track-card:hover {
   background: var(--glass-card-hover);
-  border-color: var(--border-medium);
+  border-color: var(--primary-muted);
 }
 
 .track-art {
@@ -734,9 +811,9 @@ html, body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -755,7 +832,7 @@ html, body {
   border-radius: var(--radius-lg);
   padding: 22px;
   width: 90%;
-  max-width: 600px;
+  max-width: 620px;
   box-shadow: var(--glass-specular), 0 24px 48px rgba(0, 0, 0, 0.5);
 }
 
@@ -777,7 +854,7 @@ html, body {
 /* Theme Swatches in Settings Modal */
 .theme-swatches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 8px;
   margin-top: 6px;
 }
@@ -818,6 +895,12 @@ html, body {
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-primary);
+  text-align: center;
+}
+
+.theme-swatch-sub {
+  font-size: 9.5px;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -874,7 +957,7 @@ html, body {
   border: 1px solid #4338ca;
 }
 
-/* Empty State */
+/* Empty State (Liquid Translucent) */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -884,7 +967,10 @@ html, body {
   text-align: center;
   color: var(--text-muted);
   gap: 10px;
-  border-style: dashed;
+  border: 1px dashed var(--border-medium);
+  background: var(--glass-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .empty-icon {

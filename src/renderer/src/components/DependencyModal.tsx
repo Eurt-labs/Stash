@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
   X,
-  ShieldCheck,
-  ShieldAlert,
   RefreshCw,
   Cpu,
   Film,
@@ -14,7 +12,9 @@ import {
   Palette,
   Sliders,
   Sun,
-  Moon
+  Moon,
+  Music2,
+  Sparkles
 } from 'lucide-react'
 import { DependencyStatus, AppUpdateStatus, ColorTheme, ThemeMode } from '../../../shared/types'
 import { Logo } from './Logo'
@@ -34,7 +34,7 @@ interface SettingsModalProps {
   onOpenUrl: (url: string) => void
 }
 
-const THEME_OPTIONS: Array<{ id: ColorTheme; label: string; dotGradient: string }> = [
+const STANDARD_THEMES: Array<{ id: ColorTheme; label: string; dotGradient: string }> = [
   { id: 'indigo', label: 'Indigo', dotGradient: '#6366f1' },
   { id: 'emerald', label: 'Green', dotGradient: '#10b981' },
   { id: 'sunset', label: 'Pink', dotGradient: '#f43f5e' },
@@ -42,6 +42,15 @@ const THEME_OPTIONS: Array<{ id: ColorTheme; label: string; dotGradient: string 
   { id: 'amber', label: 'Yellow', dotGradient: '#f59e0b' },
   { id: 'crimson', label: 'Red', dotGradient: '#ef4444' },
   { id: 'oled', label: 'Monochrome', dotGradient: '#ffffff' }
+]
+
+const ARTIST_THEMES: Array<{ id: ColorTheme; label: string; artist: string; dotGradient: string; desc: string }> = [
+  { id: 'weeknd', label: 'The Weeknd', artist: 'After Hours', dotGradient: '#ff1e42', desc: 'Crimson Synthwave' },
+  { id: 'taylor', label: 'Taylor Swift', artist: 'Midnights', dotGradient: '#9061f9', desc: 'Starry Lavender' },
+  { id: 'billie', label: 'Billie Eilish', artist: 'Hit Me Hard', dotGradient: '#06b6d4', desc: 'Electric Cobalt' },
+  { id: 'daftpunk', label: 'Daft Punk', artist: 'RAM', dotGradient: '#fbbf24', desc: 'Golden Chrome' },
+  { id: 'travis', label: 'Travis Scott', artist: 'Utopia', dotGradient: '#10b981', desc: 'Desert Neon Mint' },
+  { id: 'lana', label: 'Lana Del Rey', artist: 'Born to Die', dotGradient: '#f472b6', desc: 'Vintage Rose' }
 ]
 
 export const DependencyModal: React.FC<SettingsModalProps> = ({
@@ -100,7 +109,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sliders size={20} color="var(--primary)" />
@@ -111,17 +120,17 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* ── Section 1: Appearance (Dark / Light Mode & Color Palettes) ── */}
-        <div style={{ marginBottom: '22px' }}>
+        {/* ── Section 1: Appearance Mode (Dark / Light) ── */}
+        <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Palette size={14} color="var(--primary)" />
               <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-                Appearance & Liquid Glass
+                Liquid Glass Appearance
               </span>
             </div>
 
-            {/* Mode Pills (Dark / Light) */}
+            {/* Mode Switcher */}
             <div style={{ display: 'flex', gap: '4px', background: 'var(--glass-input)', padding: '3px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
               <button
                 type="button"
@@ -156,8 +165,12 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          <div className="theme-swatches-grid">
-            {THEME_OPTIONS.map((t) => (
+          {/* Standard Palette Grid */}
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+            Core Palettes
+          </div>
+          <div className="theme-swatches-grid" style={{ marginBottom: '16px' }}>
+            {STANDARD_THEMES.map((t) => (
               <div
                 key={t.id}
                 className={`theme-swatch-card ${theme === t.id ? 'active' : ''}`}
@@ -166,7 +179,32 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
                 <div className="theme-preview-dot" style={{ background: t.dotGradient }} />
                 <span className="theme-swatch-label">{t.label}</span>
                 {theme === t.id && (
-                  <span style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '10px', color: 'var(--primary)' }}>
+                  <span style={{ position: 'absolute', top: '5px', right: '6px', fontSize: '10px', color: 'var(--primary)' }}>
+                    ✓
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Artist Signature Art Styles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+            <Music2 size={12} color="var(--primary)" />
+            <span>Artist Signature Art Styles</span>
+          </div>
+          <div className="theme-swatches-grid">
+            {ARTIST_THEMES.map((t) => (
+              <div
+                key={t.id}
+                className={`theme-swatch-card ${theme === t.id ? 'active' : ''}`}
+                onClick={() => onChangeTheme(t.id)}
+                style={{ padding: '8px 6px' }}
+              >
+                <div className="theme-preview-dot" style={{ background: t.dotGradient }} />
+                <span className="theme-swatch-label" style={{ fontSize: '11px' }}>{t.label}</span>
+                <span className="theme-swatch-sub">{t.desc}</span>
+                {theme === t.id && (
+                  <span style={{ position: 'absolute', top: '5px', right: '6px', fontSize: '10px', color: 'var(--primary)' }}>
                     ✓
                   </span>
                 )}
@@ -213,7 +251,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {appUpdateData?.hasUpdate ? (
-              <span className="status-badge" style={{ background: 'var(--primary-muted)', color: 'var(--primary-light)', border: '1px solid var(--border-medium)' }}>
+              <span className="status-badge" style={{ background: 'var(--primary-muted)', color: 'var(--primary)', border: '1px solid var(--border-medium)' }}>
                 <DownloadCloud size={14} /> Update v{appUpdateData.latestVersion}
               </span>
             ) : (
