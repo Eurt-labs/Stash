@@ -6,7 +6,7 @@
 
 **A fast, lightweight media downloader for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music.**
 
-Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas &amp; SVG Shaders.
+Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas & SVG Shaders.
 
 [![GitHub Release](https://img.shields.io/github/v/release/Eurt-labs/Stash?style=flat-square&color=6366f1)](https://github.com/Eurt-labs/Stash/releases)
 [![License](https://img.shields.io/badge/license-MIT-emerald?style=flat-square)](LICENSE)
@@ -18,7 +18,7 @@ Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas
 
 ## ⚡ What is Stash?
 
-Stash is an open-source media downloader that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
+Stash is an open-source media downloader that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4 video up to 4K Ultra HD) and embeds high-resolution cover artwork and metadata tags into your files.
 
 ---
 
@@ -33,26 +33,23 @@ Stash processes downloads through a deterministic **5-phase sequential pipeline*
 </div>
 
 1. **Input & Parse**: Accepts direct URLs (video, playlist, album, artist) or plain-text artist searches.
-2. **Fetch Metadata**: Scrapes track titles, artists, album names, durations, and high-res thumbnail URLs via `yt-dlp`.
-3. **Download Stream**: Downloads the best available raw audio or video stream into a temporary working cache with live speed and ETA reporting.
-4. **Transcode (FFmpeg)**: Converts the raw stream into your chosen target format and bitrate preset (`High 320k`, `Mid 192k`, `Low 128k`).
-5. **Tag & Move**: Embeds ID3v2.4 metadata and cover artwork using `node-id3`, then moves the final file to your selected output directory and purges the temp cache.
+2. **Fetch Metadata**: Scrapes track titles, artists, album names, durations, and high-res thumbnail URLs via `yt-dlp` with automatic fallback search.
+3. **Download Stream**: Downloads the best available raw audio or video stream into a temporary working cache with live speed and ETA reporting (4K/2K/1080p/720p/Audio).
+4. **Transcode (FFmpeg)**: Converts the raw stream into your chosen target format and bitrate preset (`4K`, `2K`, `High 320k`, `Mid 192k`, `Low 128k`, or bit-perfect `Lossless`).
+5. **Tag & Move**: Embeds ID3v2/RIFF/Vorbis metadata and Baseline JPEG album artwork, then moves the final file to your selected output directory and purges the temp cache.
 
 ---
 
 ## 🛠️ Prerequisites & Dependencies
 
 Stash relies on two core command-line tools under the hood:
-- **`yt-dlp`** — Stream extraction and metadata parser.
+- **`yt-dlp`** — Stream extraction and metadata parser (Auto-managed nightly VisionOS engine).
 - **`ffmpeg` / `ffprobe`** — Audio and video transcoding engine.
 
-### Automatic Windows Setup
-If you are running on Windows, Stash includes a helper script that downloads the latest official binaries directly into `app-resources/windows/`:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\download_dependencies.ps1
-```
+### Automatic Bootstrap
+Stash includes an automatic on-demand binary bootstrap engine. If `yt-dlp` is not found on your system PATH, Stash automatically downloads the latest nightly executable directly into `~/.stash/bin/` on your first search or download with zero manual setup required!
 
-### Manual Installation by Platform
+### Manual Installation by Platform (Optional)
 
 #### Windows
 ```powershell
@@ -83,7 +80,7 @@ sudo dnf install ffmpeg yt-dlp
 
 ---
 
-## 🚀 Getting Started Locally
+## 🚀 Building & Running the Application
 
 ### 1. Clone the repository
 ```bash
@@ -96,16 +93,35 @@ cd Stash
 npm install
 ```
 
-### 3. Run in development mode
+### 3. Run in development mode (Live Reload)
 ```bash
 npm run dev
 ```
 
-### 4. Build for production (Windows `.exe` / `.msi`)
+### 4. Compile TypeScript & Vite production bundle
+```bash
+npm run build
+```
+
+### 5. Package Windows Standalone Installer (`.exe`)
+To package the clean, lightweight standalone Windows installer (**~85 MB**):
 ```bash
 npm run package:win
 ```
-The compiled installer will be generated in the `release/` folder.
+The compiled installer will be generated in the **`release/`** folder:
+- **`release/Stash Setup 2.0.0.exe`** — Standalone NSIS installer with desktop and start menu shortcuts.
+
+### 6. Alternative Build Targets
+- **Build Portable `.exe` (No installation required)**:
+  ```bash
+  npm run build
+  npx electron-builder --win portable
+  ```
+- **Build Unpacked Directory (Fast preview without installer)**:
+  ```bash
+  npm run build
+  npx electron-builder --win --dir
+  ```
 
 ---
 
@@ -113,12 +129,14 @@ The compiled installer will be generated in the `release/` folder.
 
 - **Broad Platform & URL Support**: Works with YouTube videos, Shorts, playlists, YouTube Music tracks, albums, artist channels, and plain-text search queries.
 - **Transcoding Options**:
-  - **Formats**: Auto-Detect, MP3, AAC, FLAC (lossless), OPUS, WAV, MP4 video.
-  - **Quality Presets**: High (320kbps / 1080p), Mid (192kbps / 720p), Low (128kbps / 360p).
-- **Automated Metadata & Cover Art**: Embeds ID3v2.4 tags (Title, Artist, Album, Year, Genre) and full-quality album artwork.
+  - **Formats**: MP3, AAC, FLAC (lossless), OPUS, WAV, MP4 video.
+  - **Video Quality Presets**: 4K Ultra HD (2160p), 2K Quad HD (1440p), 1080p Full HD, 720p HD, 360p Compact.
+  - **Audio Quality Presets**: High (320kbps), Mid (192kbps), Low (128kbps), Lossless (Bit-Perfect / Maximum).
+- **Automated Metadata & Cover Art**: Embeds ID3v2, RIFF INFO, and Vorbis comments with normalized 600x600 Baseline JPEG artwork across all formats.
+- **Full Playlist Extraction & Auto-Fallback**: Instantly extracts 100% of playlist items and uses automatic search fallback for hidden or region-restricted songs.
 - **13 Built-in Color & Artist Signature Themes**: 7 Core Palettes + 6 Artist Styles (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey) with slow-breathing animated backdrops.
-- **In-App Tool & Release Checker**: Checks for new `yt-dlp` binary updates and alerts you if a newer version of Stash is published on GitHub.
-- **Liquid Glass UI**: Ultra-translucent frosted glass design with hardware-accelerated shaders, responsive scaling, and clean keyboard shortcuts.
+- **Micro-Animations & Liquid Glass UI**: Spring-loaded chevrons, CSS Grid playlist accordions, staggered cascading track cards, and chromatic theme bloom transitions.
+- **In-App Self-Healing Update Engine**: 1-click update tool in Settings to automatically pull the newest upstream nightly patches without reinstalling the app.
 
 ---
 
@@ -126,19 +144,20 @@ The compiled installer will be generated in the `release/` folder.
 
 ```text
 Stash/
-├── app-resources/          # Application logo, animated SVGs, and bundled binaries
+├── app-resources/          # Application logo and animated vector SVG assets
 ├── src/
 │   ├── main/               # Electron main process
-│   │   ├── services/       # Orchestrator, LinkParser, DownloadEngine, ConversionEngine, MetadataTagger
+│   │   ├── services/       # Orchestrator, LinkParser, DownloadEngine, ConversionEngine, MetadataTagger, DependencyResolver
 │   │   ├── main.ts         # Main process window and IPC handlers
 │   │   └── preload.ts      # Context bridge exposing safe IPC API
 │   ├── renderer/           # React frontend UI
 │   │   ├── src/
 │   │   │   ├── components/ # Header, SettingsBar, LinkInputBar, BatchItem, TrackCard, SettingsModal
-│   │   │   ├── index.css   # Clean handcrafted dark design system
+│   │   │   ├── index.css   # Clean handcrafted dark design system & micro-animations
 │   │   │   └── App.tsx     # Root application component
+│   │   └── index.html      # Application HTML entry point
 │   └── shared/             # Shared TypeScript types and interfaces
-├── electron-builder.json   # Windows NSIS / MSI installer packaging configuration
+├── electron-builder.json   # Windows NSIS installer packaging configuration
 ├── vite.config.ts          # Vite + Electron plugin configuration
 └── package.json
 ```
