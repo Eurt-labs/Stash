@@ -189,7 +189,7 @@ export const App: React.FC = () => {
   const isArtistTheme = ['weeknd', 'taylor', 'billie', 'daftpunk', 'travis', 'lana'].includes(theme)
 
   return (
-    <div className="app-container">
+    <div className="app-container" key={`${theme}-${mode}`}>
       {/* 1. Dedicated Artist Artwork Backdrop (Clean Artwork with Zero Line Clutter) */}
       {isArtistTheme ? (
         <div

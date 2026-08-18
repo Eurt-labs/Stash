@@ -652,6 +652,19 @@ try {
 
 ---
 
+### 📌 [FIX-020] Smooth Spring Chevron Rotation, CSS Grid Accordion Collapse, and Chromatic Theme Bloom Transitions
+- **Date**: 2026-08-18
+- **Files Modified**: `src/renderer/src/components/BatchItem.tsx`, `src/renderer/src/App.tsx`, `src/renderer/src/index.css`
+- **Severity**: UI / Aesthetic Enhancement
+
+#### 1. Description & Enhancement
+- **Smooth Spring Chevron Rotation**: Replaced abrupt chevron icon swap with a fluid 0.38s spring rotation (`cubic-bezier(0.34, 1.56, 0.64, 1)`), smoothly rotating -90° when closed to 0° when open.
+- **CSS Grid Accordion Collapse & Expand**: Replaced abrupt conditional mounting with a CSS Grid `grid-template-rows: 0fr -> 1fr` transition for buttery smooth playlist dropdown expanding and collapsing.
+- **Cascading Track Card Reveal Stagger**: Applied cascading 0.03s staggered slide-in animations to individual track cards when expanding batches.
+- **Chromatic Theme Bloom Transition**: Added `@keyframes themeAuraBloom` and 0.65s backdrop breathing transitions when switching themes and dark/light modes.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

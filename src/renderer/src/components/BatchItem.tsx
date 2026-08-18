@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
 import {
   ChevronDown,
-  ChevronRight,
   Play,
   XCircle,
   Trash2,
   ListMusic,
-  CheckCircle2,
   FolderOpen
 } from 'lucide-react'
 import { DownloadBatch } from '../../../shared/types'
@@ -46,9 +44,17 @@ export const BatchItem: React.FC<BatchItemProps> = ({
 
   return (
     <div className="batch-card">
-      <div className="batch-header" onClick={() => setIsExpanded(!isExpanded)}>
+      <div
+        className="batch-header"
+        onClick={() => setIsExpanded(!isExpanded)}
+        role="button"
+        tabIndex={0}
+        title={isExpanded ? 'Click to collapse playlist' : 'Click to expand playlist'}
+      >
         <div className="batch-info">
-          {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          <div className={`chevron-indicator ${isExpanded ? 'is-open' : ''}`}>
+            <ChevronDown size={18} />
+          </div>
           <ListMusic size={18} color="var(--primary)" />
           <span className="batch-title">{batch.name}</span>
           <div className="batch-meta">
@@ -99,20 +105,28 @@ export const BatchItem: React.FC<BatchItemProps> = ({
         </div>
       </div>
 
-      {isExpanded && (
-        <div className="track-list">
-          {batch.items.map((item) => (
-            <TrackCard
-              key={item.id}
-              item={item}
-              onDownload={() => onStartTrack(batch.id, item.id)}
-              onCancel={() => onCancelTrack(batch.id, item.id)}
-              onRemove={() => onRemoveTrack(batch.id, item.id)}
-              onOpenFile={() => item.finalFilePath && onOpenFile(item.finalFilePath)}
-            />
-          ))}
+      {/* Smooth CSS Grid Accordion Collapse / Expand with Cascading Card Stagger */}
+      <div className={`batch-accordion-wrapper ${isExpanded ? 'is-open' : ''}`}>
+        <div className="batch-accordion-inner">
+          <div className="track-list">
+            {batch.items.map((item, idx) => (
+              <div
+                key={item.id}
+                className="track-card-animated"
+                style={{ animationDelay: `${Math.min(idx * 0.03, 0.36)}s` }}
+              >
+                <TrackCard
+                  item={item}
+                  onDownload={() => onStartTrack(batch.id, item.id)}
+                  onCancel={() => onCancelTrack(batch.id, item.id)}
+                  onRemove={() => onRemoveTrack(batch.id, item.id)}
+                  onOpenFile={() => item.finalFilePath && onOpenFile(item.finalFilePath)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
