@@ -1,102 +1,73 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
   <defs>
-    <!-- Deep Abyssal Ocean Gradient -->
-    <linearGradient id="bBg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#020a16" />
-      <stop offset="35%" stop-color="#04152d" />
-      <stop offset="70%" stop-color="#062244" />
-      <stop offset="100%" stop-color="#01060e" />
+    <!-- Deep Underwater Cobalt & Teal Radial Aura -->
+    <radialGradient id="bAura" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.25" />
+      <stop offset="35%" stop-color="#0284c7" stop-opacity="0.14" />
+      <stop offset="70%" stop-color="#0c4a6e" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#020814" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="bSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#020814" />
+      <stop offset="40%" stop-color="#041528" />
+      <stop offset="75%" stop-color="#082542" />
+      <stop offset="100%" stop-color="#020710" />
     </linearGradient>
 
-    <!-- Cyan Caustic Glow -->
-    <filter id="cyanGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="60" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-
-    <linearGradient id="rayGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.5" />
-      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.18" />
+    <linearGradient id="rayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#22d3ee" stop-opacity="0.1" />
       <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
     </linearGradient>
 
-    <linearGradient id="rayGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.55" />
-      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.2" />
-      <stop offset="100%" stop-color="#082f49" stop-opacity="0" />
-    </linearGradient>
-
     <style>
-      @keyframes raySway1 {
-        0%, 100% { transform: skewX(0deg) scaleX(1); opacity: 0.85; }
-        50% { transform: skewX(4deg) scaleX(1.1); opacity: 1; }
+      @keyframes slowOceanBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.06); opacity: 0.95; }
       }
-      @keyframes raySway2 {
-        0%, 100% { transform: skewX(0deg) scaleX(1); opacity: 0.8; }
-        50% { transform: skewX(-4deg) scaleX(1.15); opacity: 1; }
+      @keyframes slowRaySway {
+        0%, 100% { transform: skewX(0deg); opacity: 0.7; }
+        50% { transform: skewX(3.5deg); opacity: 0.95; }
       }
-      @keyframes bubbleFloat1 {
-        0% { transform: translateY(0px) translateX(0px); opacity: 0.4; }
-        50% { transform: translateY(-80px) translateX(15px); opacity: 0.9; }
-        100% { transform: translateY(-160px) translateX(-5px); opacity: 0.2; }
+      @keyframes slowBubbleDrift {
+        0%, 100% { transform: translateY(0px); opacity: 0.35; }
+        50% { transform: translateY(-40px); opacity: 0.8; }
       }
-      @keyframes bubbleFloat2 {
-        0% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
-        50% { transform: translateY(-100px) translateX(-18px); opacity: 0.85; }
-        100% { transform: translateY(-200px) translateX(10px); opacity: 0.1; }
-      }
-      @keyframes waterBreathe {
-        0%, 100% { opacity: 0.25; }
-        50% { opacity: 0.45; }
-      }
-      .anim-ray-1 { animation: raySway1 8s ease-in-out infinite; transform-origin: top center; }
-      .anim-ray-2 { animation: raySway2 11s ease-in-out infinite; transform-origin: top center; }
-      .anim-bubble-1 { animation: bubbleFloat1 7s ease-in-out infinite; }
-      .anim-bubble-2 { animation: bubbleFloat2 9s ease-in-out infinite; }
-      .anim-water-pool { animation: waterBreathe 6s ease-in-out infinite; }
+      .anim-ocean-aura { animation: slowOceanBreathe 14s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 50% 35%; }
+      .anim-rays { animation: slowRaySway 12s ease-in-out infinite; transform-origin: top center; }
+      .anim-bubbles { animation: slowBubbleDrift 10s ease-in-out infinite; }
     </style>
   </defs>
 
-  <!-- Ocean Abyss Backdrop -->
-  <rect width="1920" height="1080" fill="url(#bBg)" />
+  <!-- Deep Ocean Base -->
+  <rect width="1920" height="1080" fill="url(#bSky)" />
 
-  <!-- Ambient Submerged Caustic Light Pool -->
-  <circle cx="960" cy="300" r="600" fill="#06b6d4" class="anim-water-pool" filter="url(#cyanGlow)" />
-  <circle cx="450" cy="550" r="450" fill="#10b981" opacity="0.16" filter="url(#cyanGlow)" />
-  <circle cx="1450" cy="550" r="450" fill="#0284c7" opacity="0.2" filter="url(#cyanGlow)" />
+  <!-- Smooth Breathing Ocean Aura -->
+  <rect width="1920" height="1080" fill="url(#bAura)" class="anim-ocean-aura" />
 
-  <!-- Animated Sunken Caustic Light Beams (Submerged Sunlight) -->
-  <g class="anim-ray-1">
-    <polygon points="280,0 420,0 750,1080 350,1080" fill="url(#rayGrad1)" />
-    <polygon points="1120,0 1280,0 1720,1080 1350,1080" fill="url(#rayGrad1)" />
-  </g>
-  <g class="anim-ray-2">
-    <polygon points="680,0 840,0 1250,1080 850,1080" fill="url(#rayGrad2)" />
-    <polygon points="1480,0 1620,0 1980,1080 1680,1080" fill="url(#rayGrad2)" />
+  <!-- Soft Sunlight Caustic Beams Sinking Through Water -->
+  <g class="anim-rays">
+    <polygon points="350,0 480,0 720,1080 420,1080" fill="url(#rayGrad)" />
+    <polygon points="820,0 960,0 1280,1080 1020,1080" fill="url(#rayGrad)" />
+    <polygon points="1320,0 1440,0 1780,1080 1520,1080" fill="url(#rayGrad)" />
   </g>
 
-  <!-- Underwater Ambient Ripple Waves -->
-  <g fill="none" stroke="#22d3ee" stroke-width="2" opacity="0.3">
-    <path d="M-100,280 C350,220 720,360 1200,260 C1550,180 1780,320 2050,240" />
-    <path d="M-100,420 C420,340 850,520 1350,380 C1650,300 1820,440 2050,360" />
-    <path d="M-100,600 C380,520 800,680 1280,560 C1600,480 1850,620 2050,540" />
+  <!-- Subtle Deep Ocean Water Caustic Curves -->
+  <g fill="none" stroke="#22d3ee" stroke-width="1.5" opacity="0.2">
+    <path d="M-50,340 Q480,240 1020,320 T2020,280" />
+    <path d="M-50,520 Q540,420 1140,500 T2020,460" />
+    <path d="M-50,720 Q440,620 1060,700 T2020,660" />
   </g>
 
-  <!-- Animated Glowing Aquatic Bubble Particles -->
-  <g fill="#22d3ee">
-    <g class="anim-bubble-1">
-      <circle cx="340" cy="720" r="6" />
-      <circle cx="580" cy="640" r="8" filter="url(#cyanGlow)" />
-      <circle cx="890" cy="780" r="5" />
-      <circle cx="1320" cy="750" r="5.5" />
-      <circle cx="1680" cy="540" r="4" />
-    </g>
-    <g class="anim-bubble-2">
-      <circle cx="355" cy="690" r="3.5" />
-      <circle cx="600" cy="590" r="4.5" />
-      <circle cx="910" cy="730" r="3" />
-      <circle cx="1140" cy="620" r="7" filter="url(#cyanGlow)" />
-      <circle cx="1560" cy="670" r="6.5" />
-    </g>
+  <!-- Delicate Floating Bioluminescent Cyan Particles -->
+  <g fill="#22d3ee" class="anim-bubbles">
+    <circle cx="380" cy="520" r="2.5" />
+    <circle cx="560" cy="420" r="3.2" opacity="0.9" />
+    <circle cx="780" cy="620" r="2.2" />
+    <circle cx="940" cy="480" r="3" opacity="0.8" />
+    <circle cx="1180" cy="580" r="2" />
+    <circle cx="1380" cy="440" r="3.5" opacity="0.9" />
+    <circle cx="1620" cy="540" r="2.4" />
   </g>
 </svg>

@@ -1,96 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
   <defs>
-    <!-- Sunset Rose Noir Gradient -->
-    <linearGradient id="lBg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Seamless Sunset Rose Quartz Radial Gradient -->
+    <radialGradient id="lAura" cx="72%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.25" />
+      <stop offset="35%" stop-color="#e11d48" stop-opacity="0.14" />
+      <stop offset="70%" stop-color="#4c0519" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#090204" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="lSky" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#0a0205" />
-      <stop offset="35%" stop-color="#240715" />
-      <stop offset="70%" stop-color="#400c25" />
+      <stop offset="40%" stop-color="#1f0612" />
+      <stop offset="75%" stop-color="#350a1e" />
       <stop offset="100%" stop-color="#080104" />
     </linearGradient>
 
-    <!-- Rose Quartz Glow -->
     <filter id="roseGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feGaussianBlur stdDeviation="40" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
 
-    <linearGradient id="sunGradLana" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#f472b6" />
-      <stop offset="50%" stop-color="#fb7185" />
-      <stop offset="100%" stop-color="#9d174d" />
-    </linearGradient>
-
     <style>
-      @keyframes vinylRotate {
+      @keyframes slowRoseBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.06); opacity: 0.95; }
+      }
+      @keyframes slowVinylSpin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
       }
-      @keyframes sunsetBreathe {
-        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 35px #f472b6); opacity: 0.75; }
-        50% { transform: scale(1.05); filter: drop-shadow(0 0 75px #fb7185); opacity: 0.95; }
+      @keyframes slowSunsetGlow {
+        0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 25px rgba(244, 114, 182, 0.4)); }
+        50% { opacity: 0.9; filter: drop-shadow(0 0 55px rgba(251, 113, 133, 0.75)); }
       }
-      @keyframes palmSwayLeft {
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(2deg); }
-      }
-      @keyframes palmSwayRight {
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(-1.5deg); }
-      }
-      .anim-vinyl { animation: vinylRotate 16s linear infinite; transform-origin: 1480px 580px; }
-      .anim-sunset { animation: sunsetBreathe 7s ease-in-out infinite; transform-origin: 1480px 460px; }
-      .anim-palm-1 { animation: palmSwayLeft 6s ease-in-out infinite; transform-origin: 220px 780px; }
-      .anim-palm-2 { animation: palmSwayRight 7.5s ease-in-out infinite; transform-origin: 340px 790px; }
+      .anim-rose-aura { animation: slowRoseBreathe 15s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 72% 45%; }
+      .anim-vinyl-disc { animation: slowVinylSpin 30s linear infinite; transform-origin: 1460px 520px; }
+      .anim-sunset-sun { animation: slowSunsetGlow 12s ease-in-out infinite; }
     </style>
   </defs>
 
-  <!-- Sky Backdrop -->
-  <rect width="1920" height="1080" fill="url(#lBg)" />
+  <!-- Sky Base -->
+  <rect width="1920" height="1080" fill="url(#lSky)" />
 
-  <!-- Ambient Sunset Aura -->
-  <circle cx="1450" cy="500" r="550" fill="#f472b6" opacity="0.22" filter="url(#roseGlow)" />
-  <circle cx="450" cy="400" r="450" fill="#fb7185" opacity="0.18" filter="url(#roseGlow)" />
+  <!-- Smooth Breathing Sunset Rose Aura -->
+  <rect width="1920" height="1080" fill="url(#lAura)" class="anim-rose-aura" />
 
-  <!-- Animated Sinking Sunset Golden Rose Sun -->
-  <circle class="anim-sunset" cx="1480" cy="460" r="220" fill="url(#sunGradLana)" filter="url(#roseGlow)" />
+  <!-- Sinking Golden Rose Sunset Sun -->
+  <circle cx="1460" cy="460" r="190" fill="#f472b6" class="anim-sunset-sun" filter="url(#roseGlow)" />
 
-  <!-- Hollywood Hills & California Palm Silhouettes -->
-  <g fill="#070104" opacity="0.95">
-    <!-- Hills Ridge -->
-    <path d="M-100,740 Q400,620 980,710 T1920,660 L1920,1080 L-100,1080 Z" />
-
-    <!-- Animated Palm Tree 1 (Left) -->
-    <g class="anim-palm-1">
-      <path d="M220,780 Q215,550 200,380 L210,380 Q225,550 230,780 Z" />
-      <path d="M205,380 Q140,320 80,360 Q130,400 205,390" />
-      <path d="M205,380 Q150,260 100,280 Q160,330 205,385" />
-      <path d="M205,380 Q200,220 220,240 Q210,320 205,380" />
-      <path d="M205,380 Q260,250 310,270 Q250,330 205,385" />
-      <path d="M205,380 Q280,310 330,350 Q260,390 205,390" />
-    </g>
-
-    <!-- Animated Palm Tree 2 (Left-Mid) -->
-    <g class="anim-palm-2">
-      <path d="M340,790 Q345,600 355,440 L363,440 Q355,600 350,790 Z" />
-      <path d="M358,440 Q300,390 250,420 Q290,460 358,450" />
-      <path d="M358,440 Q390,360 430,380 Q390,430 358,445" />
-      <path d="M358,440 Q360,320 375,340 Q365,400 358,440" />
-    </g>
+  <!-- Large Minimalist Vinyl Record LP (Born to Die Motif) -->
+  <g class="anim-vinyl-disc">
+    <circle cx="1460" cy="520" r="240" fill="#0c0206" stroke="rgba(244, 114, 182, 0.35)" stroke-width="1.8" />
+    <circle cx="1460" cy="520" r="215" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
+    <circle cx="1460" cy="520" r="190" fill="none" stroke="rgba(244, 114, 182, 0.12)" stroke-width="1" />
+    <circle cx="1460" cy="520" r="165" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
+    <circle cx="1460" cy="520" r="140" fill="none" stroke="rgba(244, 114, 182, 0.12)" stroke-width="1" />
+    <!-- Center Label -->
+    <circle cx="1460" cy="520" r="80" fill="#e11d48" opacity="0.85" />
+    <circle cx="1460" cy="520" r="10" fill="#ffffff" />
   </g>
 
-  <!-- Large Animated Spinning Vinyl Record LP (Born to Die Vintage Vinyl Motif) -->
-  <g class="anim-vinyl" transform="translate(1480, 580)">
-    <!-- Vinyl Body -->
-    <circle cx="0" cy="0" r="280" fill="#0d0207" stroke="rgba(244, 114, 182, 0.4)" stroke-width="2" filter="url(#roseGlow)" opacity="0.9" />
-    <!-- Concentric Grooves -->
-    <circle cx="0" cy="0" r="255" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
-    <circle cx="0" cy="0" r="230" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
-    <circle cx="0" cy="0" r="205" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
-    <circle cx="0" cy="0" r="180" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
-    <circle cx="0" cy="0" r="155" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
-    <circle cx="0" cy="0" r="130" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
-    <!-- Center Label Disc -->
-    <circle cx="0" cy="0" r="95" fill="#e11d48" opacity="0.9" />
-    <circle cx="0" cy="0" r="12" fill="#ffffff" />
+  <!-- Hollywood Hills & Elegant California Palm Silhouettes -->
+  <g fill="#070104">
+    <path d="M-50,720 Q420,620 980,700 T2020,650 L2020,1080 L-50,1080 Z" />
+
+    <!-- Palm Tree Silhouette (Left) -->
+    <path d="M220,740 Q215,540 205,400 L212,400 Q225,540 228,740 Z" />
+    <path d="M208,400 Q140,350 85,380 Q130,420 208,410" />
+    <path d="M208,400 Q155,290 105,310 Q160,350 208,405" />
+    <path d="M208,400 Q205,250 220,270 Q212,340 208,400" />
+    <path d="M208,400 Q260,280 305,300 Q250,350 208,405" />
+    <path d="M208,400 Q275,340 320,370 Q255,410 208,410" />
   </g>
 </svg>

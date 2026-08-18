@@ -416,6 +416,28 @@ export const FloatingPaths: React.FC<FloatingPathsProps> = ({ theme = 'indigo', 
 
 ---
 
+### 📌 [FIX-011] Aesthetic Redesign & Cinematic Slow-Breathing Ambient SVG Engine
+- **Date**: 2026-08-18
+- **Files Modified**: `public/artists/*.svg`
+- **Severity**: High (Visual aesthetics, removal of clipping artifacts and hard circular edges)
+
+#### 1. Problem Description & Symptoms
+- Initial SVG artwork iterations produced visual defects in Chromium:
+  - Hard-edged circular gradient boundary rings on high-DPI viewports.
+  - Transform-origin scaling errors causing sun slices to detach into the top-left corner.
+  - Rapid, jarring animation loops that disrupted user focus instead of providing a calm, ambient, aesthetic background.
+
+#### 2. Technical Root Cause Analysis
+- Applying `feGaussianBlur` filters with high radius values inside SVG definitions without expanded bounding-box padding causes Chromium to clamp and hard-clip pixel boundaries.
+- Discrete SVG primitive coordinates with short animation durations (`2s–4s`) caused abrupt looping jumps.
+
+#### 3. Exact Solution & Code Implementation
+- Replaced clamped filter circles with **pure continuous mathematical `<radialGradient>` mesh auras** that fade smoothly to 0% opacity.
+- Switched all animations to **long-period (10s–16s) `cubic-bezier(0.4, 0, 0.2, 1)` easing curves** for smooth, organic, slow-respiration breathing.
+- Corrected coordinate systems and transform origins across all 6 artist backdrops (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey).
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

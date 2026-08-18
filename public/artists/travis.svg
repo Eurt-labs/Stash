@@ -1,91 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
   <defs>
-    <!-- Dark Utopia Desert Gradient -->
-    <linearGradient id="trBg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#010a05" />
-      <stop offset="40%" stop-color="#041f11" />
-      <stop offset="70%" stop-color="#083820" />
-      <stop offset="100%" stop-color="#010603" />
+    <!-- Seamless Dark Emerald Desert Radial Gradient -->
+    <radialGradient id="trAura" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+      <stop offset="35%" stop-color="#059669" stop-opacity="0.14" />
+      <stop offset="70%" stop-color="#064e3b" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#010804" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="trSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#010904" />
+      <stop offset="40%" stop-color="#031a0e" />
+      <stop offset="75%" stop-color="#062b18" />
+      <stop offset="100%" stop-color="#010703" />
     </linearGradient>
 
-    <!-- Emerald Glow -->
+    <linearGradient id="duneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#062e1a" />
+      <stop offset="100%" stop-color="#010d06" />
+    </linearGradient>
+
     <filter id="emeraldGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feGaussianBlur stdDeviation="40" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
 
-    <linearGradient id="duneGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#062e1a" />
-      <stop offset="100%" stop-color="#02140b" />
-    </linearGradient>
-
-    <linearGradient id="duneGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a4628" />
-      <stop offset="100%" stop-color="#031b0e" />
-    </linearGradient>
-
     <style>
-      @keyframes monolithPulse {
-        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px #10b981); opacity: 0.6; }
-        50% { transform: scale(1.06); filter: drop-shadow(0 0 70px #34d399); opacity: 0.85; }
+      @keyframes slowEmeraldBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.07); opacity: 0.95; }
       }
-      @keyframes emberDrift1 {
-        0% { transform: translateY(0px) translateX(0px); opacity: 0.4; }
-        50% { transform: translateY(-70px) translateX(25px); opacity: 0.95; }
-        100% { transform: translateY(-140px) translateX(50px); opacity: 0.2; }
+      @keyframes slowMonolithGlow {
+        0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.4)); }
+        50% { opacity: 0.85; filter: drop-shadow(0 0 55px rgba(52, 211, 153, 0.75)); }
       }
-      @keyframes emberDrift2 {
-        0% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
-        50% { transform: translateY(-90px) translateX(-20px); opacity: 0.9; }
-        100% { transform: translateY(-180px) translateX(-45px); opacity: 0.15; }
+      @keyframes slowEmberFloat {
+        0%, 100% { transform: translateY(0px); opacity: 0.35; }
+        50% { transform: translateY(-35px); opacity: 0.85; }
       }
-      @keyframes duneNeonPulse {
-        0%, 100% { opacity: 0.55; stroke-width: 2.5px; }
-        50% { opacity: 0.95; stroke-width: 3.5px; }
-      }
-      .anim-monolith { animation: monolithPulse 6s ease-in-out infinite; transform-origin: 960px 480px; }
-      .anim-ember-1 { animation: emberDrift1 8s ease-in-out infinite; }
-      .anim-ember-2 { animation: emberDrift2 10s ease-in-out infinite; }
-      .anim-dune-neon { animation: duneNeonPulse 5s ease-in-out infinite; }
+      .anim-emerald-aura { animation: slowEmeraldBreathe 14s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 50% 45%; }
+      .anim-monolith { animation: slowMonolithGlow 12s ease-in-out infinite; }
+      .anim-embers { animation: slowEmberFloat 9s ease-in-out infinite; }
     </style>
   </defs>
 
-  <!-- Sky Backdrop -->
-  <rect width="1920" height="1080" fill="url(#trBg)" />
+  <!-- Desert Night Base -->
+  <rect width="1920" height="1080" fill="url(#trSky)" />
 
-  <!-- Ambient Emerald Atmosphere -->
-  <circle cx="960" cy="400" r="550" fill="#10b981" opacity="0.25" filter="url(#emeraldGlow)" />
-  <circle cx="400" cy="550" r="400" fill="#34d399" opacity="0.18" filter="url(#emeraldGlow)" />
+  <!-- Smooth Breathing Emerald Desert Aura -->
+  <rect width="1920" height="1080" fill="url(#trAura)" class="anim-emerald-aura" />
 
-  <!-- Animated Glowing Sunken Green Celestial Disc (Utopia Monolith Sun) -->
-  <g class="anim-monolith" transform="translate(960, 480)">
-    <circle cx="0" cy="0" r="220" fill="#059669" filter="url(#emeraldGlow)" />
-    <circle cx="0" cy="0" r="180" fill="#10b981" opacity="0.5" />
+  <!-- Minimalist Celestial Monolith Sun on Horizon -->
+  <g class="anim-monolith">
+    <circle cx="960" cy="520" r="180" fill="#059669" filter="url(#emeraldGlow)" />
+    <circle cx="960" cy="520" r="140" fill="#10b981" opacity="0.6" />
   </g>
 
-  <!-- Distant Desert Mountain & Dune Ridges (Astroworld/Utopia Desert) -->
-  <!-- Layer 1: Distant Dunes -->
-  <path d="M-100,560 Q380,440 920,530 T1920,490 L1920,1080 L-100,1080 Z" fill="url(#duneGrad1)" opacity="0.9" />
+  <!-- Sweeping Desert Sand Dune Silhouettes -->
+  <path d="M-50,620 Q480,500 1020,580 T2020,540 L2020,1080 L-50,1080 Z" fill="url(#duneGrad)" />
+  <path d="M-50,620 Q480,500 1020,580 T2020,540" fill="none" stroke="#10b981" stroke-width="1.8" opacity="0.6" />
 
-  <!-- Layer 2: Midground Dunes -->
-  <path d="M-100,680 Q560,540 1140,650 T2020,590 L2020,1080 L-100,1080 Z" fill="url(#duneGrad2)" opacity="0.95" />
+  <path d="M-50,740 Q620,600 1240,710 T2020,660 L2020,1080 L-50,1080 Z" fill="#021008" />
+  <path d="M-50,740 Q620,600 1240,710 T2020,660" fill="none" stroke="#34d399" stroke-width="2" opacity="0.7" />
 
-  <!-- Glowing Animated Neon Dune Edges -->
-  <path class="anim-dune-neon" d="M-100,560 Q380,440 920,530 T1920,490" fill="none" stroke="#10b981" filter="url(#emeraldGlow)" />
-  <path class="anim-dune-neon" d="M-100,680 Q560,540 1140,650 T2020,590" fill="none" stroke="#34d399" />
-
-  <!-- Animated Floating Green Cosmic Embers -->
-  <g fill="#34d399">
-    <g class="anim-ember-1">
-      <circle cx="280" cy="380" r="3" />
-      <circle cx="680" cy="420" r="3.5" filter="url(#emeraldGlow)" />
-      <circle cx="1180" cy="390" r="4" filter="url(#emeraldGlow)" />
-      <circle cx="1680" cy="440" r="3" />
-    </g>
-    <g class="anim-ember-2">
-      <circle cx="450" cy="290" r="2.5" />
-      <circle cx="890" cy="340" r="2.8" />
-      <circle cx="1420" cy="310" r="3" />
-    </g>
+  <!-- Delicate Floating Green Cosmic Embers -->
+  <g fill="#34d399" class="anim-embers">
+    <circle cx="340" cy="440" r="2" />
+    <circle cx="620" cy="360" r="2.8" opacity="0.9" />
+    <circle cx="820" cy="480" r="1.8" />
+    <circle cx="1140" cy="400" r="2.5" opacity="0.8" />
+    <circle cx="1420" cy="340" r="2" />
+    <circle cx="1680" cy="460" r="2.6" opacity="0.9" />
   </g>
 </svg>
