@@ -1,14 +1,21 @@
 import React from 'react'
-import { Settings, DownloadCloud } from 'lucide-react'
-import { DependencyStatus, AppUpdateStatus } from '../../../shared/types'
+import { Settings, DownloadCloud, Sun, Moon } from 'lucide-react'
+import { DependencyStatus, AppUpdateStatus, ThemeMode } from '../../../shared/types'
 
 interface HeaderProps {
   depStatus: DependencyStatus | null
   appUpdate: AppUpdateStatus | null
+  mode: ThemeMode
+  onToggleMode: () => void
   onOpenDepModal: () => void
 }
 
-export const Header: React.FC<HeaderProps> = ({ appUpdate, onOpenDepModal }) => {
+export const Header: React.FC<HeaderProps> = ({
+  appUpdate,
+  mode,
+  onToggleMode,
+  onOpenDepModal
+}) => {
   return (
     <header className="header-container">
       <div className="brand-section">
@@ -16,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ appUpdate, onOpenDepModal }) => 
           src="/stash_logo.png"
           alt="Stash Logo"
           className="brand-logo"
-          style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
         />
         <div className="brand-info">
           <h1>Stash Downloader</h1>
@@ -37,10 +43,20 @@ export const Header: React.FC<HeaderProps> = ({ appUpdate, onOpenDepModal }) => 
           </button>
         )}
 
+        {/* Light / Dark Mode Toggle Button */}
+        <button
+          className="btn btn-secondary btn-icon-only"
+          onClick={onToggleMode}
+          title={mode === 'dark' ? 'Switch to Light Liquid Glass' : 'Switch to Dark Liquid Glass'}
+        >
+          {mode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
+        {/* Settings Button */}
         <button
           className="btn btn-secondary"
           onClick={onOpenDepModal}
-          title="Settings, Themes & System Updates"
+          title="Settings, Appearance & System Updates"
         >
           <Settings size={15} />
           <span>Settings</span>

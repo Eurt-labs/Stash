@@ -8,6 +8,8 @@ export type DownloadFormat = 'AUTO' | 'MP3' | 'AAC' | 'FLAC' | 'OPUS' | 'WAV' | 
 
 export type ColorTheme = 'indigo' | 'emerald' | 'sunset' | 'sapphire' | 'amber' | 'crimson' | 'oled'
 
+export type ThemeMode = 'dark' | 'light'
+
 export type DownloadState = 
   | 'IDLE' 
   | 'QUEUED' 

@@ -8,22 +8,25 @@ import {
   Film,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
   ExternalLink,
   Github,
   DownloadCloud,
   Palette,
-  Sliders
+  Sliders,
+  Sun,
+  Moon
 } from 'lucide-react'
-import { DependencyStatus, AppUpdateStatus, ColorTheme } from '../../../shared/types'
+import { DependencyStatus, AppUpdateStatus, ColorTheme, ThemeMode } from '../../../shared/types'
 
 interface SettingsModalProps {
   status: DependencyStatus | null
   appUpdate: AppUpdateStatus | null
   theme: ColorTheme
+  mode: ThemeMode
   isOpen: boolean
   onClose: () => void
   onChangeTheme: (t: ColorTheme) => void
+  onChangeMode: (m: ThemeMode) => void
   onRefresh: () => Promise<void>
   onUpdateYtDlp: () => Promise<{ success: boolean; message: string }>
   onCheckAppUpdate: () => Promise<AppUpdateStatus>
@@ -44,9 +47,11 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
   status,
   appUpdate,
   theme,
+  mode,
   isOpen,
   onClose,
   onChangeTheme,
+  onChangeMode,
   onRefresh,
   onUpdateYtDlp,
   onCheckAppUpdate,
@@ -98,20 +103,50 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sliders size={20} color="var(--primary)" />
-            <h2>Settings & Updates</h2>
+            <h2>Settings & Preferences</h2>
           </div>
           <button className="btn btn-outline btn-icon-only" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
 
-        {/* ── Section 1: Color Theme Customization ── */}
+        {/* ── Section 1: Appearance (Dark / Light Mode & Color Palettes) ── */}
         <div style={{ marginBottom: '22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-            <Palette size={14} color="var(--primary)" />
-            <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-              Color Theme Palette
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Palette size={14} color="var(--primary)" />
+              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+                Appearance & Liquid Glass
+              </span>
+            </div>
+
+            {/* Mode Pills (Dark / Light) */}
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--glass-input)', padding: '3px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <button
+                className="btn btn-icon-only"
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  background: mode === 'dark' ? 'var(--primary)' : 'transparent',
+                  color: mode === 'dark' ? '#ffffff' : 'var(--text-secondary)'
+                }}
+                onClick={() => onChangeMode('dark')}
+              >
+                <Moon size={12} /> Dark
+              </button>
+              <button
+                className="btn btn-icon-only"
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  background: mode === 'light' ? 'var(--primary)' : 'transparent',
+                  color: mode === 'light' ? '#ffffff' : 'var(--text-secondary)'
+                }}
+                onClick={() => onChangeMode('light')}
+              >
+                <Sun size={12} /> Light
+              </button>
+            </div>
           </div>
 
           <div className="theme-swatches-grid">
@@ -138,7 +173,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Github size={14} color="var(--primary)" />
-              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
                 Stash Application (GitHub)
               </span>
             </div>
@@ -152,17 +187,17 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
-          <div className="dep-item" style={{ background: 'rgba(255, 255, 255, 0.02)', borderColor: 'var(--border-subtle)' }}>
+          <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img
                 src="/stash_logo.png"
                 alt="Logo"
-                style={{ width: '38px', height: '38px', borderRadius: '10px', objectFit: 'cover' }}
+                style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover' }}
               />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   Stash Media Downloader
-                  <span className="brand-badge" style={{ fontSize: '10px' }}>
+                  <span className="tag-pill" style={{ fontSize: '10px' }}>
                     v{appUpdateData?.currentVersion || '2.0.0'}
                   </span>
                 </div>
@@ -175,7 +210,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {appUpdateData?.hasUpdate ? (
-              <span className="status-badge" style={{ background: 'rgba(99, 102, 241, 0.25)', color: '#c7d2fe', border: '1px solid rgba(99, 102, 241, 0.4)' }}>
+              <span className="status-badge" style={{ background: 'var(--primary-muted)', color: 'var(--primary-light)', border: '1px solid var(--border-medium)' }}>
                 <DownloadCloud size={14} /> Update v{appUpdateData.latestVersion}
               </span>
             ) : (
@@ -208,18 +243,18 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        {/* ── Section 3: External Tool Dependencies (yt-dlp & FFmpeg) ── */}
+        {/* ── Section 3: Core Engine Tools (yt-dlp & FFmpeg) ── */}
         <div>
-          <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
             Core Engine & Binaries
           </span>
 
           {/* yt-dlp Status */}
           <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Cpu size={22} color="var(--primary)" />
+              <Cpu size={20} color="var(--primary)" />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px' }}>yt-dlp Engine</div>
+                <div style={{ fontWeight: 700, fontSize: '13.5px' }}>yt-dlp Engine</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   {status?.ytDlpInstalled ? (status.ytDlpVersion || 'Installed') : 'Not Found'}
                 </div>
@@ -239,9 +274,9 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
           {/* FFmpeg Status */}
           <div className="dep-item">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Film size={22} color="var(--secondary)" />
+              <Film size={20} color="var(--secondary)" />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px' }}>FFmpeg Transcoder</div>
+                <div style={{ fontWeight: 700, fontSize: '13.5px' }}>FFmpeg Transcoder</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   {status?.ffmpegInstalled ? (status.ffmpegVersion?.slice(0, 40) || 'Installed') : 'Not Found'}
                 </div>
@@ -262,8 +297,9 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
             <div
               style={{
                 padding: '10px 14px',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--glass-card-subtle)',
+                border: '1px solid var(--border-subtle)',
                 fontSize: '12px',
                 marginTop: '12px',
                 fontFamily: 'var(--font-mono)',

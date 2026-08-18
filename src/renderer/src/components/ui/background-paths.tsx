@@ -31,80 +31,92 @@ export function FloatingPaths() {
     window.addEventListener("resize", resize);
     resize();
 
-    // Layered flowing geometric ribbon paths
+    // ── Liquid Glass Shader Simulation ──
     const render = () => {
-      step += 0.004;
+      step += 0.0035;
       ctx.clearRect(0, 0, width, height);
 
-      // Get current theme color from computed style
+      // Check current mode and theme colors
+      const isLightMode = document.documentElement.getAttribute("data-mode") === "light";
       const primaryColor =
         getComputedStyle(document.documentElement)
           .getPropertyValue("--primary")
           .trim() || "#6366f1";
 
-      // 1. Subtle radial ambient glow at the top center
-      const gradient = ctx.createRadialGradient(
-        width * 0.5,
-        height * 0.15,
-        10,
-        width * 0.5,
-        height * 0.15,
-        Math.max(width, height) * 0.65
-      );
-      gradient.addColorStop(0, primaryColor);
-      gradient.addColorStop(1, "transparent");
+      // 1. Flowing Liquid Ambient Orbs
+      const orb1_x = width * 0.35 + Math.sin(step * 0.8) * (width * 0.2);
+      const orb1_y = height * 0.25 + Math.cos(step * 0.6) * (height * 0.15);
+      const orb1_r = Math.min(width, height) * 0.45;
+
+      const orb1_grad = ctx.createRadialGradient(orb1_x, orb1_y, 0, orb1_x, orb1_y, orb1_r);
+      orb1_grad.addColorStop(0, primaryColor);
+      orb1_grad.addColorStop(1, "transparent");
 
       ctx.save();
-      ctx.globalAlpha = 0.08;
-      ctx.fillStyle = gradient;
+      ctx.globalAlpha = isLightMode ? 0.12 : 0.14;
+      ctx.fillStyle = orb1_grad;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
 
-      // 2. 18 Vibrant Layered Flowing Path Ribbons (Two opposing waves)
-      const lineCount = 18;
+      const orb2_x = width * 0.75 + Math.cos(step * 0.7) * (width * 0.18);
+      const orb2_y = height * 0.75 + Math.sin(step * 0.5) * (height * 0.2);
+      const orb2_r = Math.min(width, height) * 0.5;
+
+      const orb2_grad = ctx.createRadialGradient(orb2_x, orb2_y, 0, orb2_x, orb2_y, orb2_r);
+      orb2_grad.addColorStop(0, isLightMode ? "#38bdf8" : "#10b981");
+      orb2_grad.addColorStop(1, "transparent");
+
+      ctx.save();
+      ctx.globalAlpha = isLightMode ? 0.09 : 0.1;
+      ctx.fillStyle = orb2_grad;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+
+      // 2. Liquid Glass Refractive Wave Ribbons
+      const lineCount = 16;
       for (let i = 0; i < lineCount; i++) {
         const factor = i / lineCount;
-        const offset = i * 0.35;
+        const offset = i * 0.4;
 
-        // Wave 1: Flowing top-left to bottom-right
-        const y1_a = height * 0.15 + Math.sin(step + offset) * 55 + i * 24;
-        const y2_a = height * 0.55 + Math.cos(step * 0.85 + offset) * 75 + i * 12;
-        const y3_a = height * 0.35 + Math.sin(step * 1.15 + offset) * 65 + i * 18;
+        // Wave Layer A
+        const y1_a = height * 0.2 + Math.sin(step + offset) * 60 + i * 22;
+        const y2_a = height * 0.6 + Math.cos(step * 0.8 + offset) * 80 + i * 10;
+        const y3_a = height * 0.4 + Math.sin(step * 1.1 + offset) * 70 + i * 16;
 
         ctx.beginPath();
         ctx.moveTo(-60, y1_a);
         ctx.bezierCurveTo(
-          width * 0.3,
-          y1_a + Math.cos(step + i * 0.2) * 50,
-          width * 0.65,
-          y2_a + Math.sin(step + i * 0.2) * 60,
+          width * 0.32,
+          y1_a + Math.cos(step + i * 0.25) * 50,
+          width * 0.68,
+          y2_a + Math.sin(step + i * 0.25) * 60,
           width + 60,
           y3_a
         );
 
         ctx.strokeStyle = primaryColor;
-        ctx.lineWidth = 1.2 + (i % 3) * 0.4;
-        ctx.globalAlpha = 0.12 + factor * 0.28; // clearly visible opacity (12% to 40%)
+        ctx.lineWidth = 1.3 + (i % 3) * 0.4;
+        ctx.globalAlpha = isLightMode ? 0.08 + factor * 0.18 : 0.12 + factor * 0.26;
         ctx.stroke();
 
-        // Wave 2: Opposing counter-wave flowing bottom-left to top-right
-        const y1_b = height * 0.85 - Math.cos(step * 0.9 + offset) * 50 - i * 22;
-        const y2_b = height * 0.45 - Math.sin(step * 0.75 + offset) * 70 - i * 14;
-        const y3_b = height * 0.65 - Math.cos(step * 1.05 + offset) * 60 - i * 16;
+        // Wave Layer B (Counter liquid refraction)
+        const y1_b = height * 0.82 - Math.cos(step * 0.85 + offset) * 55 - i * 20;
+        const y2_b = height * 0.42 - Math.sin(step * 0.7 + offset) * 75 - i * 12;
+        const y3_b = height * 0.62 - Math.cos(step * 1.0 + offset) * 65 - i * 14;
 
         ctx.beginPath();
         ctx.moveTo(-60, y1_b);
         ctx.bezierCurveTo(
-          width * 0.35,
+          width * 0.38,
           y1_b - Math.sin(step + i * 0.3) * 45,
-          width * 0.7,
+          width * 0.72,
           y2_b - Math.cos(step + i * 0.3) * 55,
           width + 60,
           y3_b
         );
 
-        ctx.lineWidth = 1.0 + (i % 2) * 0.5;
-        ctx.globalAlpha = 0.08 + factor * 0.22;
+        ctx.lineWidth = 1.1 + (i % 2) * 0.5;
+        ctx.globalAlpha = isLightMode ? 0.06 + factor * 0.15 : 0.09 + factor * 0.2;
         ctx.stroke();
       }
 

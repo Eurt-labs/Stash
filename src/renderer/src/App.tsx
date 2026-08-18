@@ -4,6 +4,7 @@ import {
   DownloadQuality,
   DownloadFormat,
   ColorTheme,
+  ThemeMode,
   DependencyStatus,
   AppUpdateStatus,
   TrackInfo
@@ -24,6 +25,9 @@ export const App: React.FC = () => {
   const [format, setFormat] = useState<DownloadFormat>('AUTO')
   const [theme, setTheme] = useState<ColorTheme>(() => {
     return (localStorage.getItem('stash_theme') as ColorTheme) || 'indigo'
+  })
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    return (localStorage.getItem('stash_mode') as ThemeMode) || 'dark'
   })
 
   const [isFetching, setIsFetching] = useState(false)
@@ -90,11 +94,17 @@ export const App: React.FC = () => {
     }
   }, [])
 
-  // Sync theme with DOM attribute and localStorage
+  // Sync theme palette
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('stash_theme', theme)
   }, [theme])
+
+  // Sync dark/light mode
+  useEffect(() => {
+    document.documentElement.setAttribute('data-mode', mode)
+    localStorage.setItem('stash_mode', mode)
+  }, [mode])
 
   const handleFetch = async (url: string) => {
     try {
@@ -111,17 +121,18 @@ export const App: React.FC = () => {
       }
 
       await window.stashAPI.enqueueBatch(batchName, tracks, quality, format, outputDir)
-      addToast('success', `Enqueued ${tracks.length} track(s) to download queue!`)
+      addToast('success', `Added ${tracks.length} track${tracks.length > 1 ? 's' : ''} to download queue!`)
     } catch (err: any) {
-      addToast('error', err?.message || 'Failed to fetch media metadata')
+      addToast('error', err.message || 'Failed to fetch tracks')
     }
   }
 
   const handleSelectDir = async () => {
-    const selected = await window.stashAPI.selectDirectory(outputDir)
-    if (selected) {
-      setOutputDir(selected)
-      addToast('info', `Output directory set to: ${selected}`)
+    const dir = await window.stashAPI.selectDirectory()
+    if (dir) {
+      setOutputDir(dir)
+      await window.stashAPI.setOutputDir(dir)
+      addToast('info', `Output folder updated: ${dir}`)
     }
   }
 
@@ -141,14 +152,13 @@ export const App: React.FC = () => {
     await window.stashAPI.setFormat(f)
   }
 
+  const handleClearCompleted = async () => {
+    await window.stashAPI.clearCompletedBatches()
+  }
+
   const handleRefreshDeps = async () => {
     const status = await window.stashAPI.checkDependencies()
     setDepStatus(status)
-  }
-
-  const handleClearCompleted = async () => {
-    await window.stashAPI.clearCompletedBatches()
-    addToast('info', 'Cleared completed batches from list')
   }
 
   const handleCheckAppUpdate = async () => {
@@ -164,93 +174,95 @@ export const App: React.FC = () => {
   const batchList = Object.values(batches)
 
   return (
-    <div className="app-container" style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Animated Flowing SVG Background Paths */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 1 }}>
-        <FloatingPaths />
-      </div>
+    <div className="app-container">
+      {/* Animated Liquid Glass Shader & Flowing Paths */}
+      <FloatingPaths />
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
         <Header
           depStatus={depStatus}
           appUpdate={appUpdate}
+          mode={mode}
+          onToggleMode={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}
           onOpenDepModal={() => setIsDepModalOpen(true)}
         />
 
-      <div className="content-scrollable">
-        <SettingsBar
-          outputDir={outputDir}
-          quality={quality}
-          format={format}
-          onSelectDir={handleSelectDir}
-          onOpenDir={handleOpenDir}
-          onChangeQuality={handleChangeQuality}
-          onChangeFormat={handleChangeFormat}
-        />
+        <div className="content-scrollable">
+          <SettingsBar
+            outputDir={outputDir}
+            quality={quality}
+            format={format}
+            onSelectDir={handleSelectDir}
+            onOpenDir={handleOpenDir}
+            onChangeQuality={handleChangeQuality}
+            onChangeFormat={handleChangeFormat}
+          />
 
-        <LinkInputBar isFetching={isFetching} fetchingMessage={fetchingMessage} onFetch={handleFetch} />
+          <LinkInputBar isFetching={isFetching} fetchingMessage={fetchingMessage} onFetch={handleFetch} />
 
-        {/* Batches Queue Section */}
-        <div>
-          <div className="batch-section-header">
-            <h2 className="section-title">
-              <ListMusic size={18} color="var(--primary)" />
-              <span>Download Queue</span>
-              <span className="count-badge">{batchList.length} Batches</span>
-            </h2>
+          {/* Batches Queue Section */}
+          <div>
+            <div className="batch-section-header">
+              <h2 className="section-title">
+                <ListMusic size={18} color="var(--primary)" />
+                <span>Download Queue</span>
+                <span className="count-badge">{batchList.length} Batches</span>
+              </h2>
 
-            {batchList.length > 0 && (
-              <button className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={handleClearCompleted}>
-                <Trash2 size={14} /> Clear Completed
-              </button>
-            )}
-          </div>
+              {batchList.length > 0 && (
+                <button className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={handleClearCompleted}>
+                  <Trash2 size={14} /> Clear Completed
+                </button>
+              )}
+            </div>
 
-          <div style={{ marginTop: '14px' }}>
-            {batchList.length === 0 ? (
-              <div className="card empty-state">
-                <div className="empty-icon">
-                  <ListMusic size={32} />
+            <div style={{ marginTop: '14px' }}>
+              {batchList.length === 0 ? (
+                <div className="card empty-state">
+                  <div className="empty-icon">
+                    <ListMusic size={32} />
+                  </div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700 }}>Your Download Queue is Empty</h3>
+                  <p style={{ fontSize: '13px', maxWidth: '420px' }}>
+                    Paste any YouTube or YouTube Music link, playlist, album, or artist name in the box above to start downloading.
+                  </p>
                 </div>
-                <h3>Your Download Queue is Empty</h3>
-                <p style={{ fontSize: '13px', maxWidth: '420px' }}>
-                  Paste any YouTube or YouTube Music link, playlist, album, or artist name in the box above to start downloading.
-                </p>
-              </div>
-            ) : (
-              batchList.map((batch) => (
-                <BatchItem
-                  key={batch.id}
-                  batch={batch}
-                  onStartBatch={(bId) => window.stashAPI.startBatchDownload(bId)}
-                  onCancelBatch={(bId) => window.stashAPI.cancelBatch(bId)}
-                  onRemoveBatch={(bId) => window.stashAPI.removeBatch(bId)}
-                  onStartTrack={(bId, tId) => window.stashAPI.startTrackDownload(bId, tId)}
-                  onCancelTrack={(bId, tId) => window.stashAPI.cancelTrack(bId, tId)}
-                  onRemoveTrack={(bId, tId) => window.stashAPI.removeTrack(bId, tId)}
-                  onOpenFile={(filePath) => window.stashAPI.openFile(filePath)}
-                  onOpenFolder={(folderPath) => window.stashAPI.openDirectory(folderPath)}
-                />
-              ))
-            )}
+              ) : (
+                batchList.map((batch) => (
+                  <BatchItem
+                    key={batch.id}
+                    batch={batch}
+                    onStartBatch={(bId) => window.stashAPI.startBatchDownload(bId)}
+                    onCancelBatch={(bId) => window.stashAPI.cancelBatch(bId)}
+                    onRemoveBatch={(bId) => window.stashAPI.removeBatch(bId)}
+                    onStartTrack={(bId, tId) => window.stashAPI.startTrackDownload(bId, tId)}
+                    onCancelTrack={(bId, tId) => window.stashAPI.cancelTrack(bId, tId)}
+                    onRemoveTrack={(bId, tId) => window.stashAPI.removeTrack(bId, tId)}
+                    onOpenFile={(filePath) => window.stashAPI.openFile(filePath)}
+                    onOpenFolder={(folderPath) => window.stashAPI.openDirectory(folderPath)}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <DependencyModal
-        isOpen={isDepModalOpen}
-        status={depStatus}
-        appUpdate={appUpdate}
-        theme={theme}
-        onClose={() => setIsDepModalOpen(false)}
-        onChangeTheme={(t) => setTheme(t)}
-        onRefresh={handleRefreshDeps}
-        onUpdateYtDlp={() => window.stashAPI.updateYtDlp()}
-        onCheckAppUpdate={handleCheckAppUpdate}
-        onOpenUrl={handleOpenUrl}
-      />
+        <DependencyModal
+          isOpen={isDepModalOpen}
+          status={depStatus}
+          appUpdate={appUpdate}
+          theme={theme}
+          mode={mode}
+          onClose={() => setIsDepModalOpen(false)}
+          onChangeTheme={(t) => setTheme(t)}
+          onChangeMode={(m) => setMode(m)}
+          onRefresh={handleRefreshDeps}
+          onUpdateYtDlp={() => window.stashAPI.updateYtDlp()}
+          onCheckAppUpdate={handleCheckAppUpdate}
+          onOpenUrl={handleOpenUrl}
+        />
 
-      <Toast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+        <Toast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
       </div>
     </div>
   )
