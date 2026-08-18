@@ -1,6 +1,7 @@
 import { spawn, execFile } from 'child_process'
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import { app } from 'electron'
 import { DependencyStatus } from '../../shared/types'
 
@@ -15,7 +16,13 @@ export class DependencyResolver {
     const ext = isWindows ? '.exe' : ''
     const exeName = `${binaryName}${ext}`
 
-    // 1. Packaged extraResources path: <resources>/bin/yt-dlp.exe
+    // 1. User auto-managed ~/.stash/bin/<binary>.exe
+    const userStashBin = path.join(os.homedir(), '.stash', 'bin', exeName)
+    if (fs.existsSync(userStashBin)) {
+      return userStashBin
+    }
+
+    // 2. Packaged extraResources path: <resources>/bin/yt-dlp.exe
     if (app && app.isPackaged) {
       const packagedBin = path.join(process.resourcesPath, 'bin', exeName)
       if (fs.existsSync(packagedBin)) {
@@ -27,20 +34,20 @@ export class DependencyResolver {
       }
     }
 
-    // 2. Dev mode: app-resources/windows/yt-dlp.exe in current working directory
+    // 3. Dev mode: app-resources/windows/yt-dlp.exe in current working directory
     const devPath = path.join(process.cwd(), 'app-resources', 'windows', exeName)
     if (fs.existsSync(devPath)) {
       return devPath
     }
 
-    // 3. Application directory / root
+    // 4. Application directory / root
     const appDir = app ? app.getAppPath() : process.cwd()
     const appDirPath = path.join(appDir, 'app-resources', 'windows', exeName)
     if (fs.existsSync(appDirPath)) {
       return appDirPath
     }
 
-    // 4. Fallback to system PATH
+    // 5. Fallback to system PATH
     return binaryName
   }
 
@@ -118,7 +125,7 @@ export class DependencyResolver {
   public static updateYtDlp(): Promise<{ success: boolean; message: string }> {
     return new Promise((resolve) => {
       const ytDlpPath = this.resolveExecutable('yt-dlp')
-      execFile(ytDlpPath, ['-U'], { timeout: 60000 }, async (error, stdout, stderr) => {
+      execFile(ytDlpPath, ['--update-to', 'nightly'], { timeout: 60000 }, async (error, stdout, stderr) => {
         // Invalidate cache so subsequent checks fetch the latest version string
         this.cachedStatus = null
 

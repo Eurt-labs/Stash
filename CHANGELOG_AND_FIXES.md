@@ -689,6 +689,27 @@ try {
 
 ---
 
+### 📌 [FIX-023] Resolution of YouTube HTTP 403 Forbidden Throttling via Nightly VisionOS Engine & Auto-Managed Local Binaries
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/DependencyResolver.ts`, `src/main/services/DownloadEngine.ts`
+- **Severity**: Critical (YouTube SABR experiment stream throttling & HTTP 403 blocks)
+
+#### 1. Problem Description & Symptoms
+- Downloading certain tracks (such as *"Holographic"* by Roderick Porter) failed with:
+  `yt-dlp download failed with code 1: ERROR: unable to download video data: HTTP Error 403: Forbidden`.
+
+#### 2. Technical Root Cause Analysis
+- YouTube rolled out SABR streaming experiments and GVS PO-token requirements on default web and legacy mobile clients.
+- Older `yt-dlp` releases (`2026.07.04`) received HTTP 403 on DASH/HLS audio and video stream chunks because they lacked VisionOS / modern mweb extractor clients.
+- After unbundling `app-resources/windows`, the application required a reliable, unbundled user binary location.
+
+#### 3. Exact Solution & Code Implementation
+1. **Nightly VisionOS Engine**: Upgraded `yt-dlp` to `nightly@2026.08.18.122307`, which leverages Apple Vision OS (`visionos`) endpoints completely bypassing SABR throttling without requiring manual PO tokens.
+2. **Auto-Managed User Binary Path**: Added `~/.stash/bin/` as priority search path in `DependencyResolver.resolveExecutable`, ensuring plug-and-play operation across dev and packaged distributions.
+3. **Anti-Throttling Flags**: Added `--geo-bypass`, realistic Chrome 128 User-Agent header, and configured `DependencyResolver.updateYtDlp()` to auto-update against the nightly channel (`--update-to nightly`).
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
