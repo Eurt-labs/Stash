@@ -14,6 +14,7 @@ import { LinkInputBar } from './components/LinkInputBar'
 import { BatchItem } from './components/BatchItem'
 import { DependencyModal } from './components/DependencyModal'
 import { Toast, ToastItem } from './components/Toast'
+import { FloatingPaths } from './components/ui/background-paths'
 import { ListMusic, Trash2 } from 'lucide-react'
 
 export const App: React.FC = () => {
@@ -163,12 +164,19 @@ export const App: React.FC = () => {
   const batchList = Object.values(batches)
 
   return (
-    <div className="app-container">
-      <Header
-        depStatus={depStatus}
-        appUpdate={appUpdate}
-        onOpenDepModal={() => setIsDepModalOpen(true)}
-      />
+    <div className="app-container" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Animated Flowing SVG Background Paths */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.75 }}>
+        <FloatingPaths position={1} />
+        <FloatingPaths position={-1} />
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
+        <Header
+          depStatus={depStatus}
+          appUpdate={appUpdate}
+          onOpenDepModal={() => setIsDepModalOpen(true)}
+        />
 
       <div className="content-scrollable">
         <SettingsBar
@@ -244,6 +252,7 @@ export const App: React.FC = () => {
       />
 
       <Toast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+      </div>
     </div>
   )
 }
