@@ -109,8 +109,19 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+      <div
+        className="modal-card"
+        style={{
+          maxWidth: '640px',
+          maxHeight: '88vh',
+          padding: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header" style={{ padding: '18px 22px 14px 22px', margin: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sliders size={20} color="var(--primary)" />
             <h2>Settings & Preferences</h2>
@@ -120,8 +131,9 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* ── Section 1: Appearance Mode (Dark / Light) ── */}
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 22px 22px 22px' }}>
+          {/* ── Section 1: Appearance Mode (Dark / Light) ── */}
+          <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Palette size={14} color="var(--primary)" />
@@ -360,6 +372,7 @@ export const DependencyModal: React.FC<SettingsModalProps> = ({
               <span>{isUpdatingYtDlp ? 'Updating yt-dlp...' : 'Update yt-dlp'}</span>
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
