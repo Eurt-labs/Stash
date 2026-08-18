@@ -1,7 +1,124 @@
 import React, { useEffect, useRef } from "react";
+import { ColorTheme, ThemeMode } from "../../../shared/types";
 
-export function FloatingPaths() {
+interface FloatingPathsProps {
+  theme?: ColorTheme;
+  mode?: ThemeMode;
+}
+
+// ── Artist Palette Configurations (Harmonious Dual-Tone Wave Sets) ──
+const THEME_PALETTES: Record<
+  string,
+  { primary: string; secondary: string; ambient: string; bgDark: string; bgLight: string }
+> = {
+  weeknd: {
+    primary: "#ff1e42",
+    secondary: "#fb7185",
+    ambient: "#e11d48",
+    bgDark: "#0d0205",
+    bgLight: "#fff1f2",
+  },
+  taylor: {
+    primary: "#9061f9",
+    secondary: "#38bdf8",
+    ambient: "#7e3af2",
+    bgDark: "#090514",
+    bgLight: "#faf5ff",
+  },
+  billie: {
+    primary: "#06b6d4",
+    secondary: "#10b981",
+    ambient: "#0284c7",
+    bgDark: "#020914",
+    bgLight: "#f0f9ff",
+  },
+  daftpunk: {
+    primary: "#fbbf24",
+    secondary: "#f59e0b",
+    ambient: "#d97706",
+    bgDark: "#0d0a02",
+    bgLight: "#fefce8",
+  },
+  travis: {
+    primary: "#10b981",
+    secondary: "#34d399",
+    ambient: "#059669",
+    bgDark: "#020d07",
+    bgLight: "#f0fdf4",
+  },
+  lana: {
+    primary: "#f472b6",
+    secondary: "#fb7185",
+    ambient: "#ec4899",
+    bgDark: "#0f0307",
+    bgLight: "#fff1f2",
+  },
+  emerald: {
+    primary: "#10b981",
+    secondary: "#34d399",
+    ambient: "#059669",
+    bgDark: "#020d07",
+    bgLight: "#f0fdf4",
+  },
+  sunset: {
+    primary: "#f43f5e",
+    secondary: "#fb7185",
+    ambient: "#e11d48",
+    bgDark: "#0e0306",
+    bgLight: "#fff1f2",
+  },
+  sapphire: {
+    primary: "#3b82f6",
+    secondary: "#60a5fa",
+    ambient: "#2563eb",
+    bgDark: "#030a16",
+    bgLight: "#eff6ff",
+  },
+  amber: {
+    primary: "#f59e0b",
+    secondary: "#fbbf24",
+    ambient: "#d97706",
+    bgDark: "#0e0902",
+    bgLight: "#fffbeb",
+  },
+  crimson: {
+    primary: "#ef4444",
+    secondary: "#f87171",
+    ambient: "#dc2626",
+    bgDark: "#0e0202",
+    bgLight: "#fef2f2",
+  },
+  oled: {
+    primary: "#ffffff",
+    secondary: "#94a3b8",
+    ambient: "#475569",
+    bgDark: "#000000",
+    bgLight: "#f8fafc",
+  },
+  indigo: {
+    primary: "#6366f1",
+    secondary: "#818cf8",
+    ambient: "#4f46e5",
+    bgDark: "#07090e",
+    bgLight: "#f8fafc",
+  },
+};
+
+export const FloatingPaths: React.FC<FloatingPathsProps> = ({
+  theme = "indigo",
+  mode = "dark",
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const themeRef = useRef<ColorTheme>(theme);
+  const modeRef = useRef<ThemeMode>(mode);
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,112 +147,14 @@ export function FloatingPaths() {
     window.addEventListener("resize", resize);
     resize();
 
-    // ── Artist Palette Configurations (Harmonious Dual-Tone Wave Sets) ──
-    const THEME_PALETTES: Record<
-      string,
-      { primary: string; secondary: string; ambient: string; bgDark: string; bgLight: string }
-    > = {
-      weeknd: {
-        primary: "#ff1e42",
-        secondary: "#fb7185",
-        ambient: "#e11d48",
-        bgDark: "#0d0205",
-        bgLight: "#fff1f2",
-      },
-      taylor: {
-        primary: "#9061f9",
-        secondary: "#38bdf8",
-        ambient: "#7e3af2",
-        bgDark: "#090514",
-        bgLight: "#faf5ff",
-      },
-      billie: {
-        primary: "#06b6d4",
-        secondary: "#10b981",
-        ambient: "#0284c7",
-        bgDark: "#020914",
-        bgLight: "#f0f9ff",
-      },
-      daftpunk: {
-        primary: "#fbbf24",
-        secondary: "#f59e0b",
-        ambient: "#d97706",
-        bgDark: "#0d0a02",
-        bgLight: "#fefce8",
-      },
-      travis: {
-        primary: "#10b981",
-        secondary: "#34d399",
-        ambient: "#059669",
-        bgDark: "#020d07",
-        bgLight: "#f0fdf4",
-      },
-      lana: {
-        primary: "#f472b6",
-        secondary: "#fb7185",
-        ambient: "#ec4899",
-        bgDark: "#0f0307",
-        bgLight: "#fff1f2",
-      },
-      emerald: {
-        primary: "#10b981",
-        secondary: "#34d399",
-        ambient: "#059669",
-        bgDark: "#020d07",
-        bgLight: "#f0fdf4",
-      },
-      sunset: {
-        primary: "#f43f5e",
-        secondary: "#fb7185",
-        ambient: "#e11d48",
-        bgDark: "#0e0306",
-        bgLight: "#fff1f2",
-      },
-      sapphire: {
-        primary: "#3b82f6",
-        secondary: "#60a5fa",
-        ambient: "#2563eb",
-        bgDark: "#030a16",
-        bgLight: "#eff6ff",
-      },
-      amber: {
-        primary: "#f59e0b",
-        secondary: "#fbbf24",
-        ambient: "#d97706",
-        bgDark: "#0e0902",
-        bgLight: "#fffbeb",
-      },
-      crimson: {
-        primary: "#ef4444",
-        secondary: "#f87171",
-        ambient: "#dc2626",
-        bgDark: "#0e0202",
-        bgLight: "#fef2f2",
-      },
-      oled: {
-        primary: "#ffffff",
-        secondary: "#94a3b8",
-        ambient: "#475569",
-        bgDark: "#000000",
-        bgLight: "#f8fafc",
-      },
-      indigo: {
-        primary: "#6366f1",
-        secondary: "#818cf8",
-        ambient: "#4f46e5",
-        bgDark: "#07090e",
-        bgLight: "#f8fafc",
-      },
-    };
-
     // ── Silky-Smooth Organic Liquid Waves Renderer ──
     const render = () => {
       step += 0.0035;
       ctx.clearRect(0, 0, width, height);
 
-      const isLight = document.documentElement.getAttribute("data-mode") === "light";
-      const themeId = document.documentElement.getAttribute("data-theme") || "indigo";
-      const palette = THEME_PALETTES[themeId] || THEME_PALETTES.indigo;
+      const isLight = modeRef.current === "light";
+      const currentTheme = themeRef.current || "indigo";
+      const palette = THEME_PALETTES[currentTheme] || THEME_PALETTES.indigo;
 
       // 1. Soft Ambient Background Tint
       const bgGrad = ctx.createLinearGradient(0, 0, width, height);
@@ -154,7 +173,7 @@ export function FloatingPaths() {
       orb1_grad.addColorStop(1, "transparent");
 
       ctx.save();
-      ctx.globalAlpha = isLight ? 0.14 : 0.18;
+      ctx.globalAlpha = isLight ? 0.16 : 0.22;
       ctx.fillStyle = orb1_grad;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
@@ -169,7 +188,7 @@ export function FloatingPaths() {
       orb2_grad.addColorStop(1, "transparent");
 
       ctx.save();
-      ctx.globalAlpha = isLight ? 0.1 : 0.14;
+      ctx.globalAlpha = isLight ? 0.12 : 0.16;
       ctx.fillStyle = orb2_grad;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
@@ -196,8 +215,8 @@ export function FloatingPaths() {
         );
 
         ctx.strokeStyle = i % 2 === 0 ? palette.primary : palette.secondary;
-        ctx.lineWidth = 1.3 + (i % 3) * 0.4;
-        ctx.globalAlpha = isLight ? 0.12 + factor * 0.22 : 0.16 + factor * 0.3;
+        ctx.lineWidth = 1.4 + (i % 3) * 0.4;
+        ctx.globalAlpha = isLight ? 0.14 + factor * 0.24 : 0.18 + factor * 0.32;
         ctx.stroke();
       }
 
@@ -223,7 +242,7 @@ export function FloatingPaths() {
 
         ctx.strokeStyle = j % 2 === 0 ? palette.secondary : palette.ambient;
         ctx.lineWidth = 1.2 + (j % 2) * 0.5;
-        ctx.globalAlpha = isLight ? 0.09 + factorB * 0.18 : 0.12 + factorB * 0.24;
+        ctx.globalAlpha = isLight ? 0.1 + factorB * 0.2 : 0.14 + factorB * 0.26;
         ctx.stroke();
       }
 
@@ -251,4 +270,4 @@ export function FloatingPaths() {
       }}
     />
   );
-}
+};

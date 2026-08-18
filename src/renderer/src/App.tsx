@@ -178,7 +178,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-container">
       {/* Animated Liquid Glass Shader & Flowing Paths */}
-      <FloatingPaths />
+      <FloatingPaths theme={theme} mode={mode} />
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
         <Header
