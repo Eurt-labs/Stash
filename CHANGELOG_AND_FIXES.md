@@ -591,6 +591,18 @@ if (ext === '.mp3') {
 
 ---
 
+### 📌 [FIX-017] Elimination of Ambiguous Auto-Detect Target Format Option
+- **Date**: 2026-08-18
+- **Files Modified**: `src/renderer/src/components/SettingsBar.tsx`, `src/renderer/src/App.tsx`, `src/main/services/StashOrchestrator.ts`
+- **Severity**: UX Simplification
+
+#### 1. Description & Enhancement
+- Removed the ambiguous `Auto-Detect` option from the Target Format selector.
+- Users now explicitly pick their desired media container (`MP3`, `AAC`, `FLAC`, `OPUS`, `WAV`, `MP4`), ensuring deterministic transcoding and quality presets with zero guesswork.
+- Default initial state is set to `MP3 Audio (.mp3)`.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

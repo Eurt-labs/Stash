@@ -122,10 +122,9 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
         </label>
         <select
           className="select-box"
-          value={format}
+          value={format === 'AUTO' ? 'MP3' : format}
           onChange={(e) => onChangeFormat(e.target.value as DownloadFormat)}
         >
-          <option value="AUTO">Auto-Detect</option>
           <option value="MP3">MP3 Audio (.mp3)</option>
           <option value="AAC">AAC Audio (.m4a)</option>
           <option value="FLAC">FLAC Lossless (.flac)</option>

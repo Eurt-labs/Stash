@@ -19,7 +19,7 @@ import { FileManager } from './FileManager'
 export class StashOrchestrator {
   private outputDir: string = FileManager.getDefaultDownloadDir()
   private quality: DownloadQuality = 'HIGH'
-  private format: DownloadFormat = 'AUTO'
+  private format: DownloadFormat = 'MP3'
 
   private batches: Map<string, DownloadBatch> = new Map()
   private isProcessingQueue = false

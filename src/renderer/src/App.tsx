@@ -22,7 +22,7 @@ export const App: React.FC = () => {
   const [batches, setBatches] = useState<Record<string, DownloadBatch>>({})
   const [outputDir, setOutputDir] = useState('')
   const [quality, setQuality] = useState<DownloadQuality>('HIGH')
-  const [format, setFormat] = useState<DownloadFormat>('AUTO')
+  const [format, setFormat] = useState<DownloadFormat>('MP3')
   const [theme, setTheme] = useState<ColorTheme>(() => {
     return (localStorage.getItem('stash_theme') as ColorTheme) || 'indigo'
   })
