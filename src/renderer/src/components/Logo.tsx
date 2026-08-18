@@ -30,38 +30,29 @@ export const Logo: React.FC<LogoProps> = ({ size = 36, className = '' }) => {
         viewBox="0 0 100 100"
         fill="none"
       >
-        {/* 1. Musical Note (Top / Center) */}
-        <path
-          d="M58 20 C68 20 74 26 74 34"
-          stroke="#ffffff"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M58 20 V54"
-          stroke="#ffffff"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
+        {/* Note Head Loop at bottom-left */}
         <circle
-          cx="44"
-          cy="54"
+          cx="36"
+          cy="62"
           r="14"
           stroke="#ffffff"
-          strokeWidth="5"
+          strokeWidth="5.5"
         />
 
-        {/* 2. Precision Download Arrow (Bottom / Center) */}
+        {/* Stem rising up from note tangent, curving over the top arch, and descending down as arrow shaft */}
         <path
-          d="M50 58 V80"
+          d="M50 62 V28 C50 15 70 15 70 28 V56"
           stroke="#ffffff"
-          strokeWidth="5"
+          strokeWidth="5.5"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
+
+        {/* Downward Arrowhead */}
         <path
-          d="M38 68 L50 80 L62 68"
+          d="M59 46 L70 56 L81 46"
           stroke="#ffffff"
-          strokeWidth="5"
+          strokeWidth="5.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
