@@ -344,6 +344,29 @@ export const FloatingPaths: React.FC<FloatingPathsProps> = ({ theme = 'indigo', 
 
 ---
 
+### 📌 [FIX-008] High-Definition Dedicated Artist Artwork Backdrops & Layering Architecture
+- **Date**: 2026-08-18
+- **Files Modified**: `public/artists/*.svg`, `src/renderer/src/App.tsx`, `src/renderer/src/index.css`
+- **Severity**: High (Visual identity & user-requested singer aesthetics)
+
+#### 1. Problem Description & Symptoms
+- When selecting an Artist Signature Style (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey), the background only showed generic abstract wave lines in different colors rather than the singer's actual iconic visual art style.
+
+#### 2. Technical Root Cause Analysis
+- Procedural bezier curves alone cannot depict complex representational album art motifs (e.g. city skylines, crescent moons, palm trees, vinyl LP grooves, and stage pyramids).
+
+#### 3. Exact Solution & Code Implementation
+- Created 6 high-definition, infinitely scalable vector artwork backdrops in `public/artists/`:
+  - `weeknd.svg`: Sinking segmented synthwave sun, dark skyscraper city skyline silhouettes with glowing neon windows, and perspective laser grid.
+  - `taylor.svg`: Midnight twilight nebula, luminous crescent moon, roman numeral clock face ring, and starry constellations.
+  - `billie.svg`: Deep oceanic abyss, submerged sunlight caustic beams, floating cyan bubbles, and underwater ripples.
+  - `daftpunk.svg`: Obsidian studio, radiant RAM pyramid laser beams, wireframe pyramid, and audio spectrum equalizer matrix.
+  - `travis.svg`: Surreal desert night, celestial disc, glowing emerald dune ridges, and cosmic green embers.
+  - `lana.svg`: Sunset rose quartz sky, Hollywood hills, California palm tree silhouettes, and a spinning vintage vinyl record LP.
+- Wired a dynamic layer `<div className="artist-backdrop" style={{ backgroundImage: 'url(./artists/${theme}.svg)' }} />` in `App.tsx` that smoothly cross-fades into the background when an artist style is selected, while fading away when standard core color palettes are active.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

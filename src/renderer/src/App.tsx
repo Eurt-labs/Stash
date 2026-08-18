@@ -174,10 +174,21 @@ export const App: React.FC = () => {
   }
 
   const batchList = Object.values(batches)
+  const isArtistTheme = ['weeknd', 'taylor', 'billie', 'daftpunk', 'travis', 'lana'].includes(theme)
 
   return (
     <div className="app-container">
-      {/* Animated Liquid Glass Shader & Flowing Paths */}
+      {/* 1. Dedicated Artist Artwork Backdrop */}
+      {isArtistTheme && (
+        <div
+          className="artist-backdrop"
+          style={{
+            backgroundImage: `url('./artists/${theme}.svg')`
+          }}
+        />
+      )}
+
+      {/* 2. Animated Liquid Glass Shader & Flowing Paths */}
       <FloatingPaths theme={theme} mode={mode} />
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>

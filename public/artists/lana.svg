@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Sunset Rose Noir Gradient -->
+    <linearGradient id="lBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0205" />
+      <stop offset="35%" stop-color="#240715" />
+      <stop offset="70%" stop-color="#400c25" />
+      <stop offset="100%" stop-color="#080104" />
+    </linearGradient>
+
+    <!-- Rose Quartz Glow -->
+    <filter id="roseGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <linearGradient id="sunGradLana" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="50%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#9d174d" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky Backdrop -->
+  <rect width="1920" height="1080" fill="url(#lBg)" />
+
+  <!-- Ambient Sunset Aura -->
+  <circle cx="1450" cy="500" r="550" fill="#f472b6" opacity="0.22" filter="url(#roseGlow)" />
+  <circle cx="450" cy="400" r="450" fill="#fb7185" opacity="0.18" filter="url(#roseGlow)" />
+
+  <!-- Sinking Sunset Golden Rose Sun -->
+  <circle cx="1480" cy="460" r="220" fill="url(#sunGradLana)" filter="url(#roseGlow)" opacity="0.75" />
+
+  <!-- Hollywood Hills & California Palm Silhouettes -->
+  <g fill="#070104" opacity="0.95">
+    <!-- Hills Ridge -->
+    <path d="M-100,740 Q400,620 980,710 T1920,660 L1920,1080 L-100,1080 Z" />
+
+    <!-- Palm Tree 1 (Left) -->
+    <path d="M220,780 Q215,550 200,380 L210,380 Q225,550 230,780 Z" />
+    <!-- Fronds -->
+    <path d="M205,380 Q140,320 80,360 Q130,400 205,390" />
+    <path d="M205,380 Q150,260 100,280 Q160,330 205,385" />
+    <path d="M205,380 Q200,220 220,240 Q210,320 205,380" />
+    <path d="M205,380 Q260,250 310,270 Q250,330 205,385" />
+    <path d="M205,380 Q280,310 330,350 Q260,390 205,390" />
+
+    <!-- Palm Tree 2 (Left-Mid) -->
+    <path d="M340,790 Q345,600 355,440 L363,440 Q355,600 350,790 Z" />
+    <path d="M358,440 Q300,390 250,420 Q290,460 358,450" />
+    <path d="M358,440 Q390,360 430,380 Q390,430 358,445" />
+    <path d="M358,440 Q360,320 375,340 Q365,400 358,440" />
+  </g>
+
+  <!-- Large Spinning Vinyl Record LP (Born to Die Vintage Vinyl Motif) -->
+  <g transform="translate(1480, 580)">
+    <!-- Vinyl Body -->
+    <circle cx="0" cy="0" r="280" fill="#0d0207" stroke="rgba(244, 114, 182, 0.4)" stroke-width="2" filter="url(#roseGlow)" opacity="0.85" />
+    <!-- Concentric Grooves -->
+    <circle cx="0" cy="0" r="255" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
+    <circle cx="0" cy="0" r="230" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
+    <circle cx="0" cy="0" r="205" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
+    <circle cx="0" cy="0" r="180" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
+    <circle cx="0" cy="0" r="155" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
+    <circle cx="0" cy="0" r="130" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
+    <!-- Center Label Disc -->
+    <circle cx="0" cy="0" r="95" fill="#e11d48" opacity="0.9" />
+    <circle cx="0" cy="0" r="12" fill="#ffffff" />
+  </g>
+</svg>

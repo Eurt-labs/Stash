@@ -292,6 +292,27 @@ html, body {
   overflow: hidden;
 }
 
+/* Dedicated High-Definition Artist Artwork Backdrop */
+.artist-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.75;
+  filter: brightness(0.9) contrast(1.1);
+  transition: opacity 0.45s ease, background-image 0.4s ease;
+}
+
+[data-mode='light'] .artist-backdrop {
+  opacity: 0.35;
+  filter: brightness(1.05) contrast(0.95);
+}
+
 .content-scrollable {
   flex: 1;
   overflow-y: auto;

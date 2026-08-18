@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Deep Obsidian & Golden Ember Gradient -->
+    <linearGradient id="dBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#080601" />
+      <stop offset="40%" stop-color="#1c1303" />
+      <stop offset="75%" stop-color="#302004" />
+      <stop offset="100%" stop-color="#060400" />
+    </linearGradient>
+
+    <!-- Golden Chrome Glow -->
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <linearGradient id="goldBeam" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Obsidian Studio Backdrop -->
+  <rect width="1920" height="1080" fill="url(#dBg)" />
+
+  <!-- Ambient Golden Chrome Aura -->
+  <circle cx="960" cy="540" r="550" fill="#fbbf24" opacity="0.2" filter="url(#goldGlow)" />
+
+  <!-- Iconic RAM Pyramid Stage Laser Beams -->
+  <g opacity="0.6">
+    <polygon points="960,820 0,0 80,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 280,0 380,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 620,0 720,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 910,0 1010,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 1200,0 1300,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 1540,0 1640,0" fill="url(#goldBeam)" />
+    <polygon points="960,820 1840,0 1920,0" fill="url(#goldBeam)" />
+  </g>
+
+  <!-- Golden Pyramid Wireframe Outline -->
+  <polygon points="960,320 620,820 1300,820" fill="rgba(251, 191, 36, 0.08)" stroke="#fbbf24" stroke-width="3" filter="url(#goldGlow)" />
+  <line x1="960" y1="320" x2="960" y2="820" stroke="#fde047" stroke-width="2" />
+  <line x1="790" y1="570" x2="1130" y2="570" stroke="#fbbf24" stroke-width="1.8" />
+
+  <!-- Audio Spectrum Equalizer Matrix Bars along base -->
+  <g fill="#fbbf24" opacity="0.4">
+    <rect x="120" y="920" width="28" height="160" />
+    <rect x="180" y="880" width="28" height="200" />
+    <rect x="240" y="840" width="28" height="240" />
+    <rect x="300" y="900" width="28" height="180" />
+    <rect x="360" y="820" width="28" height="260" />
+    <rect x="420" y="860" width="28" height="220" />
+
+    <rect x="1440" y="860" width="28" height="220" />
+    <rect x="1500" y="820" width="28" height="260" />
+    <rect x="1560" y="900" width="28" height="180" />
+    <rect x="1620" y="840" width="28" height="240" />
+    <rect x="1680" y="880" width="28" height="200" />
+    <rect x="1740" y="920" width="28" height="160" />
+  </g>
+</svg>

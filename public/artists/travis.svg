@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Dark Utopia Desert Gradient -->
+    <linearGradient id="trBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#010a05" />
+      <stop offset="40%" stop-color="#041f11" />
+      <stop offset="70%" stop-color="#083820" />
+      <stop offset="100%" stop-color="#010603" />
+    </linearGradient>
+
+    <!-- Emerald Glow -->
+    <filter id="emeraldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <linearGradient id="duneGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#062e1a" />
+      <stop offset="100%" stop-color="#02140b" />
+    </linearGradient>
+
+    <linearGradient id="duneGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a4628" />
+      <stop offset="100%" stop-color="#031b0e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky Backdrop -->
+  <rect width="1920" height="1080" fill="url(#trBg)" />
+
+  <!-- Ambient Emerald Atmosphere -->
+  <circle cx="960" cy="400" r="550" fill="#10b981" opacity="0.25" filter="url(#emeraldGlow)" />
+  <circle cx="400" cy="550" r="400" fill="#34d399" opacity="0.18" filter="url(#emeraldGlow)" />
+
+  <!-- Glowing Sunken Green Celestial Disc (Utopia Monolith Sun) -->
+  <g transform="translate(960, 480)">
+    <circle cx="0" cy="0" r="220" fill="#059669" filter="url(#emeraldGlow)" opacity="0.6" />
+    <circle cx="0" cy="0" r="180" fill="#10b981" opacity="0.4" />
+  </g>
+
+  <!-- Distant Desert Mountain & Dune Ridges (Astroworld/Utopia Desert) -->
+  <!-- Layer 1: Distant Dunes -->
+  <path d="M-100,560 Q380,440 920,530 T1920,490 L1920,1080 L-100,1080 Z" fill="url(#duneGrad1)" opacity="0.9" />
+
+  <!-- Layer 2: Midground Dunes -->
+  <path d="M-100,680 Q560,540 1140,650 T2020,590 L2020,1080 L-100,1080 Z" fill="url(#duneGrad2)" opacity="0.95" />
+
+  <!-- Glowing Neon Dune Edges -->
+  <path d="M-100,560 Q380,440 920,530 T1920,490" fill="none" stroke="#10b981" stroke-width="2.5" opacity="0.6" filter="url(#emeraldGlow)" />
+  <path d="M-100,680 Q560,540 1140,650 T2020,590" fill="none" stroke="#34d399" stroke-width="3" opacity="0.75" />
+
+  <!-- Floating Green Cosmic Embers -->
+  <g fill="#34d399">
+    <circle cx="280" cy="380" r="3" opacity="0.8" />
+    <circle cx="450" cy="290" r="2" opacity="0.6" />
+    <circle cx="680" cy="420" r="3.5" opacity="0.9" filter="url(#emeraldGlow)" />
+    <circle cx="890" cy="340" r="2.5" opacity="0.7" />
+    <circle cx="1180" cy="390" r="4" opacity="0.9" filter="url(#emeraldGlow)" />
+    <circle cx="1420" cy="310" r="2" opacity="0.6" />
+    <circle cx="1680" cy="440" r="3" opacity="0.8" />
+  </g>
+</svg>
