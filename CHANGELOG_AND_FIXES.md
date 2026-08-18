@@ -603,6 +603,26 @@ if (ext === '.mp3') {
 
 ---
 
+### 📌 [FIX-018] WAV RIFF INFO + ID3v2 Chunk Tagging & FLAC Vorbis Attached Picture Hardening
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/MetadataTagger.ts`
+- **Severity**: High (WAV and FLAC metadata and thumbnail extraction in Windows)
+
+#### 1. Problem Description & Symptoms
+- Downloaded `.wav` files (e.g. `Asim Azhar, Noor - Aarzu.wav`) appeared without contributing artists, album, title, or thumbnail in Windows Media Player and Windows Explorer.
+
+#### 2. Technical Root Cause Analysis
+- WAV container format does not accept direct video stream muxing (`attached_pic`). Calling generic stream copy failed or produced no metadata tags.
+- Windows Media Player and Windows Shell require both **RIFF INFO chunks** (`INAM`, `IART`, `IPRD`, `ICRD`) and an **ID3v2 chunk** (via `-write_id3v2 1 -write_bext 1`) inside the `.wav` container to display metadata.
+- For FLAC, artwork must be normalized to standard 600x600 Baseline JPEG with both standard and uppercase Vorbis comments (`TITLE`, `ARTIST`, `ALBUM`, `DATE`).
+
+#### 3. Exact Solution & Code Implementation
+- Refactored `tagWav` in `MetadataTagger.ts` to write both RIFF INFO tags and standard ID3v2 chunks (`-write_id3v2 1 -write_bext 1`).
+- Enhanced artwork preprocessor to crop/scale images to 600x600 Baseline JPEG for maximum Windows Media Player compatibility.
+- Hardened FLAC Vorbis comment tags and `attached_pic` disposition.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

@@ -39,7 +39,9 @@ export class MetadataTagger {
         await this.tagFlac(filePath, trackInfo, coverJpgPath)
       } else if (ext === '.m4a' || ext === '.aac') {
         await this.tagM4a(filePath, trackInfo, coverJpgPath)
-      } else if (ext === '.opus' || ext === '.ogg' || ext === '.wav') {
+      } else if (ext === '.wav') {
+        await this.tagWav(filePath, trackInfo)
+      } else if (ext === '.opus' || ext === '.ogg') {
         await this.tagAudioGeneric(filePath, trackInfo)
       } else if (ext === '.mp4' || ext === '.mkv') {
         await this.tagVideo(filePath, trackInfo)
@@ -112,7 +114,14 @@ export class MetadataTagger {
   }
 
   /**
-   * Generic audio tagger for OPUS/OGG/WAV
+   * Tags WAV files with ID3v2 and RIFF INFO chunks
+   */
+  private static async tagWav(filePath: string, trackInfo: TrackInfo): Promise<void> {
+    await this.tagWithFFmpeg(filePath, trackInfo, null, 'wav')
+  }
+
+  /**
+   * Generic audio tagger for OPUS/OGG
    */
   private static async tagAudioGeneric(filePath: string, trackInfo: TrackInfo): Promise<void> {
     await this.tagWithFFmpeg(filePath, trackInfo, null, path.extname(filePath).replace('.', ''))
@@ -136,35 +145,55 @@ export class MetadataTagger {
   ): Promise<void> {
     const ffmpegPath = DependencyResolver.resolveExecutable('ffmpeg')
     const dir = path.dirname(filePath)
-    const tempOutput = path.join(dir, `tagged_${Date.now()}_${path.basename(filePath)}`)
+    const ext = path.extname(filePath)
+    const tempOutput = path.join(dir, `tagged_${Date.now()}_${Math.random().toString(36).substring(2, 6)}${ext}`)
 
     const args: string[] = ['-i', filePath]
 
-    if (coverJpgPath && fs.existsSync(coverJpgPath)) {
+    if (coverJpgPath && fs.existsSync(coverJpgPath) && (formatExt === 'flac' || formatExt === 'm4a' || formatExt === 'mp3')) {
       args.push('-i', coverJpgPath)
       args.push('-map', '0:a', '-map', '1:v', '-c', 'copy')
       if (formatExt === 'flac' || formatExt === 'm4a') {
         args.push('-disposition:v:0', 'attached_pic')
       } else if (formatExt === 'mp3') {
-        args.push('-id3v2_version', '3', '-metadata:s:v', 'title="Album cover"', '-metadata:s:v', 'comment="Cover (front)"')
+        args.push('-id3v2_version', '3', '-metadata:s:v', 'title=Album cover', '-metadata:s:v', 'comment=Cover (front)')
       }
     } else {
       args.push('-c', 'copy')
     }
 
-    args.push('-metadata', `title=${trackInfo.title}`)
-    args.push('-metadata', `artist=${trackInfo.artists.join(', ')}`)
-    if (trackInfo.album) {
-      args.push('-metadata', `album=${trackInfo.album}`)
+    if (formatExt === 'wav') {
+      args.push('-write_id3v2', '1', '-write_bext', '1')
+      args.push('-metadata', `INAM=${trackInfo.title}`)
+      args.push('-metadata', `IART=${trackInfo.artists.join(', ')}`)
+      args.push('-metadata', `IPRD=${trackInfo.album || trackInfo.title}`)
+      if (trackInfo.releaseYear) args.push('-metadata', `ICRD=${trackInfo.releaseYear}`)
+      if (trackInfo.genre) args.push('-metadata', `IGNR=${trackInfo.genre}`)
+      if (trackInfo.trackNumber) args.push('-metadata', `ITRK=${trackInfo.trackNumber}`)
     }
+
+    const artistStr = trackInfo.artists.join(', ')
+    args.push('-metadata', `title=${trackInfo.title}`)
+    args.push('-metadata', `artist=${artistStr}`)
+    args.push('-metadata', `album_artist=${artistStr}`)
+    args.push('-metadata', `album=${trackInfo.album || trackInfo.title}`)
     if (trackInfo.releaseYear) {
       args.push('-metadata', `date=${trackInfo.releaseYear}`)
+      args.push('-metadata', `year=${trackInfo.releaseYear}`)
     }
     if (trackInfo.genre) {
       args.push('-metadata', `genre=${trackInfo.genre}`)
     }
     if (trackInfo.trackNumber) {
       args.push('-metadata', `track=${trackInfo.trackNumber}`)
+    }
+
+    // Also write standard uppercase Vorbis comments for FLAC/OGG
+    if (formatExt === 'flac' || formatExt === 'ogg' || formatExt === 'opus') {
+      args.push('-metadata', `TITLE=${trackInfo.title}`)
+      args.push('-metadata', `ARTIST=${artistStr}`)
+      args.push('-metadata', `ALBUM=${trackInfo.album || trackInfo.title}`)
+      if (trackInfo.releaseYear) args.push('-metadata', `DATE=${trackInfo.releaseYear}`)
     }
 
     args.push('-y', tempOutput)
@@ -194,7 +223,7 @@ export class MetadataTagger {
   }
 
   /**
-   * Downloads thumbnail and converts it into a clean baseline JPEG using FFmpeg
+   * Downloads thumbnail and converts it into a clean square baseline JPEG using FFmpeg
    */
   private static async prepareArtworkJpeg(url: string): Promise<{ filePath: string; buffer: Buffer } | null> {
     try {
@@ -217,12 +246,12 @@ export class MetadataTagger {
 
       fs.writeFileSync(rawTempPath, rawBuffer)
 
-      // Use FFmpeg to convert image (WebP, PNG, etc.) to standard Baseline JPEG
+      // Use FFmpeg to convert image (WebP, PNG, etc.) to 600x600 Baseline JPEG
       const ffmpegPath = DependencyResolver.resolveExecutable('ffmpeg')
       await new Promise<void>((resolve) => {
         const child = spawn(
           ffmpegPath,
-          ['-i', rawTempPath, '-vf', "scale='min(800,iw)':-1", '-q:v', '2', '-y', jpgTempPath],
+          ['-i', rawTempPath, '-vf', 'scale=600:600:force_original_aspect_ratio=increase,crop=600:600', '-q:v', '2', '-y', jpgTempPath],
           { windowsHide: true }
         )
         child.on('close', () => resolve())
