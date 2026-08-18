@@ -1,16 +1,16 @@
 <div align="center">
 
-![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.1)
+![Stash Banner](app-resources/hero.svg?raw=true&v=2.0.2)
 
 # Stash Media Downloader
 
-**A fast, lightweight desktop application for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music.**
+**A fast, lightweight cross-platform application for downloading, transcoding, and tagging audio and video from YouTube and YouTube Music across Desktop and Android.**
 
 Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas &amp; SVG Shaders.
 
 [![GitHub Release](https://img.shields.io/github/v/release/Eurt-labs/Stash?style=flat-square&color=6366f1)](https://github.com/Eurt-labs/Stash/releases)
 [![License](https://img.shields.io/badge/license-MIT-emerald?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-3b82f6?style=flat-square)](#prerequisites--dependencies)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-3b82f6?style=flat-square)](#prerequisites--dependencies)
 
 </div>
 
@@ -18,7 +18,7 @@ Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas
 
 ## ⚡ What is Stash?
 
-Stash is an open-source desktop tool that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local drive. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
+Stash is an open-source cross-platform tool that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4) and embeds high-resolution cover artwork and ID3 tags into your files.
 
 ---
 
@@ -28,7 +28,7 @@ Stash processes downloads through a deterministic **5-phase sequential pipeline*
 
 <div align="center">
 
-![Stash Pipeline](app-resources/pipeline.svg?raw=true&v=2.0.1)
+![Stash Pipeline](app-resources/pipeline.svg?raw=true&v=2.0.2)
 
 </div>
 
@@ -111,14 +111,14 @@ The compiled installer will be generated in the `release/` folder.
 
 ## ✨ Features
 
-- **Broad Platform Support**: Works with YouTube videos, Shorts, playlists, YouTube Music tracks, albums, artist channels, and plain-text search queries.
+- **Broad Platform & URL Support**: Works with YouTube videos, Shorts, playlists, YouTube Music tracks, albums, artist channels, and plain-text search queries.
 - **Transcoding Options**:
   - **Formats**: Auto-Detect, MP3, AAC, FLAC (lossless), OPUS, WAV, MP4 video.
   - **Quality Presets**: High (320kbps / 1080p), Mid (192kbps / 720p), Low (128kbps / 360p).
 - **Automated Metadata & Cover Art**: Embeds ID3v2.4 tags (Title, Artist, Album, Year, Genre) and full-quality album artwork.
-- **7 Built-in Color Themes**: Linear Indigo, Emerald Mint, Sunset Rose, Ocean Sapphire, Amber Gold, Crimson Red, and OLED Monochrome with instant live switching.
+- **13 Built-in Color & Artist Signature Themes**: 7 Core Palettes + 6 Artist Styles (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey) with slow-breathing animated backdrops.
 - **In-App Tool & Release Checker**: Checks for new `yt-dlp` binary updates and alerts you if a newer version of Stash is published on GitHub.
-- **Fluid Desktop UI**: Ambient animated SVG background paths powered by Framer Motion, with clean keyboard shortcuts and responsive scaling.
+- **Liquid Glass UI**: Ultra-translucent frosted glass design with hardware-accelerated shaders, responsive scaling, and clean keyboard shortcuts.
 
 ---
 

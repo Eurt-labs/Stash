@@ -61,12 +61,12 @@
 
     <!-- Subtitle -->
     <text x="74" y="54" class="sans-med" font-size="13" fill="#a1a1aa" letter-spacing="-0.01em">
-      High-Speed Desktop Media Downloader &amp; Tag Transcoder
+      High-Speed Cross-Platform Media Downloader &amp; Tag Transcoder
     </text>
 
     <!-- Monochromatic Specs Line -->
     <text x="0" y="112" class="mono-code" font-size="11" fill="#71717a" letter-spacing="0.04em">
-      ELECTRON • REACT 18 • TYPESCRIPT • VITE
+      DESKTOP &amp; ANDROID • ELECTRON • REACT 18 • TYPESCRIPT
     </text>
     <text x="0" y="132" class="mono-code" font-size="10.5" fill="#52525b" letter-spacing="0.02em">
       v2.0.0 • OPEN SOURCE • MIT LICENSE
