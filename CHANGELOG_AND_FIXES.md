@@ -677,6 +677,18 @@ try {
 
 ---
 
+### 📌 [FIX-022] Permanent Removal of Legacy Neon Icon & Full SVG Vector Identity Integration
+- **Date**: 2026-08-18
+- **Files Modified**: `public/favicon.png` (deleted), `public/stash_logo.png` (deleted), `app-resources/stash_logo.png` (deleted), `index.html`
+- **Severity**: Asset Cleanup
+
+#### 1. Description & Enhancement
+- Permanently deleted all legacy 464KB neon 3D icon files from `public/` and `app-resources/`.
+- Updated `index.html` to load pure crisp SVG vector favicon (`/stash_logo.svg`).
+- Ensured zero stale raster assets remain across the codebase.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
