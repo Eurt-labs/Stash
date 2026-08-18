@@ -18,7 +18,14 @@ export class DownloadEngine {
     onTrackExtracted?: (count: number) => void
   ): Promise<TrackInfo[]> {
     const ytDlpPath = DependencyResolver.resolveExecutable('yt-dlp')
-    const args = ['--dump-json', '--no-download', '--no-warnings', '--socket-timeout', '30']
+    const args = [
+      '--dump-json',
+      '--no-download',
+      '--no-warnings',
+      '--no-check-certificates',
+      '--socket-timeout', '30',
+      '--extractor-args', 'youtube:player_client=web,android'
+    ]
     
     if (flatPlaylist) {
       args.push('--flat-playlist')
@@ -83,6 +90,8 @@ export class DownloadEngine {
     onProgress?: (percent: number, speed: string, eta: string) => void
   ): Promise<string> {
     const ytDlpPath = DependencyResolver.resolveExecutable('yt-dlp')
+    const ffmpegPath = DependencyResolver.resolveExecutable('ffmpeg')
+
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true })
     }
@@ -94,22 +103,29 @@ export class DownloadEngine {
       '--no-check-certificates',
       '--no-warnings',
       '--socket-timeout', '30',
-      '--retries', '3',
-      '--fragment-retries', '3',
+      '--retries', '5',
+      '--fragment-retries', '5',
       '--fixup', 'never',
       '--newline',
-      '--no-playlist'
+      '--no-playlist',
+      '--extractor-args', 'youtube:player_client=web,android'
     ]
+
+    // Pass ffmpeg directory location so yt-dlp can locate ffmpeg on all environments
+    if (fs.existsSync(ffmpegPath)) {
+      const ffmpegDir = path.dirname(ffmpegPath)
+      args.push('--ffmpeg-location', ffmpegDir)
+    }
 
     if (format === 'MP4' || format === 'OTHER_VIDEO') {
       let heightLimit = 1080
       if (quality === 'LOW') heightLimit = 360
       if (quality === 'MID') heightLimit = 720
-      args.push('-f', `bestvideo[height<=${heightLimit}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${heightLimit}]/best`)
+      args.push('-f', `bv*[height<=${heightLimit}]+ba/b[height<=${heightLimit}]/bv*+ba/b`)
       args.push('--merge-output-format', 'mp4')
     } else {
-      args.push('-f', 'bestaudio')
-      args.push('--extract-audio')
+      // Audio: fetch best audio stream without forced early conversion; ConversionEngine handles 320k transcode in Phase 3
+      args.push('-f', 'ba/b')
     }
 
     args.push(url)

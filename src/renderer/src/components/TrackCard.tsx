@@ -116,6 +116,23 @@ export const TrackCard: React.FC<TrackCardProps> = ({
           {trackInfo.album && <span>• {trackInfo.album}</span>}
           <span>• {formatDuration(trackInfo.durationMs)}</span>
         </div>
+        {state === 'FAILED' && item.errorMessage && (
+          <div
+            style={{
+              fontSize: '11px',
+              color: '#f87171',
+              marginTop: '2px',
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '340px'
+            }}
+            title={item.errorMessage}
+          >
+            ⚠️ {item.errorMessage}
+          </div>
+        )}
       </div>
 
       {/* Format & Quality Badges */}

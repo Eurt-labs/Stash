@@ -438,6 +438,43 @@ export const FloatingPaths: React.FC<FloatingPathsProps> = ({ theme = 'indigo', 
 
 ---
 
+### 📌 [FIX-012] YouTube HTTP 403 Forbidden Extraction Bypass & FFmpeg Location Forwarding
+- **Date**: 2026-08-18
+- **Files Modified**: `src/main/services/DownloadEngine.ts`, `src/renderer/src/components/TrackCard.tsx`
+- **Severity**: Critical (Downloads failing on YouTube videos)
+
+#### 1. Problem Description & Symptoms
+- Users reported video downloads failing immediately with status `Failed` when downloading YouTube videos (e.g. Gyan Therapy's *"This Monitor Makes Your Laptop TouchScreen !"*).
+- Under the hood, `yt-dlp` returned: `ERROR: unable to download video data: HTTP Error 403: Forbidden` or failed during postprocessing if FFmpeg was missing from system PATH.
+
+#### 2. Technical Root Cause Analysis
+- YouTube rolled out bot-detection throttling against older default extractor clients (e.g. `android_vr`), which return HTTP 403 Forbidden on chunk streams.
+- `yt-dlp` also required `--ffmpeg-location` to merge video and audio streams if FFmpeg was not globally installed in Windows system PATH.
+
+#### 3. Exact Solution & Code Implementation
+- Added `--extractor-args "youtube:player_client=web,android"` to bypass YouTube's 403 Forbidden throttling.
+- Added dynamic `--ffmpeg-location <dir>` parameter dynamically resolving the bundled `app-resources/windows/ffmpeg.exe` path.
+- Updated `TrackCard.tsx` to display descriptive inline error messages on failed tracks for complete troubleshooting visibility.
+
+```ts
+// DownloadEngine.ts
+const args = [
+  '-o', outputTemplate,
+  '--no-check-certificates',
+  '--no-warnings',
+  '--socket-timeout', '30',
+  '--retries', '5',
+  '--fragment-retries', '5',
+  '--extractor-args', 'youtube:player_client=web,android'
+];
+
+if (fs.existsSync(ffmpegPath)) {
+  args.push('--ffmpeg-location', path.dirname(ffmpegPath));
+}
+```
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
