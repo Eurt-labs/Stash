@@ -394,6 +394,28 @@ export const FloatingPaths: React.FC<FloatingPathsProps> = ({ theme = 'indigo', 
 
 ---
 
+### 📌 [FIX-010] Native Embedded CSS Keyframe Animations for All Artist Artworks
+- **Date**: 2026-08-18
+- **Files Modified**: `public/artists/*.svg`
+- **Severity**: Medium (Visual dynamism & aesthetic vitality)
+
+#### 1. Problem Description & Symptoms
+- After suppressing the generic canvas wave lines, the artist vector artwork backdrops were static and felt lifeless compared to the fluid liquid UI.
+
+#### 2. Technical Root Cause Analysis
+- Static vector illustrations lack continuous visual movement unless animated. Running JavaScript RAF loops for 6 different vector graphics would consume unnecessary main-thread CPU.
+
+#### 3. Exact Solution & Code Implementation
+- Embedded pure hardware-accelerated CSS `@keyframes` animations directly into each SVG's `<style>` tag:
+  - **The Weeknd (`weeknd.svg`)**: Breathing segmented synthwave sun (`@keyframes sunBreathe`), drifting red fog, flickering neon skyscraper windows, and pulsing laser grid.
+  - **Taylor Swift (`taylor.svg`)**: Independent multi-speed star cluster twinkle loops (`@keyframes twinkleFast` & `twinkleSlow`), glowing crescent moon, and 90s slow-rotating clock ring.
+  - **Billie Eilish (`billie.svg`)**: Undulating submerged caustic sunlight rays (`@keyframes raySway1` & `raySway2`), and rising glowing aquatic bubbles.
+  - **Daft Punk (`daftpunk.svg`)**: Pulsating pyramid stage laser beams (`@keyframes laserPulse`), dancing dual-speed audio equalizer matrix bars (`@keyframes eqBounce`), and shimmering gold pyramid wireframe.
+  - **Travis Scott (`travis.svg`)**: Pulsing monolith celestial sun, drifting green cosmic embers, and breathing neon dune edge highlights.
+  - **Lana Del Rey (`lana.svg`)**: Smooth continuous 360-degree spinning vintage vinyl record LP (`@keyframes vinylRotate`), swaying California palm tree fronds, and breathing golden rose sunset aura.
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |

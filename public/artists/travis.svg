@@ -23,6 +23,31 @@
       <stop offset="0%" stop-color="#0a4628" />
       <stop offset="100%" stop-color="#031b0e" />
     </linearGradient>
+
+    <style>
+      @keyframes monolithPulse {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px #10b981); opacity: 0.6; }
+        50% { transform: scale(1.06); filter: drop-shadow(0 0 70px #34d399); opacity: 0.85; }
+      }
+      @keyframes emberDrift1 {
+        0% { transform: translateY(0px) translateX(0px); opacity: 0.4; }
+        50% { transform: translateY(-70px) translateX(25px); opacity: 0.95; }
+        100% { transform: translateY(-140px) translateX(50px); opacity: 0.2; }
+      }
+      @keyframes emberDrift2 {
+        0% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+        50% { transform: translateY(-90px) translateX(-20px); opacity: 0.9; }
+        100% { transform: translateY(-180px) translateX(-45px); opacity: 0.15; }
+      }
+      @keyframes duneNeonPulse {
+        0%, 100% { opacity: 0.55; stroke-width: 2.5px; }
+        50% { opacity: 0.95; stroke-width: 3.5px; }
+      }
+      .anim-monolith { animation: monolithPulse 6s ease-in-out infinite; transform-origin: 960px 480px; }
+      .anim-ember-1 { animation: emberDrift1 8s ease-in-out infinite; }
+      .anim-ember-2 { animation: emberDrift2 10s ease-in-out infinite; }
+      .anim-dune-neon { animation: duneNeonPulse 5s ease-in-out infinite; }
+    </style>
   </defs>
 
   <!-- Sky Backdrop -->
@@ -32,10 +57,10 @@
   <circle cx="960" cy="400" r="550" fill="#10b981" opacity="0.25" filter="url(#emeraldGlow)" />
   <circle cx="400" cy="550" r="400" fill="#34d399" opacity="0.18" filter="url(#emeraldGlow)" />
 
-  <!-- Glowing Sunken Green Celestial Disc (Utopia Monolith Sun) -->
-  <g transform="translate(960, 480)">
-    <circle cx="0" cy="0" r="220" fill="#059669" filter="url(#emeraldGlow)" opacity="0.6" />
-    <circle cx="0" cy="0" r="180" fill="#10b981" opacity="0.4" />
+  <!-- Animated Glowing Sunken Green Celestial Disc (Utopia Monolith Sun) -->
+  <g class="anim-monolith" transform="translate(960, 480)">
+    <circle cx="0" cy="0" r="220" fill="#059669" filter="url(#emeraldGlow)" />
+    <circle cx="0" cy="0" r="180" fill="#10b981" opacity="0.5" />
   </g>
 
   <!-- Distant Desert Mountain & Dune Ridges (Astroworld/Utopia Desert) -->
@@ -45,18 +70,22 @@
   <!-- Layer 2: Midground Dunes -->
   <path d="M-100,680 Q560,540 1140,650 T2020,590 L2020,1080 L-100,1080 Z" fill="url(#duneGrad2)" opacity="0.95" />
 
-  <!-- Glowing Neon Dune Edges -->
-  <path d="M-100,560 Q380,440 920,530 T1920,490" fill="none" stroke="#10b981" stroke-width="2.5" opacity="0.6" filter="url(#emeraldGlow)" />
-  <path d="M-100,680 Q560,540 1140,650 T2020,590" fill="none" stroke="#34d399" stroke-width="3" opacity="0.75" />
+  <!-- Glowing Animated Neon Dune Edges -->
+  <path class="anim-dune-neon" d="M-100,560 Q380,440 920,530 T1920,490" fill="none" stroke="#10b981" filter="url(#emeraldGlow)" />
+  <path class="anim-dune-neon" d="M-100,680 Q560,540 1140,650 T2020,590" fill="none" stroke="#34d399" />
 
-  <!-- Floating Green Cosmic Embers -->
+  <!-- Animated Floating Green Cosmic Embers -->
   <g fill="#34d399">
-    <circle cx="280" cy="380" r="3" opacity="0.8" />
-    <circle cx="450" cy="290" r="2" opacity="0.6" />
-    <circle cx="680" cy="420" r="3.5" opacity="0.9" filter="url(#emeraldGlow)" />
-    <circle cx="890" cy="340" r="2.5" opacity="0.7" />
-    <circle cx="1180" cy="390" r="4" opacity="0.9" filter="url(#emeraldGlow)" />
-    <circle cx="1420" cy="310" r="2" opacity="0.6" />
-    <circle cx="1680" cy="440" r="3" opacity="0.8" />
+    <g class="anim-ember-1">
+      <circle cx="280" cy="380" r="3" />
+      <circle cx="680" cy="420" r="3.5" filter="url(#emeraldGlow)" />
+      <circle cx="1180" cy="390" r="4" filter="url(#emeraldGlow)" />
+      <circle cx="1680" cy="440" r="3" />
+    </g>
+    <g class="anim-ember-2">
+      <circle cx="450" cy="290" r="2.5" />
+      <circle cx="890" cy="340" r="2.8" />
+      <circle cx="1420" cy="310" r="3" />
+    </g>
   </g>
 </svg>

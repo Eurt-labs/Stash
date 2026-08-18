@@ -26,19 +26,44 @@
       <stop offset="0%" stop-color="#ff1e42" stop-opacity="0.8" />
       <stop offset="100%" stop-color="#e11d48" stop-opacity="0.1" />
     </linearGradient>
+
+    <style>
+      @keyframes sunBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 40px #ff1e42); }
+        50% { transform: scale(1.04); opacity: 1; filter: drop-shadow(0 0 80px #ff1e42); }
+      }
+      @keyframes fogFloat {
+        0%, 100% { transform: translateX(0px) scale(1); opacity: 0.22; }
+        50% { transform: translateX(40px) scale(1.08); opacity: 0.35; }
+      }
+      @keyframes windowFlicker {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+        75% { opacity: 0.2; }
+      }
+      @keyframes gridPulse {
+        0%, 100% { opacity: 0.55; }
+        50% { opacity: 0.85; }
+      }
+      .anim-sun { animation: sunBreathe 6s ease-in-out infinite; transform-origin: 960px 520px; }
+      .anim-fog { animation: fogFloat 12s ease-in-out infinite; }
+      .anim-windows-1 { animation: windowFlicker 3s ease-in-out infinite; }
+      .anim-windows-2 { animation: windowFlicker 4.5s ease-in-out infinite 1s; }
+      .anim-grid { animation: gridPulse 5s ease-in-out infinite; }
+    </style>
   </defs>
 
   <!-- Sky Backdrop -->
   <rect width="1920" height="1080" fill="url(#wBg)" />
 
-  <!-- Ambient Red Fog -->
-  <circle cx="960" cy="540" r="600" fill="#ff1e42" opacity="0.22" filter="url(#neonGlow)" />
+  <!-- Ambient Animated Red Fog -->
+  <circle cx="960" cy="540" r="600" fill="#ff1e42" class="anim-fog" filter="url(#neonGlow)" />
   <circle cx="300" cy="400" r="400" fill="#e11d48" opacity="0.15" filter="url(#neonGlow)" />
   <circle cx="1620" cy="400" r="400" fill="#e11d48" opacity="0.15" filter="url(#neonGlow)" />
 
-  <!-- Massive Synthwave Sun (After Hours / Dawn FM Motif) -->
-  <g transform="translate(960, 520)">
-    <circle cx="0" cy="0" r="260" fill="url(#sunGrad)" filter="url(#neonGlow)" opacity="0.85" />
+  <!-- Animated Massive Synthwave Sun (After Hours / Dawn FM Motif) -->
+  <g class="anim-sun" transform="translate(960, 520)">
+    <circle cx="0" cy="0" r="260" fill="url(#sunGrad)" filter="url(#neonGlow)" />
     <!-- Segment horizontal cuts -->
     <rect x="-300" y="20" width="600" height="12" fill="#1c0208" />
     <rect x="-300" y="55" width="600" height="16" fill="#1c0208" />
@@ -79,23 +104,25 @@
     <rect x="1790" y="450" width="130" height="170" />
   </g>
 
-  <!-- Glowing Neon Windows in City -->
-  <g fill="#ff1e42" opacity="0.6">
+  <!-- Glowing Animated Neon Windows in City -->
+  <g fill="#ff1e42" class="anim-windows-1">
     <rect x="85" y="455" width="4" height="6" />
     <rect x="95" y="455" width="4" height="6" />
-    <rect x="85" y="475" width="4" height="6" />
     <rect x="215" y="435" width="5" height="8" />
-    <rect x="235" y="435" width="5" height="8" />
     <rect x="445" y="430" width="6" height="8" />
     <rect x="735" y="420" width="6" height="10" />
     <rect x="1065" y="430" width="6" height="10" />
-    <rect x="1210" y="445" width="5" height="8" />
     <rect x="1375" y="435" width="6" height="8" />
     <rect x="1565" y="430" width="6" height="8" />
   </g>
+  <g fill="#fb7185" class="anim-windows-2">
+    <rect x="85" y="475" width="4" height="6" />
+    <rect x="235" y="435" width="5" height="8" />
+    <rect x="1210" y="445" width="5" height="8" />
+  </g>
 
-  <!-- Retro Perspective Neon Grid Ground -->
-  <g stroke="url(#laserGrad)" stroke-width="1.8" opacity="0.65">
+  <!-- Retro Animated Perspective Neon Grid Ground -->
+  <g class="anim-grid" stroke="url(#laserGrad)" stroke-width="1.8">
     <!-- Horizon line -->
     <line x1="0" y1="580" x2="1920" y2="580" stroke="#ff1e42" stroke-width="2.5" />
 

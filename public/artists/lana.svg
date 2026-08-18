@@ -19,6 +19,29 @@
       <stop offset="50%" stop-color="#fb7185" />
       <stop offset="100%" stop-color="#9d174d" />
     </linearGradient>
+
+    <style>
+      @keyframes vinylRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes sunsetBreathe {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 35px #f472b6); opacity: 0.75; }
+        50% { transform: scale(1.05); filter: drop-shadow(0 0 75px #fb7185); opacity: 0.95; }
+      }
+      @keyframes palmSwayLeft {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(2deg); }
+      }
+      @keyframes palmSwayRight {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(-1.5deg); }
+      }
+      .anim-vinyl { animation: vinylRotate 16s linear infinite; transform-origin: 1480px 580px; }
+      .anim-sunset { animation: sunsetBreathe 7s ease-in-out infinite; transform-origin: 1480px 460px; }
+      .anim-palm-1 { animation: palmSwayLeft 6s ease-in-out infinite; transform-origin: 220px 780px; }
+      .anim-palm-2 { animation: palmSwayRight 7.5s ease-in-out infinite; transform-origin: 340px 790px; }
+    </style>
   </defs>
 
   <!-- Sky Backdrop -->
@@ -28,34 +51,37 @@
   <circle cx="1450" cy="500" r="550" fill="#f472b6" opacity="0.22" filter="url(#roseGlow)" />
   <circle cx="450" cy="400" r="450" fill="#fb7185" opacity="0.18" filter="url(#roseGlow)" />
 
-  <!-- Sinking Sunset Golden Rose Sun -->
-  <circle cx="1480" cy="460" r="220" fill="url(#sunGradLana)" filter="url(#roseGlow)" opacity="0.75" />
+  <!-- Animated Sinking Sunset Golden Rose Sun -->
+  <circle class="anim-sunset" cx="1480" cy="460" r="220" fill="url(#sunGradLana)" filter="url(#roseGlow)" />
 
   <!-- Hollywood Hills & California Palm Silhouettes -->
   <g fill="#070104" opacity="0.95">
     <!-- Hills Ridge -->
     <path d="M-100,740 Q400,620 980,710 T1920,660 L1920,1080 L-100,1080 Z" />
 
-    <!-- Palm Tree 1 (Left) -->
-    <path d="M220,780 Q215,550 200,380 L210,380 Q225,550 230,780 Z" />
-    <!-- Fronds -->
-    <path d="M205,380 Q140,320 80,360 Q130,400 205,390" />
-    <path d="M205,380 Q150,260 100,280 Q160,330 205,385" />
-    <path d="M205,380 Q200,220 220,240 Q210,320 205,380" />
-    <path d="M205,380 Q260,250 310,270 Q250,330 205,385" />
-    <path d="M205,380 Q280,310 330,350 Q260,390 205,390" />
+    <!-- Animated Palm Tree 1 (Left) -->
+    <g class="anim-palm-1">
+      <path d="M220,780 Q215,550 200,380 L210,380 Q225,550 230,780 Z" />
+      <path d="M205,380 Q140,320 80,360 Q130,400 205,390" />
+      <path d="M205,380 Q150,260 100,280 Q160,330 205,385" />
+      <path d="M205,380 Q200,220 220,240 Q210,320 205,380" />
+      <path d="M205,380 Q260,250 310,270 Q250,330 205,385" />
+      <path d="M205,380 Q280,310 330,350 Q260,390 205,390" />
+    </g>
 
-    <!-- Palm Tree 2 (Left-Mid) -->
-    <path d="M340,790 Q345,600 355,440 L363,440 Q355,600 350,790 Z" />
-    <path d="M358,440 Q300,390 250,420 Q290,460 358,450" />
-    <path d="M358,440 Q390,360 430,380 Q390,430 358,445" />
-    <path d="M358,440 Q360,320 375,340 Q365,400 358,440" />
+    <!-- Animated Palm Tree 2 (Left-Mid) -->
+    <g class="anim-palm-2">
+      <path d="M340,790 Q345,600 355,440 L363,440 Q355,600 350,790 Z" />
+      <path d="M358,440 Q300,390 250,420 Q290,460 358,450" />
+      <path d="M358,440 Q390,360 430,380 Q390,430 358,445" />
+      <path d="M358,440 Q360,320 375,340 Q365,400 358,440" />
+    </g>
   </g>
 
-  <!-- Large Spinning Vinyl Record LP (Born to Die Vintage Vinyl Motif) -->
-  <g transform="translate(1480, 580)">
+  <!-- Large Animated Spinning Vinyl Record LP (Born to Die Vintage Vinyl Motif) -->
+  <g class="anim-vinyl" transform="translate(1480, 580)">
     <!-- Vinyl Body -->
-    <circle cx="0" cy="0" r="280" fill="#0d0207" stroke="rgba(244, 114, 182, 0.4)" stroke-width="2" filter="url(#roseGlow)" opacity="0.85" />
+    <circle cx="0" cy="0" r="280" fill="#0d0207" stroke="rgba(244, 114, 182, 0.4)" stroke-width="2" filter="url(#roseGlow)" opacity="0.9" />
     <!-- Concentric Grooves -->
     <circle cx="0" cy="0" r="255" fill="none" stroke="rgba(244, 114, 182, 0.25)" stroke-width="1.2" />
     <circle cx="0" cy="0" r="230" fill="none" stroke="rgba(244, 114, 182, 0.18)" stroke-width="1" />
