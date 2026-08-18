@@ -1,9 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="112" fill="#0c0e14"/>
-  <rect x="6" y="6" width="500" height="500" rx="106" stroke="#ffffff" stroke-opacity="0.1" stroke-width="6"/>
-  <!-- Minimalist Monochromatic Stash Geometric 'S' Mark -->
-  <path d="M352 148H210C171.34 148 140 179.34 140 218C140 256.66 171.34 288 210 288H302C340.66 288 372 319.34 372 358C372 396.66 340.66 428 302 428H160" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Precision Downward Indicator -->
-  <path d="M256 220V320" stroke="#ffffff" stroke-width="32" stroke-linecap="round"/>
-  <polyline points="214 278 256 320 298 278" stroke="#ffffff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="22" fill="#0c0e14"/>
+  <rect x="1.5" y="1.5" width="97" height="97" rx="20.5" stroke="#ffffff" stroke-opacity="0.1" stroke-width="3"/>
+  
+  <!-- Minimalist Lightning Bolt (Left) -->
+  <path
+    d="M40 16 L20 48 H36 L26 72 L50 42 H36 L44 16 Z"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Minimalist Music Note (Right) -->
+  <path
+    d="M48 24 L74 16 V48"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle
+    cx="62"
+    cy="52"
+    r="10"
+    stroke="#ffffff"
+    stroke-width="5"
+  />
+
+  <!-- Minimalist Download Arrow (Bottom) -->
+  <path
+    d="M50 56 V80 M38 68 L50 80 L62 68"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>

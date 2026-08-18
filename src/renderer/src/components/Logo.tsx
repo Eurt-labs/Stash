@@ -25,18 +25,44 @@ export const Logo: React.FC<LogoProps> = ({ size = 36, className = '' }) => {
       }}
     >
       <svg
-        width={Math.round(size * 0.62)}
-        height={Math.round(size * 0.62)}
-        viewBox="0 0 24 24"
+        width={Math.round(size * 0.72)}
+        height={Math.round(size * 0.72)}
+        viewBox="0 0 100 100"
         fill="none"
-        stroke="#ffffff"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
       >
-        <path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7" />
-        <line x1="12" y1="10" x2="12" y2="15" />
-        <polyline points="9.5 12.5 12 15 14.5 12.5" />
+        {/* Lightning Bolt (Left) */}
+        <path
+          d="M40 16 L20 48 H36 L26 74 L50 42 H36 L44 16 Z"
+          stroke="#ffffff"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Music Note (Right) */}
+        <path
+          d="M48 24 L74 16 V48"
+          stroke="#ffffff"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx="62"
+          cy="52"
+          r="10"
+          stroke="#ffffff"
+          strokeWidth="5"
+        />
+
+        {/* Download Arrow (Bottom) */}
+        <path
+          d="M50 56 V80 M38 68 L50 80 L62 68"
+          stroke="#ffffff"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   )
