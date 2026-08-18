@@ -22,10 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ depStatus, appUpdate, onOpenDepM
           style={{ width: '44px', height: '44px', borderRadius: '12px', objectFit: 'cover' }}
         />
         <div className="brand-info">
-          <h1>
-            Stash Downloader
-            <span className="brand-badge">v2.0 Desktop</span>
-          </h1>
+          <h1>Stash Downloader</h1>
           <p>Download, convert, and tag media from YouTube, YouTube Music, and more ~By eurt-labs</p>
         </div>
       </div>
