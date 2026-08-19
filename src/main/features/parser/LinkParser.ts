@@ -1,5 +1,5 @@
 import { ParsedLink, Platform, ContentType } from '../../../shared/types'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 export class LinkParser {
   private static readonly YOUTUBE_VIDEO_REGEX = /https?:\/\/(?:www\.)?youtube\.com\/watch\?(?:.*?[&])?v=([a-zA-Z0-9_-]{11})/i
