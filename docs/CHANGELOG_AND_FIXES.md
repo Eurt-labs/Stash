@@ -762,6 +762,38 @@ How Stash protects against network drops, socket timeouts, geo-restrictions, and
 
 ---
 
+### 📌 [FIX-025] Enterprise Project Restructuring & Domain-Driven Modular Architecture
+- **Date**: 2026-08-19
+- **Files Modified**: `src/main/app.ts`, `src/main/ipc/index.ts`, `src/main/core/`, `src/main/features/`, `config/`, `.github/`, `bin/`, `docs/`
+- **Severity**: Architectural Modernization
+
+#### 1. Problem Description & Enhancement
+- The project structure had flat root configs and service monoliths located under a generic `services/` directory.
+- Needed a clean, industry-standard domain-driven folder hierarchy with separate DevOps workflows, technical documentation, configuration repositories, test suites, and strict separation between Electron main lifecycle, IPC routing, core utils, and domain features.
+
+#### 2. Technical Solution & Implementation
+- **Domain Modules**: Separated services into dedicated domain features: `downloader/`, `transcoder/`, `metadata/`, `updater/`, and `parser/`.
+- **Core Layer**: Extracted typed application error hierarchy (`AppError`, `DownloadError`, `TranscodeError`, etc.) and system constants into `src/main/core/`.
+- **IPC Controller**: Extracted all `ipcMain` handler registrations into a modular `src/main/ipc/index.ts`.
+- **DevOps & Config**: Relocated `electron-builder.json` to `config/electron-builder.json`, added `config/default.json`, `bin/download_dependencies.ps1`, GitHub CI pipelines (`.github/workflows/build.yml`), and PR/Issue templates.
+
+---
+
+### 📌 [FIX-026] Test Suite Setup with Vitest & Strict Type Assertions for LinkParser
+- **Date**: 2026-08-19
+- **Files Modified**: `tests/unit/LinkParser.test.ts`, `vitest.config.ts`, `package.json`, `src/main/features/parser/LinkParser.ts`
+- **Severity**: Quality Assurance & Bug Fix
+
+#### 1. Problem Description & Symptoms
+- `tests/unit/LinkParser.test.ts` showed TypeScript errors in the editor because test globals (`describe`, `test`, `expect`) were unimported and `ParsedLink | null` was accessed without non-null assertion checks.
+
+#### 2. Technical Solution & Implementation
+- Installed **`vitest`** and configured `vitest.config.ts` with Node test environment and full path aliases (`@/`, `@main/`, `@features/`, `@core/`, `@shared/`).
+- Added `"test": "vitest run"` script to `package.json`.
+- Updated `LinkParser.test.ts` to import from `vitest` and added strict assertions covering YouTube videos, youtu.be links, Shorts, YouTube Music playlists, and albums (5/5 tests passing).
+
+---
+
 ## 🎨 Theme & Artist Style Reference Matrix
 
 | Theme ID | Display Name | Category | Primary Color | Secondary Accent | Background Gradient Harmony |
