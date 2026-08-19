@@ -17,8 +17,13 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@main/*": ["src/main/*"],
+      "@renderer/*": ["src/renderer/src/*"],
+      "@shared/*": ["src/shared/*"],
+      "@core/*": ["src/main/core/*"],
+      "@features/*": ["src/main/features/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "config"]
 }

@@ -1,4 +1,4 @@
-import { ParsedLink, Platform, ContentType } from '../../shared/types'
+import { ParsedLink, Platform, ContentType } from '../../../shared/types'
 import crypto from 'crypto'
 
 export class LinkParser {

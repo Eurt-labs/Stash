@@ -2,14 +2,14 @@
   "name": "stash-downloader",
   "version": "2.0.0",
   "description": "High-performance, elegant media downloader and converter built with Electron",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/app.js",
   "author": "eurt-labs",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "package:win": "npm run build && electron-builder --win -c.win.signAndEditExecutable=false -c.forceCodeSigning=false"
+    "package:win": "npm run build && electron-builder --config config/electron-builder.json --win -c.win.signAndEditExecutable=false -c.forceCodeSigning=false"
   },
   "dependencies": {
     "axios": "^1.7.9",

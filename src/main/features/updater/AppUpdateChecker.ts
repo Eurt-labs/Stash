@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { app } from 'electron'
-import { AppUpdateStatus } from '../../shared/types'
+import { AppUpdateStatus } from '../../../shared/types'
 
 export class AppUpdateChecker {
   public static readonly REPO_OWNER = 'Eurt-labs'

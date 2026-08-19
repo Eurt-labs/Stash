@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "Stash",
+    "version": "2.0.0",
+    "description": "High-performance, elegant media downloader and converter built with Electron",
+    "author": "eurt-labs",
+    "githubRepo": "https://github.com/Eurt-labs/Stash"
+  },
+  "defaults": {
+    "format": "MP3",
+    "quality": "HIGH",
+    "theme": "indigo",
+    "mode": "dark"
+  },
+  "engine": {
+    "socketTimeout": 30,
+    "retries": 5,
+    "fragmentRetries": 5,
+    "nightlyRepo": "yt-dlp/yt-dlp-nightly-builds"
+  }
+}

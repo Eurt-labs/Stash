@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes to **Stash Media Downloader** are documented in this file.
+
+For detailed historical root-cause analyses and code diffs across all 24 major iterations, refer to [`docs/CHANGELOG_AND_FIXES.md`](docs/CHANGELOG_AND_FIXES.md).
+
+---
+
+## [2.0.0] - 2026-08-19
+
+### Highlights
+- **Architecture**: Complete transition from legacy Kotlin codebase to modular Electron, React 18, and TypeScript architecture.
+- **Packaging**: Unbundled ~200MB binaries from installer, shrinking package footprint to **85.9 MB** with on-demand background bootstrapping.
+- **Video Formats**: Added 4K Ultra-HD (2160p) and 2K Quad-HD (1440p) presets with smart UI visibility toggles.
+- **Audiophile Audio**: Bit-perfect lossless FLAC and WAV transcoding with RIFF INFO and Vorbis ID3 chunk embedding.
+- **Anti-Throttling**: Switched to modern VisionOS extraction engine, resolving YouTube SABR and HTTP 403 Forbidden errors.
+- **Resilience**: Added automated alternative search fallback (`ytsearch1:`) for hidden or region-blocked playlist tracks.
+- **UI & Animations**: Monochromatic vector SVG identity, spring-loaded playlist accordions, and chromatic theme bloom transitions.
+- **Self-Healing**: Added 1-click in-app `yt-dlp` nightly updater directly inside Settings.

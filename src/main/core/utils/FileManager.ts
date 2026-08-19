@@ -92,7 +92,7 @@ export class FileManager {
       fs.copyFileSync(srcPath, targetPath)
       try {
         fs.unlinkSync(srcPath)
-      } catch (e) {
+      } catch {
         // ignore delete error
       }
       return targetPath
@@ -123,7 +123,7 @@ export class FileManager {
         for (const file of files) {
           try {
             fs.unlinkSync(path.join(cacheDir, file))
-          } catch (e) {
+          } catch {
             // ignore
           }
         }

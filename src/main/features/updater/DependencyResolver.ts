@@ -4,7 +4,8 @@ import fs from 'fs'
 import os from 'os'
 import axios from 'axios'
 import { app } from 'electron'
-import { DependencyStatus } from '../../shared/types'
+import { DependencyStatus } from '../../../shared/types'
+import { APP_CONSTANTS } from '../../core/constants'
 
 export class DependencyResolver {
   private static cachedStatus: DependencyStatus | null = null
@@ -18,7 +19,7 @@ export class DependencyResolver {
     const exeName = `${binaryName}${ext}`
 
     // 1. User auto-managed ~/.stash/bin/<binary>.exe
-    const userStashBin = path.join(os.homedir(), '.stash', 'bin', exeName)
+    const userStashBin = path.join(APP_CONSTANTS.DEFAULT_STASH_BIN_DIR, exeName)
     if (fs.existsSync(userStashBin)) {
       return userStashBin
     }
@@ -124,7 +125,7 @@ export class DependencyResolver {
    * Downloads and initializes yt-dlp nightly binary directly into ~/.stash/bin/yt-dlp.exe
    */
   public static async installYtDlpDirect(): Promise<{ success: boolean; message: string }> {
-    const userBinDir = path.join(os.homedir(), '.stash', 'bin')
+    const userBinDir = APP_CONSTANTS.DEFAULT_STASH_BIN_DIR
     if (!fs.existsSync(userBinDir)) {
       try {
         fs.mkdirSync(userBinDir, { recursive: true })
@@ -134,7 +135,7 @@ export class DependencyResolver {
     }
 
     const destPath = path.join(userBinDir, 'yt-dlp.exe')
-    const url = 'https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.exe'
+    const url = APP_CONSTANTS.YT_DLP_NIGHTLY_URL
 
     try {
       const response = await axios({
@@ -143,7 +144,7 @@ export class DependencyResolver {
         responseType: 'stream',
         timeout: 60000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+          'User-Agent': APP_CONSTANTS.USER_AGENT
         }
       })
 

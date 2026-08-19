@@ -8,14 +8,15 @@ import {
   DownloadQuality,
   DownloadFormat,
   DownloadState,
-  ParsedLink
-} from '../../shared/types'
-import { LinkParser } from './LinkParser'
+  ParsedLink,
+  StashSettings
+} from '../../../shared/types'
+import { LinkParser } from '../parser/LinkParser'
 import { DownloadEngine } from './DownloadEngine'
-import { ConversionEngine } from './ConversionEngine'
-import { MetadataTagger } from './MetadataTagger'
-import { FileManager } from './FileManager'
-import { DependencyResolver } from './DependencyResolver'
+import { ConversionEngine } from '../transcoder/ConversionEngine'
+import { MetadataTagger } from '../metadata/MetadataTagger'
+import { DependencyResolver } from '../updater/DependencyResolver'
+import { FileManager } from '../../core/utils/FileManager'
 
 export class StashOrchestrator {
   private outputDir: string = FileManager.getDefaultDownloadDir()
@@ -24,15 +25,20 @@ export class StashOrchestrator {
 
   private batches: Map<string, DownloadBatch> = new Map()
   private isProcessingQueue = false
-  private downloadEngine = new DownloadEngine()
-  private conversionEngine = new ConversionEngine()
 
-  // Event callbacks
+  private downloadEngine: DownloadEngine
+  private conversionEngine: ConversionEngine
+
   public onBatchesChanged?: (batches: Record<string, DownloadBatch>) => void
   public onFetchingStatusChanged?: (status: { isFetching: boolean; message: string }) => void
   public onToastMessage?: (toast: { type: 'success' | 'error' | 'info'; message: string }) => void
 
-  public getSettings() {
+  constructor() {
+    this.downloadEngine = new DownloadEngine()
+    this.conversionEngine = new ConversionEngine()
+  }
+
+  public getSettings(): StashSettings {
     return {
       outputDir: this.outputDir,
       quality: this.quality,
@@ -41,15 +47,10 @@ export class StashOrchestrator {
   }
 
   public setOutputDirectory(dir: string): string {
-    if (!fs.existsSync(dir)) {
-      try {
-        fs.mkdirSync(dir, { recursive: true })
-      } catch (e) {
-        console.error('Failed to create custom directory:', e)
-        return this.outputDir
-      }
+    if (fs.existsSync(dir)) {
+      this.outputDir = dir
+      return dir
     }
-    this.outputDir = dir
     return this.outputDir
   }
 
@@ -62,11 +63,11 @@ export class StashOrchestrator {
   }
 
   public getAllBatches(): Record<string, DownloadBatch> {
-    const obj: Record<string, DownloadBatch> = {}
+    const result: Record<string, DownloadBatch> = {}
     for (const [id, batch] of this.batches.entries()) {
-      obj[id] = { ...batch, items: [...batch.items] }
+      result[id] = batch
     }
-    return obj
+    return result
   }
 
   private notifyUpdate(): void {
@@ -76,12 +77,12 @@ export class StashOrchestrator {
   }
 
   /**
-   * Phase 1: Fetch metadata
+   * Fetches metadata for an input URL and returns parsed link info & track list.
    */
-  public async fetchMetadata(link: string): Promise<{ parsedLink: ParsedLink; tracks: TrackInfo[] }> {
-    const parsed = LinkParser.parse(link)
+  public async fetchMetadata(inputUrl: string): Promise<{ parsedLink: ParsedLink; tracks: TrackInfo[] }> {
+    const parsed = LinkParser.parse(inputUrl)
     if (!parsed) {
-      throw new Error('Unsupported or invalid link format')
+      throw new Error('Unsupported URL format or invalid search input')
     }
 
     if (this.onFetchingStatusChanged) {
@@ -89,22 +90,13 @@ export class StashOrchestrator {
     }
 
     try {
-      const depStatus = await DependencyResolver.getDependencyStatus()
-      if (!depStatus.ytDlpInstalled) {
-        if (this.onFetchingStatusChanged) {
-          this.onFetchingStatusChanged({ isFetching: true, message: 'Initializing yt-dlp nightly engine...' })
-        }
-        await DependencyResolver.installYtDlpDirect()
-      }
-
-      let fetchUrl = parsed.originalUrl
       const isPlaylistOrSearch = parsed.contentType === 'playlist' || parsed.contentType === 'album' || parsed.originalUrl.startsWith('ytsearch')
 
       if (this.onFetchingStatusChanged) {
         this.onFetchingStatusChanged({ isFetching: true, message: `Querying metadata from ${parsed.platform}...` })
       }
 
-      const tracks = await this.downloadEngine.extractInfo(fetchUrl, isPlaylistOrSearch, (count) => {
+      const tracks = await this.downloadEngine.extractInfo(parsed.originalUrl, isPlaylistOrSearch, (count) => {
         if (this.onFetchingStatusChanged) {
           this.onFetchingStatusChanged({ isFetching: true, message: `Discovered ${count} track(s)...` })
         }
@@ -123,7 +115,7 @@ export class StashOrchestrator {
   }
 
   /**
-   * Enqueues tracks into a new batch
+   * Enqueues a batch of tracks into the download pipeline
    */
   public enqueueBatch(
     name: string,
@@ -132,27 +124,20 @@ export class StashOrchestrator {
     format: DownloadFormat = this.format,
     outputDir: string = this.outputDir
   ): DownloadBatch {
-    if (!tracks || tracks.length === 0) {
-      throw new Error('Cannot enqueue empty track list')
-    }
-
-    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-    const items: DownloadItem[] = tracks.map((track, idx) => {
-      const itemId = `item_${batchId}_${idx}_${track.id}`
-      return {
-        id: itemId,
-        batchId,
-        trackInfo: track,
-        quality,
-        format,
-        outputDir,
-        state: 'QUEUED',
-        progress: 0,
-        speed: '',
-        eta: '',
-        statusMessage: 'In queue'
-      }
-    })
+    const batchId = crypto.randomUUID()
+    const items: DownloadItem[] = tracks.map((track) => ({
+      id: crypto.randomUUID(),
+      batchId,
+      trackInfo: track,
+      quality,
+      format,
+      outputDir,
+      state: 'QUEUED' as DownloadState,
+      progress: 0,
+      speed: '',
+      eta: '',
+      statusMessage: 'In queue'
+    }))
 
     const batch: DownloadBatch = {
       id: batchId,

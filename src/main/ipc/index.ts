@@ -1,90 +1,33 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
-import path from 'path'
-import { StashOrchestrator } from './services/StashOrchestrator'
-import { DependencyResolver } from './services/DependencyResolver'
-import { FileManager } from './services/FileManager'
-import { AppUpdateChecker } from './services/AppUpdateChecker'
-import { DownloadQuality, DownloadFormat, TrackInfo } from '../shared/types'
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
+import { StashOrchestrator } from '../features/downloader/StashOrchestrator'
+import { DependencyResolver } from '../features/updater/DependencyResolver'
+import { AppUpdateChecker } from '../features/updater/AppUpdateChecker'
+import { FileManager } from '../core/utils/FileManager'
+import { DownloadQuality, DownloadFormat, TrackInfo } from '../../shared/types'
 
-process.env.DIST = path.join(__dirname, '../dist')
-process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
-
-let mainWindow: BrowserWindow | null = null
-const orchestrator = new StashOrchestrator()
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    title: 'Stash Downloader',
-    width: 1100,
-    height: 800,
-    minWidth: 840,
-    minHeight: 620,
-    backgroundColor: '#090d16',
-    autoHideMenuBar: true,
-    show: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      sandbox: false,
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  })
-
+export function registerIpcHandlers(orchestrator: StashOrchestrator, getMainWindow: () => BrowserWindow | null): void {
   // Wire orchestrator events to renderer
   orchestrator.onBatchesChanged = (batches) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('stash:batchesUpdated', batches)
+    const win = getMainWindow()
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('stash:batchesUpdated', batches)
     }
   }
 
   orchestrator.onFetchingStatusChanged = (status) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('stash:fetchingStatus', status)
+    const win = getMainWindow()
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('stash:fetchingStatus', status)
     }
   }
 
   orchestrator.onToastMessage = (toast) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('stash:toast', toast)
+    const win = getMainWindow()
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('stash:toast', toast)
     }
   }
 
-  // Graceful show on ready-to-show
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
-
-  // Handle external link clicks
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
-    return { action: 'deny' }
-  })
-
-  const devServerUrl = process.env.VITE_DEV_SERVER_URL
-  if (devServerUrl) {
-    mainWindow.loadURL(devServerUrl)
-  } else {
-    const distPath = process.env.DIST || path.join(__dirname, '../dist')
-    mainWindow.loadFile(path.join(distPath, 'index.html'))
-  }
-}
-
-app.whenReady().then(() => {
-  setupIpcHandlers()
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-function setupIpcHandlers() {
   // Settings
   ipcMain.handle('stash:getSettings', () => orchestrator.getSettings())
   ipcMain.handle('stash:setOutputDir', (_e, dir: string) => orchestrator.setOutputDirectory(dir))
@@ -93,8 +36,9 @@ function setupIpcHandlers() {
 
   // System & Files
   ipcMain.handle('stash:selectDirectory', async (_e, defaultPath?: string) => {
-    if (!mainWindow) return null
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const win = getMainWindow()
+    if (!win) return null
+    const result = await dialog.showOpenDialog(win, {
       title: 'Select Output Folder for Downloads',
       defaultPath: defaultPath || orchestrator.getSettings().outputDir,
       properties: ['openDirectory', 'createDirectory']
@@ -139,9 +83,21 @@ function setupIpcHandlers() {
     return await orchestrator.fetchMetadata(url)
   })
 
-  ipcMain.handle('stash:enqueueBatch', async (_e, data: { name: string; tracks: TrackInfo[]; quality?: DownloadQuality; format?: DownloadFormat; outputDir?: string }) => {
-    return orchestrator.enqueueBatch(data.name, data.tracks, data.quality, data.format, data.outputDir)
-  })
+  ipcMain.handle(
+    'stash:enqueueBatch',
+    async (
+      _e,
+      data: {
+        name: string
+        tracks: TrackInfo[]
+        quality?: DownloadQuality
+        format?: DownloadFormat
+        outputDir?: string
+      }
+    ) => {
+      return orchestrator.enqueueBatch(data.name, data.tracks, data.quality, data.format, data.outputDir)
+    }
+  )
 
   ipcMain.handle('stash:startBatchDownload', async (_e, batchId: string) => {
     await orchestrator.startBatchDownload(batchId)

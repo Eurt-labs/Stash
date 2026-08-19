@@ -10,7 +10,7 @@ export default defineConfig({
     electron([
       {
         // Main-Process entry file of the Electron App.
-        entry: path.join(__dirname, 'src/main/main.ts'),
+        entry: path.join(__dirname, 'src/main/app.ts'),
         vite: {
           build: {
             outDir: 'dist-electron',

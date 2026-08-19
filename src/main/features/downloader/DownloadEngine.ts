@@ -2,15 +2,15 @@ import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import readline from 'readline'
-import { TrackInfo, Platform, DownloadQuality, DownloadFormat } from '../../shared/types'
-import { DependencyResolver } from './DependencyResolver'
-import { FileManager } from './FileManager'
+import { TrackInfo, DownloadQuality, DownloadFormat, Platform } from '../../../shared/types'
+import { DependencyResolver } from '../updater/DependencyResolver'
+import { FileManager } from '../../core/utils/FileManager'
 
 export class DownloadEngine {
   private activeProcesses: Map<string, ChildProcess> = new Map()
 
   /**
-   * Extracts metadata using `yt-dlp --dump-json`
+   * Extracts metadata for tracks from YouTube / YouTube Music
    */
   public async extractInfo(
     url: string,
@@ -190,10 +190,10 @@ export class DownloadEngine {
     if (proc && !proc.killed) {
       try {
         proc.kill('SIGTERM')
-      } catch (e) {
+      } catch {
         try {
           proc.kill('SIGKILL')
-        } catch (err) {
+        } catch {
           // ignore
         }
       }

@@ -2,8 +2,8 @@ import { spawn, execFile, ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import readline from 'readline'
-import { DownloadFormat, DownloadQuality } from '../../shared/types'
-import { DependencyResolver } from './DependencyResolver'
+import { DownloadFormat, DownloadQuality } from '../../../shared/types'
+import { DependencyResolver } from '../updater/DependencyResolver'
 
 export class ConversionEngine {
   private activeProcesses: Map<string, ChildProcess> = new Map()
@@ -82,7 +82,7 @@ export class ConversionEngine {
             if (inputPath !== outputPath) {
               try {
                 fs.unlinkSync(inputPath)
-              } catch (e) {
+              } catch {
                 // ignore
               }
             }
@@ -111,10 +111,10 @@ export class ConversionEngine {
     if (proc && !proc.killed) {
       try {
         proc.kill('SIGTERM')
-      } catch (e) {
+      } catch {
         try {
           proc.kill('SIGKILL')
-        } catch (err) {
+        } catch {
           // ignore
         }
       }
