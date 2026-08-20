@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-012] Full HD/4K/2K Stream Selector & Liquid Sliding Mode Bubble
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/model/Models.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Video Quality & Visual Polish
+
+#### 1. User Requests Addressed
+- **High-Quality Video Stream Assurance**: 
+  - Upgraded video stream format selectors to `bestvideo[height<=...]+bestaudio/best` and added `--format-sort "res,fps,codec:h264,size,br"` to guarantee that 1080p, 2K, and 4K downloads fetch the full uncompressed high-bitrate video streams rather than low-resolution fallbacks.
+  - Audio extraction now uses `bestaudio/best` at max acoustic quality.
+- **Liquid Glass Sliding Mode Bubble in Settings**:
+  - Implemented an animated sliding liquid glass bubble pill in `SettingsScreen.kt` with spring physics (`stiffness = 450f, dampingRatio = 0.72f`) that glides fluidly between **Music & Audio** and **Video** modes.
+
+---
+
 ### 📌 [ANDROID-FEAT-011] Interactive Download Queue Controls, Manual Link Pasting & Glass Polish
 - **Date**: 2026-08-20
 - **Files Modified**: 

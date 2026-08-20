@@ -115,8 +115,8 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Refined Liquid Glass Mode Card
-            Row(
+            // Refined Liquid Glass Sliding Mode Selector
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
@@ -132,44 +132,70 @@ fun SettingsScreen(
                         ),
                         shape = RoundedCornerShape(18.dp)
                     )
-                    .padding(5.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    .padding(5.dp)
             ) {
-                MediaType.values().forEach { mode ->
-                    val isSelected = currentMediaType == mode
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                if (isSelected) {
-                                    Brush.verticalGradient(
-                                        listOf(palette.primary, palette.primary.copy(alpha = 0.85f))
-                                    )
-                                } else {
-                                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
-                                }
+                val halfWidth = maxWidth / 2
+                val bubbleOffset by androidx.compose.animation.core.animateDpAsState(
+                    targetValue = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth,
+                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 450f),
+                    label = "modeBubble"
+                )
+
+                // Sliding Liquid Glass Bubble Pill
+                Box(
+                    modifier = Modifier
+                        .offset(x = bubbleOffset)
+                        .width(halfWidth)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    palette.primary,
+                                    palette.primary.copy(alpha = 0.85f)
+                                )
                             )
-                            .clickable { onSelectMediaType(mode) }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        )
+                        .border(
+                            width = 1.2.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.10f))
+                            ),
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    MediaType.values().forEach { mode ->
+                        val isSelected = currentMediaType == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable { onSelectMediaType(mode) },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = if (mode == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
-                                contentDescription = mode.label,
-                                tint = if (isSelected) palette.onPrimary else palette.textSecondary,
-                                modifier = Modifier.size(17.dp)
-                            )
-                            Text(
-                                text = mode.label,
-                                color = if (isSelected) palette.onPrimary else palette.textPrimary,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 13.sp
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (mode == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
+                                    contentDescription = mode.label,
+                                    tint = if (isSelected) palette.onPrimary else palette.textSecondary,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Text(
+                                    text = mode.label,
+                                    color = if (isSelected) palette.onPrimary else palette.textPrimary,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 }

@@ -186,13 +186,14 @@ object YoutubeDLManager {
             addOption("--extractor-args", "youtube:player_client=android,web,mweb")
 
             if (format.isAudioOnly) {
-                addOption("-f", "ba/b")
+                addOption("-f", "bestaudio/best")
                 addOption("-x")
                 addOption("--audio-format", format.ext)
                 addOption("--audio-quality", "0")
             } else {
                 addOption("-f", quality.valueOption)
                 addOption("--merge-output-format", format.ext)
+                addOption("--format-sort", "res,fps,codec:h264,size,br")
             }
         }
 

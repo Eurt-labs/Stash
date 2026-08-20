@@ -35,11 +35,11 @@ enum class DownloadQuality(val label: String, val valueOption: String, val isAud
     AUDIO_128K("128 kbps (Standard Quality)", "128k", true),
 
     // Video Resolutions
-    VIDEO_4K("4K Ultra HD (2160p)", "bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b", false),
-    VIDEO_2K("2K QHD (1440p)", "bv*[height<=1440]+ba/b[height<=1440]/bv*+ba/b", false),
-    VIDEO_1080P("Full HD (1080p)", "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b", false),
-    VIDEO_720P("HD (720p)", "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b", false),
-    VIDEO_480P("SD (480p)", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b", false)
+    VIDEO_4K("4K Ultra HD (2160p)", "bestvideo[height<=2160]+bestaudio/best[height<=2160]/bestvideo+bestaudio/best", false),
+    VIDEO_2K("2K QHD (1440p)", "bestvideo[height<=1440]+bestaudio/best[height<=1440]/bestvideo+bestaudio/best", false),
+    VIDEO_1080P("Full HD (1080p)", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bestvideo+bestaudio/best", false),
+    VIDEO_720P("HD (720p)", "bestvideo[height<=720]+bestaudio/best[height<=720]/bestvideo+bestaudio/best", false),
+    VIDEO_480P("SD (480p)", "bestvideo[height<=480]+bestaudio/best[height<=480]/bestvideo+bestaudio/best", false)
 }
 
 enum class DownloadFormat(val ext: String, val isAudioOnly: Boolean, val label: String) {
