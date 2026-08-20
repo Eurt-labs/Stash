@@ -2,6 +2,29 @@
 
 ---
 
+### 📌 [ANDROID-FIX-009] Type.kt Color Fallbacks & Metadata Extraction Normalization
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/theme/Type.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/theme/Color.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+- **Severity**: Compilation & Robustness Fix
+
+#### 1. Problem Description & Symptoms
+- `:app:compileDebugKotlin` failed with unresolved reference:
+  `Type.kt: Unresolved reference: TextPrimary`
+  `Type.kt: Unresolved reference: TextSecondary`
+
+#### 2. Technical Root Cause Analysis
+- `Type.kt` referenced top-level `TextPrimary` / `TextSecondary` which were encapsulated inside `ThemePalette` during the theme engine refactoring.
+
+#### 3. Exact Solution & Code Implementation
+- Provided explicit fallback colors in `Type.kt`.
+- Exported global `val TextPrimary` and `val TextSecondary` in `Color.kt` for backwards compatibility.
+- Cleaned up metadata request execution in `YoutubeDLManager.kt`.
+
+---
+
 ### 📌 [ANDROID-FIX-008] Robust Download Execution Algorithm & Dynamic Music/Video Matrix
 - **Date**: 2026-08-20
 - **Files Modified**: 
