@@ -41,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,7 +51,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,27 +81,27 @@ fun TrackActionModalSheet(
     val file = item.finalFilePath?.let { File(it) }
     val isFileAvailable = file != null && file.exists()
 
-    // Full screen overlay with dark dim
+    // Full screen overlay with deep frosted dark backdrop
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.65f))
+            .background(Color.Black.copy(alpha = 0.85f))
             .clickable(interactionSource = interactionSource, indication = null) { onDismiss() },
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Liquid Glass Modal Card
+        // Highly Refractive Liquid Glass Sheet (Opaque Frosted Core + Refraction Rim)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .clickable(interactionSource = interactionSource, indication = null) { /* Consume taps */ }
-                .clip(RoundedCornerShape(32.dp))
+                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .shadow(elevation = 24.dp, shape = RoundedCornerShape(34.dp), ambientColor = Color.Black, spotColor = palette.primary)
+                .clip(RoundedCornerShape(34.dp))
                 .background(
                     brush = Brush.verticalGradient(
                         listOf(
-                            palette.surface.copy(alpha = 0.95f),
-                            palette.surfaceVariant.copy(alpha = 0.85f),
-                            palette.background.copy(alpha = 0.92f)
+                            Color(0xFF222228),
+                            Color(0xFF16161B),
+                            Color(0xFF0E0E12)
                         )
                     )
                 )
@@ -108,26 +109,35 @@ fun TrackActionModalSheet(
                     width = 1.5.dp,
                     brush = Brush.verticalGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.50f),
-                            Color.White.copy(alpha = 0.15f),
+                            Color.White.copy(alpha = 0.70f),
+                            Color.White.copy(alpha = 0.20f),
                             Color.White.copy(alpha = 0.04f)
                         )
                     ),
-                    shape = RoundedCornerShape(32.dp)
+                    shape = RoundedCornerShape(34.dp)
                 )
-                .padding(24.dp)
+                .clickable(interactionSource = interactionSource, indication = null) { /* Consume taps */ }
+                .padding(22.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Grab Bar
+                // Top Grab Bar with Specular Highlight
                 Box(
                     modifier = Modifier
-                        .width(40.dp)
-                        .height(4.dp)
+                        .width(42.dp)
+                        .height(4.5.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.35f))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.20f),
+                                    Color.White.copy(alpha = 0.60f),
+                                    Color.White.copy(alpha = 0.20f)
+                                )
+                            )
+                        )
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -139,10 +149,10 @@ fun TrackActionModalSheet(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(18.dp))
                             .background(palette.surfaceVariant)
-                            .border(1.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(16.dp)),
+                            .border(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(0.40f), Color.White.copy(0.05f))), RoundedCornerShape(18.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
@@ -182,7 +192,7 @@ fun TrackActionModalSheet(
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -190,22 +200,23 @@ fun TrackActionModalSheet(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(palette.primary.copy(alpha = 0.20f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .border(0.8.dp, palette.primary.copy(alpha = 0.40f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = item.format.ext.uppercase(),
                                     color = palette.primary,
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Black
                                 )
                             }
 
                             Text(
                                 text = "•  ${item.quality.label.substringBefore(" ")}",
                                 color = palette.textSecondary,
-                                fontSize = 11.sp
+                                fontSize = 11.5.sp
                             )
                         }
                     }
@@ -234,7 +245,7 @@ fun TrackActionModalSheet(
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                // Action Pills Section (Liquid Glass Pills)
+                // Action Pills Section (Refracted Liquid Glass Cloud Capsules)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -245,7 +256,7 @@ fun TrackActionModalSheet(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            LiquidActionPill(
+                            LiquidCloudActionPill(
                                 icon = Icons.Default.Pause,
                                 label = "Pause Download",
                                 color = palette.textPrimary,
@@ -256,7 +267,7 @@ fun TrackActionModalSheet(
                                 }
                             )
 
-                            LiquidActionPill(
+                            LiquidCloudActionPill(
                                 icon = Icons.Default.Close,
                                 label = "Cancel Download",
                                 color = palette.error,
@@ -271,7 +282,7 @@ fun TrackActionModalSheet(
 
                     // Paused or Cancelled: Resume
                     if (item.state == DownloadState.IDLE || item.state == DownloadState.CANCELLED) {
-                        LiquidActionPill(
+                        LiquidCloudActionPill(
                             icon = Icons.Default.PlayArrow,
                             label = "Resume Download",
                             color = palette.primary,
@@ -285,7 +296,7 @@ fun TrackActionModalSheet(
 
                     // Failed: Retry
                     if (item.state == DownloadState.FAILED) {
-                        LiquidActionPill(
+                        LiquidCloudActionPill(
                             icon = Icons.Default.Refresh,
                             label = "Retry Download",
                             color = palette.primary,
@@ -303,7 +314,7 @@ fun TrackActionModalSheet(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            LiquidActionPill(
+                            LiquidCloudActionPill(
                                 icon = Icons.Default.PlayArrow,
                                 label = "Play Media",
                                 color = palette.primary,
@@ -319,7 +330,7 @@ fun TrackActionModalSheet(
                                 }
                             )
 
-                            LiquidActionPill(
+                            LiquidCloudActionPill(
                                 icon = Icons.Default.Share,
                                 label = "Share File",
                                 color = palette.textPrimary,
@@ -343,7 +354,7 @@ fun TrackActionModalSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        LiquidActionPill(
+                        LiquidCloudActionPill(
                             icon = Icons.Default.ContentCopy,
                             label = "Copy URL",
                             color = palette.textSecondary,
@@ -357,7 +368,7 @@ fun TrackActionModalSheet(
                             }
                         )
 
-                        LiquidActionPill(
+                        LiquidCloudActionPill(
                             icon = Icons.Default.DeleteOutline,
                             label = "Remove",
                             color = palette.textSecondary,
@@ -375,7 +386,7 @@ fun TrackActionModalSheet(
 }
 
 @Composable
-private fun LiquidActionPill(
+private fun LiquidCloudActionPill(
     icon: ImageVector,
     label: String,
     color: Color,
@@ -386,27 +397,27 @@ private fun LiquidActionPill(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(
                 brush = Brush.verticalGradient(
                     listOf(
-                        palette.surface.copy(alpha = 0.90f),
-                        palette.surfaceVariant.copy(alpha = 0.70f)
+                        Color(0xFF282830),
+                        Color(0xFF1C1C22)
                     )
                 )
             )
             .border(
-                width = 1.dp,
+                width = 1.2.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.05f)
+                        Color.White.copy(alpha = 0.45f),
+                        Color.White.copy(alpha = 0.08f)
                     )
                 ),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(22.dp)
             )
             .clickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 13.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -421,7 +432,7 @@ private fun LiquidActionPill(
             text = label,
             color = color,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 12.5.sp,
+            fontSize = 13.sp,
             maxLines = 1
         )
     }

@@ -2,6 +2,8 @@ package com.eurtlabs.stash.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -47,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -104,9 +107,9 @@ fun SettingsScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 90.dp, top = 12.dp, start = 20.dp, end = 20.dp)
+        contentPadding = PaddingValues(bottom = 90.dp, top = 12.dp, start = 18.dp, end = 18.dp)
     ) {
-        // Section: Media Mode Toggle (Music / Video)
+        // Section: Media Mode Toggle with Animated Floating Cloud Capsule
         item {
             Text(
                 text = "DOWNLOAD MODE",
@@ -117,53 +120,56 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Refined Liquid Glass Sliding Mode Selector
+            // Animated Cloud Liquid Glass Mode Track
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(28.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                            listOf(
+                                Color(0xFF1C1C22),
+                                Color(0xFF121216)
+                            )
                         )
                     )
                     .border(
                         width = 1.2.dp,
                         brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
+                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))
                         ),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(28.dp)
                     )
                     .padding(5.dp)
             ) {
                 val halfWidth = maxWidth / 2
-                val bubbleOffset by androidx.compose.animation.core.animateDpAsState(
+                val bubbleOffset by animateDpAsState(
                     targetValue = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth,
-                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 450f),
+                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 400f),
                     label = "modeBubble"
                 )
 
-                // Sliding Liquid Glass Bubble Pill
+                // Floating Cloud Capsule
                 Box(
                     modifier = Modifier
                         .offset(x = bubbleOffset)
                         .width(halfWidth)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(24.dp))
                         .background(
-                            brush = Brush.linearGradient(
+                            brush = Brush.verticalGradient(
                                 listOf(
-                                    palette.primary,
-                                    palette.primary.copy(alpha = 0.85f)
+                                    palette.surfaceVariant.copy(alpha = 0.95f),
+                                    palette.surface.copy(alpha = 0.85f)
                                 )
                             )
                         )
                         .border(
                             width = 1.2.dp,
                             brush = Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.10f))
+                                listOf(Color.White.copy(alpha = 0.50f), Color.White.copy(alpha = 0.10f))
                             ),
-                            shape = RoundedCornerShape(14.dp)
+                            shape = RoundedCornerShape(24.dp)
                         )
                 )
 
@@ -173,11 +179,18 @@ fun SettingsScreen(
                 ) {
                     MediaType.values().forEach { mode ->
                         val isSelected = currentMediaType == mode
+                        val scale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.02f else 0.98f,
+                            animationSpec = spring(stiffness = 500f),
+                            label = "scale"
+                        )
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(44.dp)
-                                .clip(RoundedCornerShape(14.dp))
+                                .height(48.dp)
+                                .scale(scale)
+                                .clip(RoundedCornerShape(24.dp))
                                 .clickable { onSelectMediaType(mode) },
                             contentAlignment = Alignment.Center
                         ) {
@@ -188,14 +201,14 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = if (mode == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
                                     contentDescription = mode.label,
-                                    tint = if (isSelected) palette.onPrimary else palette.textSecondary,
-                                    modifier = Modifier.size(17.dp)
+                                    tint = if (isSelected) palette.primary else palette.textSecondary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                                 Text(
                                     text = mode.label,
-                                    color = if (isSelected) palette.onPrimary else palette.textPrimary,
+                                    color = if (isSelected) palette.textPrimary else palette.textSecondary,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp
+                                    fontSize = 13.5.sp
                                 )
                             }
                         }
@@ -206,7 +219,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Horizontal Format Selection
+        // Section: Horizontal Format Selection (Cloud Capsule Chips)
         item {
             SettingsSectionHeader(
                 icon = if (currentMediaType == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
@@ -221,27 +234,42 @@ fun SettingsScreen(
             ) {
                 items(availableFormats) { format ->
                     val isSelected = currentFormat == format
+                    val scale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.03f else 1.0f,
+                        animationSpec = spring(stiffness = 500f),
+                        label = "formatScale"
+                    )
 
                     Box(
                         modifier = Modifier
-                            .width(108.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .width(110.dp)
+                            .scale(scale)
+                            .clip(RoundedCornerShape(24.dp))
                             .background(
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.28f), palette.primary.copy(alpha = 0.12f))
-                                    else listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                                    if (isSelected) {
+                                        listOf(
+                                            palette.surfaceVariant.copy(alpha = 0.95f),
+                                            palette.surface.copy(alpha = 0.85f)
+                                        )
+                                    } else {
+                                        listOf(
+                                            Color(0xFF1C1C22),
+                                            Color(0xFF121216)
+                                        )
+                                    }
                                 )
                             )
                             .border(
                                 width = if (isSelected) 1.5.dp else 1.dp,
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.90f), palette.primary.copy(alpha = 0.35f))
-                                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                                    if (isSelected) listOf(Color.White.copy(alpha = 0.65f), Color.White.copy(alpha = 0.15f))
+                                    else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.04f))
                                 ),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(24.dp)
                             )
                             .clickable { onSelectFormat(format) }
-                            .padding(horizontal = 10.dp, vertical = 12.dp),
+                            .padding(horizontal = 10.dp, vertical = 14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -263,15 +291,15 @@ fun SettingsScreen(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = palette.primary,
-                                        modifier = Modifier.size(13.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }
                             if (format == DownloadFormat.FLAC || format == DownloadFormat.WAV) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(palette.primary.copy(alpha = 0.22f))
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(palette.primary.copy(alpha = 0.20f))
                                         .padding(horizontal = 5.dp, vertical = 1.5.dp)
                                 ) {
                                     Text(
@@ -297,7 +325,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Quality / Bitrate
+        // Section: Quality / Bitrate (Cloud Capsule Chips)
         item {
             SettingsSectionHeader(
                 icon = Icons.Filled.Tune,
@@ -307,14 +335,14 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             if (isLosslessAudio) {
-                // FLAC / WAV: Lossless bit-perfect information banner (Quality selection not needed)
+                // FLAC / WAV: Lossless bit-perfect information banner
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(24.dp))
                         .background(
                             brush = Brush.verticalGradient(
-                                listOf(palette.primary.copy(alpha = 0.18f), palette.surface.copy(alpha = 0.90f))
+                                listOf(palette.primary.copy(alpha = 0.18f), Color(0xFF141418))
                             )
                         )
                         .border(
@@ -322,7 +350,7 @@ fun SettingsScreen(
                             brush = Brush.verticalGradient(
                                 listOf(palette.primary.copy(alpha = 0.60f), Color.White.copy(alpha = 0.10f))
                             ),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(24.dp)
                         )
                         .padding(16.dp)
                 ) {
@@ -352,37 +380,52 @@ fun SettingsScreen(
                     }
                 }
             } else {
-                // Horizontal Lossy Bitrates or Video Resolutions
+                // Horizontal Cloud Lossy Bitrates or Video Resolutions
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(availableQualities) { quality ->
                         val isSelected = currentQuality == quality
+                        val scale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.03f else 1.0f,
+                            animationSpec = spring(stiffness = 500f),
+                            label = "qualityScale"
+                        )
 
                         val shortLabel = quality.label.substringBefore(" (")
                         val subLabel = if (quality.label.contains("(")) "(" + quality.label.substringAfter("(") else quality.valueOption
 
                         Box(
                             modifier = Modifier
-                                .width(122.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.28f), palette.primary.copy(alpha = 0.12f))
-                                    else listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                                .width(124.dp)
+                                .scale(scale)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        if (isSelected) {
+                                            listOf(
+                                                palette.surfaceVariant.copy(alpha = 0.95f),
+                                                palette.surface.copy(alpha = 0.85f)
+                                            )
+                                        } else {
+                                            listOf(
+                                                Color(0xFF1C1C22),
+                                                Color(0xFF121216)
+                                            )
+                                        }
+                                    )
                                 )
-                            )
-                            .border(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.90f), palette.primary.copy(alpha = 0.35f))
-                                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            )
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    brush = Brush.verticalGradient(
+                                        if (isSelected) listOf(Color.White.copy(alpha = 0.65f), Color.White.copy(alpha = 0.15f))
+                                        else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.04f))
+                                    ),
+                                    shape = RoundedCornerShape(24.dp)
+                                )
                                 .clickable { onSelectQuality(quality) }
-                                .padding(horizontal = 10.dp, vertical = 12.dp),
+                                .padding(horizontal = 10.dp, vertical = 14.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
@@ -423,7 +466,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Color Theme
+        // Section: Color Theme (Cloud Pill Badges)
         item {
             SettingsSectionHeader(
                 icon = Icons.Default.Palette,
@@ -442,8 +485,8 @@ fun SettingsScreen(
 
                     Box(
                         modifier = Modifier
-                            .width(96.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .width(100.dp)
+                            .clip(RoundedCornerShape(22.dp))
                             .background(
                                 brush = Brush.verticalGradient(
                                     listOf(themePal.surface.copy(alpha = 0.95f), themePal.background)
@@ -452,10 +495,10 @@ fun SettingsScreen(
                             .border(
                                 width = if (isSelected) 2.dp else 1.dp,
                                 color = if (isSelected) palette.primary else Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(22.dp)
                             )
                             .clickable { onSelectTheme(theme) }
-                            .padding(10.dp),
+                            .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -483,7 +526,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Storage Location
+        // Section: Storage Location (Pill Capsule)
         item {
             SettingsSectionHeader(
                 icon = Icons.Default.Folder,
@@ -495,10 +538,13 @@ fun SettingsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                            listOf(
+                                Color(0xFF1C1C22),
+                                Color(0xFF121216)
+                            )
                         )
                     )
                     .border(
@@ -506,7 +552,7 @@ fun SettingsScreen(
                         brush = Brush.verticalGradient(
                             listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
                         ),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(24.dp)
                     )
                     .clickable { onChangeStorage() }
                     .padding(16.dp)
@@ -537,9 +583,10 @@ fun SettingsScreen(
 
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(palette.surfaceVariant)
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .border(0.8.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = "Change",
@@ -566,10 +613,13 @@ fun SettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                            listOf(
+                                Color(0xFF1C1C22),
+                                Color(0xFF121216)
+                            )
                         )
                     )
                     .border(
@@ -577,7 +627,7 @@ fun SettingsScreen(
                         brush = Brush.verticalGradient(
                             listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
                         ),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(24.dp)
                     )
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -586,7 +636,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(palette.surfaceVariant)
                         .clickable {
                             LogManager.exportLogs(context)
@@ -620,7 +670,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(palette.surfaceVariant)
                         .clickable {
                             if (!isUpdating) {

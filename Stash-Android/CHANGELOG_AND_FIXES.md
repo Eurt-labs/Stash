@@ -2,6 +2,22 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-014] Frosted Background Refraction & Cloud Pill Glass Selectors
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackActionModalSheet.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: UI Refraction & Micro-Animation Polish
+
+#### 1. User Requests Addressed
+- **Frosted Apple-Style Glass Refraction in Modal Sheet**:
+  - Replaced the transparent backdrop with an 85% alpha frosted dark scrim and dense high-opacity triple-stop gradient card core (`#222228` -> `#16161B` -> `#0E0E12`) with 34dp curvature, specular rim borders (`0.70f` alpha), and drop shadow to eliminate transparent background bleed-through.
+- **Animated Cloud Liquid Glass Selectors in Settings**:
+  - Re-architected **Download Mode Selector** into a floating Cloud Pill Track with animated smooth spring gliding (`dampingRatio = 0.72f, stiffness = 400f`).
+  - Upgraded **Format** and **Bitrate/Quality** chips into 24dp Cloud Capsule structures that scale and glow on selection with high-contrast specular borders.
+
+---
+
 ### 📌 [ANDROID-FEAT-013] Pop-Out Liquid Glass Action Modal & Unified Pill Redesign
 - **Date**: 2026-08-20
 - **Files Modified**: 
