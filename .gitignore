@@ -28,5 +28,13 @@ Thumbs.db
 *.sw?
 
 # Bundled Binaries (downloaded via download_dependencies.ps1)
-app-resources/windows/
+bin/ffmpeg.exe
+bin/ffprobe.exe
+bin/yt-dlp.exe
 
+# Android
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
