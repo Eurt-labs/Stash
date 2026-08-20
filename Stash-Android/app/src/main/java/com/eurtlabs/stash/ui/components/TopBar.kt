@@ -58,7 +58,7 @@ fun TopBar(
                     )
                 }
                 Text(
-                    text = "High-Res Media Downloader",
+                    text = "Media Downloader",
                     color = palette.textSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
