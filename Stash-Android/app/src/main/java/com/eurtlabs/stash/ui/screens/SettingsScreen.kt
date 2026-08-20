@@ -60,6 +60,7 @@ fun SettingsScreen(
     onSelectTheme: (ColorTheme) -> Unit,
     onSelectFormat: (DownloadFormat) -> Unit,
     onSelectQuality: (DownloadQuality) -> Unit,
+    onChangeStorage: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -364,6 +365,7 @@ fun SettingsScreen(
                     .clip(RoundedCornerShape(14.dp))
                     .background(palette.surface)
                     .border(1.dp, palette.border, RoundedCornerShape(14.dp))
+                    .clickable { onChangeStorage() }
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Row(
@@ -373,20 +375,34 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.Folder,
                         contentDescription = null,
-                        tint = palette.textSecondary,
-                        modifier = Modifier.size(20.dp)
+                        tint = palette.primary,
+                        modifier = Modifier.size(22.dp)
                     )
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Music / Stash",
+                            text = "Download Location",
                             color = palette.textPrimary,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            fontSize = 13.5.sp
                         )
                         Text(
-                            text = settings.outputDir.ifEmpty { "Android/data/com.eurtlabs.stash/files/Music/Stash" },
+                            text = settings.outputDir.ifEmpty { "Music / Stash" },
                             color = palette.textSecondary,
-                            fontSize = 11.sp
+                            fontSize = 11.5.sp
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(palette.surfaceVariant)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Change",
+                            color = palette.textPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

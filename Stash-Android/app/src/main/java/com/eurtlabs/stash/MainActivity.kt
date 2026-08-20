@@ -3,6 +3,7 @@ package com.eurtlabs.stash
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -24,7 +25,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,6 +51,7 @@ import com.eurtlabs.stash.data.model.NavigationTab
 import com.eurtlabs.stash.ui.components.BatchQueueList
 import com.eurtlabs.stash.ui.components.BottomNavBar
 import com.eurtlabs.stash.ui.components.SearchInputBar
+import com.eurtlabs.stash.ui.components.StorageSelectionDialog
 import com.eurtlabs.stash.ui.components.TopBar
 import com.eurtlabs.stash.ui.screens.LibraryScreen
 import com.eurtlabs.stash.ui.screens.SearchScreen
@@ -68,6 +69,18 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { /* Permission result handled */ }
 
+    private val folderPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            viewModel.confirmStorageCustom(uri)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Enforce modern Android 15 & 16 Edge-to-Edge window rendering
         enableEdgeToEdge()
@@ -81,6 +94,11 @@ class MainActivity : ComponentActivity() {
             val batches by viewModel.batches.collectAsState()
             val isFetching by viewModel.isFetching.collectAsState()
             val fetchingMessage by viewModel.fetchingMessage.collectAsState()
+
+            val isSearching by viewModel.isSearching.collectAsState()
+            val searchResults by viewModel.searchResults.collectAsState()
+            val searchFilter by viewModel.searchFilter.collectAsState()
+            val showStorageDialog by viewModel.showStorageDialog.collectAsState()
 
             val activeDownloadsCount = batches.flatMap { it.items }.count {
                 it.state == DownloadState.DOWNLOADING || it.state == DownloadState.CONVERTING || it.state == DownloadState.TAGGING
@@ -174,10 +192,13 @@ class MainActivity : ComponentActivity() {
                                     }
                                     NavigationTab.SEARCH -> {
                                         SearchScreen(
-                                            isFetching = isFetching,
-                                            fetchingMessage = fetchingMessage,
-                                            onAnalyzeUrl = { url ->
-                                                viewModel.parseAndEnqueue(url)
+                                            isSearching = isSearching,
+                                            searchResults = searchResults,
+                                            selectedFilter = searchFilter,
+                                            onFilterChanged = { viewModel.setSearchFilter(it) },
+                                            onSearch = { query -> viewModel.performSearch(query) },
+                                            onDownloadItem = { item ->
+                                                viewModel.enqueueSearchResult(item)
                                                 activeTabState = NavigationTab.QUEUE
                                             }
                                         )
@@ -191,7 +212,8 @@ class MainActivity : ComponentActivity() {
                                             onSelectMediaType = { viewModel.updateMediaType(it) },
                                             onSelectTheme = { viewModel.updateTheme(it) },
                                             onSelectFormat = { viewModel.updateFormat(it) },
-                                            onSelectQuality = { viewModel.updateQuality(it) }
+                                            onSelectQuality = { viewModel.updateQuality(it) },
+                                            onChangeStorage = { folderPickerLauncher.launch(null) }
                                         )
                                     }
                                 }
@@ -204,6 +226,16 @@ class MainActivity : ComponentActivity() {
                             onTabSelected = { activeTabState = it },
                             activeQueueCount = activeDownloadsCount,
                             libraryCount = completedCount
+                        )
+                    }
+
+                    // First Launch or Triggered Storage Folder Selection Dialog
+                    if (showStorageDialog) {
+                        StorageSelectionDialog(
+                            currentPath = settings.outputDir,
+                            onChooseDefault = { viewModel.confirmStorageDefault() },
+                            onChooseCustom = { folderPickerLauncher.launch(null) },
+                            onDismiss = { viewModel.dismissStorageDialog() }
                         )
                     }
                 }

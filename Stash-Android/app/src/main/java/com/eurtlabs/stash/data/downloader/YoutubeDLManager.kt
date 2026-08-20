@@ -29,6 +29,65 @@ object YoutubeDLManager {
         return stashDir
     }
 
+    suspend fun searchMedia(query: String, filter: com.eurtlabs.stash.data.model.SearchFilter = com.eurtlabs.stash.data.model.SearchFilter.ALL): List<com.eurtlabs.stash.data.model.SearchResultItem> = withContext(Dispatchers.IO) {
+        val searchPrefix = when (filter) {
+            com.eurtlabs.stash.data.model.SearchFilter.MUSIC -> "ytsearch10:$query music"
+            com.eurtlabs.stash.data.model.SearchFilter.ARTISTS -> "ytsearch10:$query official artist channel"
+            com.eurtlabs.stash.data.model.SearchFilter.VIDEOS -> "ytsearch10:$query"
+            com.eurtlabs.stash.data.model.SearchFilter.ALL -> "ytsearch10:$query"
+        }
+
+        try {
+            val request = YoutubeDLRequest(searchPrefix).apply {
+                addOption("--dump-json")
+                addOption("--flat-playlist")
+                addOption("--no-warnings")
+                addOption("--socket-timeout", "15")
+            }
+            val response = YoutubeDL.getInstance().execute(request)
+            val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
+
+            val results = mutableListOf<com.eurtlabs.stash.data.model.SearchResultItem>()
+            for (line in jsonLines) {
+                try {
+                    val json = org.json.JSONObject(line)
+                    val id = json.optString("id")
+                    val title = json.optString("title")
+                    if (id.isNotBlank() && title.isNotBlank()) {
+                        val uploader = json.optString("uploader", json.optString("channel", "YouTube"))
+                        val duration = json.optLong("duration", 0L)
+                        val durationStr = if (duration > 0) {
+                            val mins = duration / 60
+                            val secs = duration % 60
+                            String.format("%d:%02d", mins, secs)
+                        } else ""
+                        val thumbnail = json.optString("thumbnail", "")
+                        val url = json.optString("url", "https://www.youtube.com/watch?v=$id")
+                        val isAudio = filter == com.eurtlabs.stash.data.model.SearchFilter.MUSIC || filter == com.eurtlabs.stash.data.model.SearchFilter.ARTISTS
+
+                        results.add(
+                            com.eurtlabs.stash.data.model.SearchResultItem(
+                                id = id,
+                                title = title,
+                                artist = uploader,
+                                durationText = durationStr,
+                                thumbnailUrl = thumbnail.ifEmpty { null },
+                                url = if (url.startsWith("http")) url else "https://www.youtube.com/watch?v=$id",
+                                isAudio = isAudio
+                            )
+                        )
+                    }
+                } catch (je: Exception) {
+                    // Ignore line parse exception
+                }
+            }
+            results
+        } catch (e: Exception) {
+            Log.e(TAG, "Search failed for query: $query", e)
+            emptyList()
+        }
+    }
+
     suspend fun extractMetadata(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
         try {
             val request = YoutubeDLRequest(url).apply {

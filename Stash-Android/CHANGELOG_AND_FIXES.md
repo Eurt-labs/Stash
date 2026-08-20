@@ -2,6 +2,34 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-003] Interactive Search Engine & First-Launch Storage Prompt
+- **Date**: 2026-08-20
+- **Files Modified/Created**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SearchScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/StorageSelectionDialog.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/StorageManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Major Feature & UX Enhancement
+
+#### 1. User Requests Addressed
+- Implement interactive search for YouTube Music, Artists, and YouTube Videos with a clean minimalist design.
+- Prompt the user to select their preferred storage location when starting the application for the first time.
+
+#### 2. Technical Implementation
+- **Interactive Search Engine**:
+  - Added `searchMedia(query, filter)` in `YoutubeDLManager.kt` leveraging `--flat-playlist --dump-json` to extract titles, artists, thumbnails, and durations in <1.5s.
+  - Interactive search tabs in `SearchScreen.kt`: `All`, `Songs & Music`, `Artists`, and `Videos`.
+  - Rich result cards with instant single-tap `[ Get 📥 ]` buttons that immediately enqueue downloads in the user's chosen format.
+- **First-Launch Storage Onboarding**:
+  - Implemented `StorageManager.kt` to persist folder preferences and first-launch state.
+  - Designed `StorageSelectionDialog.kt` modal prompting users between **Default Music Folder** (`Music/Stash`) and **Custom Folder** (via Android's native `OpenDocumentTree()` SAF picker).
+  - Added **"Change Folder"** capability inside `SettingsScreen.kt`.
+
+---
+
 ### 📌 [ANDROID-FIX-010] Synchronous Engine Startup, Stream Selection & Live Status/Retry UI
 - **Date**: 2026-08-20
 - **Files Modified**: 

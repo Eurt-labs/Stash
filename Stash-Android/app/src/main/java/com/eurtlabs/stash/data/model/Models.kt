@@ -127,8 +127,27 @@ data class DownloadBatch(
     val isCompleted: Boolean = false
 )
 
+enum class SearchFilter(val label: String) {
+    ALL("All"),
+    MUSIC("Songs & Music"),
+    ARTISTS("Artists"),
+    VIDEOS("Videos")
+}
+
+data class SearchResultItem(
+    val id: String,
+    val title: String,
+    val artist: String,
+    val durationText: String = "",
+    val thumbnailUrl: String? = null,
+    val url: String,
+    val isAudio: Boolean = true
+)
+
 data class StashSettings(
     val outputDir: String = "",
+    val customDirUri: String? = null,
+    val isFirstLaunchDone: Boolean = false,
     val mediaType: MediaType = MediaType.AUDIO,
     val audioFormat: DownloadFormat = DownloadFormat.MP3,
     val audioQuality: DownloadQuality = DownloadQuality.AUDIO_320K,

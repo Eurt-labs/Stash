@@ -1,6 +1,7 @@
 package com.eurtlabs.stash.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,9 +13,12 @@ import com.eurtlabs.stash.data.model.DownloadItem
 import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.DownloadState
 import com.eurtlabs.stash.data.model.MediaType
+import com.eurtlabs.stash.data.model.SearchFilter
+import com.eurtlabs.stash.data.model.SearchResultItem
 import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.eurtlabs.stash.data.parser.LinkParser
+import com.eurtlabs.stash.data.storage.StorageManager
 import com.eurtlabs.stash.data.transcoder.MediaTagger
 import com.eurtlabs.stash.service.DownloadForegroundService
 import kotlinx.coroutines.Dispatchers
@@ -36,9 +40,24 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private val _fetchingMessage = MutableStateFlow("")
     val fetchingMessage: StateFlow<String> = _fetchingMessage.asStateFlow()
 
+    // Search State
+    private val _searchResults = MutableStateFlow<List<SearchResultItem>>(emptyList())
+    val searchResults: StateFlow<List<SearchResultItem>> = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _searchFilter = MutableStateFlow(SearchFilter.ALL)
+    val searchFilter: StateFlow<SearchFilter> = _searchFilter.asStateFlow()
+
+    // First launch state
+    private val _showStorageDialog = MutableStateFlow(StorageManager.isFirstLaunch(application))
+    val showStorageDialog: StateFlow<Boolean> = _showStorageDialog.asStateFlow()
+
     private val _settings = MutableStateFlow(
         StashSettings(
-            outputDir = YoutubeDLManager.getDefaultOutputDir(application).absolutePath,
+            outputDir = StorageManager.getDisplayStoragePath(application),
+            isFirstLaunchDone = !StorageManager.isFirstLaunch(application),
             mediaType = MediaType.AUDIO,
             audioFormat = DownloadFormat.MP3,
             audioQuality = DownloadQuality.AUDIO_320K,
@@ -77,6 +96,69 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         } else {
             _settings.value = _settings.value.copy(videoQuality = quality)
         }
+    }
+
+    fun confirmStorageDefault() {
+        val app = getApplication<Application>()
+        StorageManager.setUseDefaultStorage(app)
+        _settings.value = _settings.value.copy(
+            outputDir = StorageManager.getDisplayStoragePath(app),
+            isFirstLaunchDone = true
+        )
+        _showStorageDialog.value = false
+    }
+
+    fun confirmStorageCustom(uri: Uri) {
+        val app = getApplication<Application>()
+        StorageManager.setCustomStorage(app, uri)
+        _settings.value = _settings.value.copy(
+            outputDir = StorageManager.getDisplayStoragePath(app),
+            customDirUri = uri.toString(),
+            isFirstLaunchDone = true
+        )
+        _showStorageDialog.value = false
+    }
+
+    fun openStorageDialog() {
+        _showStorageDialog.value = true
+    }
+
+    fun dismissStorageDialog() {
+        _showStorageDialog.value = false
+    }
+
+    fun setSearchFilter(filter: SearchFilter) {
+        _searchFilter.value = filter
+    }
+
+    fun performSearch(query: String) {
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            return
+        }
+
+        // If user typed a direct URL, parse and download directly
+        if (query.startsWith("http://", ignoreCase = true) || query.startsWith("https://", ignoreCase = true)) {
+            parseAndEnqueue(query)
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isSearching.value = true
+            try {
+                val results = YoutubeDLManager.searchMedia(query, _searchFilter.value)
+                _searchResults.value = results
+            } catch (e: Exception) {
+                Log.e("DownloadViewModel", "Search execution error", e)
+                _searchResults.value = emptyList()
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
+    fun enqueueSearchResult(item: SearchResultItem) {
+        parseAndEnqueue(item.url)
     }
 
     fun parseAndEnqueue(input: String) {
@@ -135,7 +217,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private fun processQueue() {
         viewModelScope.launch(Dispatchers.IO) {
             val context = getApplication<Application>()
-            val outputDir = YoutubeDLManager.getDefaultOutputDir(context)
+            val outputDir = StorageManager.getTargetOutputDir(context)
 
             val currentBatches = _batches.value
             for (batch in currentBatches) {
