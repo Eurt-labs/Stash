@@ -11,24 +11,40 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.eurtlabs.stash.data.model.DownloadState
 import com.eurtlabs.stash.data.model.NavigationTab
@@ -89,6 +105,44 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.statusBarsPadding()
                         )
 
+                        // Animated Global Fetching / Analyzing Banner
+                        AnimatedVisibility(
+                            visible = isFetching,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(palette.surface)
+                                    .border(1.dp, palette.primary.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    color = palette.primary,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = "Fetching Stream & Metadata...",
+                                        color = palette.textPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        text = fetchingMessage.ifEmpty { "Analyzing video/audio stream..." },
+                                        color = palette.textSecondary,
+                                        fontSize = 11.5.sp
+                                    )
+                                }
+                            }
+                        }
+
                         // Main Content with Animated Tab Transitions
                         Box(
                             modifier = Modifier
@@ -113,7 +167,8 @@ class MainActivity : ComponentActivity() {
                                             )
                                             BatchQueueList(
                                                 batches = batches,
-                                                onRemoveBatch = { batchId -> viewModel.removeBatch(batchId) }
+                                                onRemoveBatch = { batchId -> viewModel.removeBatch(batchId) },
+                                                onRetryItem = { itemId -> viewModel.retryItem(itemId) }
                                             )
                                         }
                                     }

@@ -44,6 +44,7 @@ import com.eurtlabs.stash.ui.theme.LocalStashPalette
 fun BatchQueueList(
     batches: List<DownloadBatch>,
     onRemoveBatch: (String) -> Unit,
+    onRetryItem: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -141,7 +142,7 @@ fun BatchQueueList(
                 }
 
                 items(items = batch.items, key = { it.id }) { item ->
-                    TrackCardItem(item = item)
+                    TrackCardItem(item = item, onRetry = onRetryItem)
                 }
             }
         }

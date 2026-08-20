@@ -134,9 +134,9 @@ object LinkParser {
         // 8. Plain Text Query search fallback
         return ParsedLink(
             platform = Platform.YOUTUBE,
-            contentType = ContentType.PLAYLIST,
+            contentType = ContentType.TRACK,
             id = trimmed,
-            originalUrl = "ytsearch150:$trimmed music.youtube.com"
+            originalUrl = "ytsearch1:$trimmed"
         )
     }
 

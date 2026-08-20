@@ -2,6 +2,33 @@
 
 ---
 
+### 📌 [ANDROID-FIX-010] Synchronous Engine Startup, Stream Selection & Live Status/Retry UI
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/StashApplication.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/parser/LinkParser.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackCardItem.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BatchQueueList.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+- **Severity**: Critical (Engine Initialization Race Condition & Live UI Feedback)
+
+#### 1. Problems Addressed
+- **Startup Race Condition**: `YoutubeDL.getInstance().init(this)` was wrapped in a background coroutine in `StashApplication.kt`, causing `YoutubeDLException: not initialized` when users immediately pasted a link after app launch.
+- **Heavy Stream Download**: Audio downloads were downloading the entire video stream before running ffmpeg extraction.
+- **Search Query Latency**: `LinkParser.kt` was querying `ytsearch150:` causing long timeouts on mobile connections.
+- **Missing Loading/Analyzing Feedback**: No visual cues or progress indicators when analyzing links or when downloads fail.
+
+#### 2. Technical Solution & Implementation
+- **Synchronous Engine Init in `StashApplication.kt`**: `YoutubeDL.getInstance().init(this)` is invoked directly in `Application.onCreate()`.
+- **Audio Stream Direct Extraction**: Added `-f ba/b` and `--audio-quality 0` to immediately stream pure audio without full video overhead.
+- **Instant Search Resolution**: Changed query format to `ytsearch1:$query` for instant top match scraping.
+- **Animated Fetching Banner**: Added live animated status banner in `MainActivity.kt` when `isFetching == true`.
+- **Card Error Details & 1-Tap Retry**: Track cards now display real-time speed/ETA, error descriptions, and an interactive **Retry ↻** button.
+
+---
+
 ### 📌 [ANDROID-FIX-009] Type.kt Color Fallbacks & Metadata Extraction Normalization
 - **Date**: 2026-08-20
 - **Files Modified**: 

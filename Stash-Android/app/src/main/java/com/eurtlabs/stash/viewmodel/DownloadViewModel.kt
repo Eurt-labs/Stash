@@ -205,6 +205,11 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun retryItem(itemId: String) {
+        updateItemState(itemId, DownloadState.QUEUED, 0f, "Queued for retry", error = null)
+        processQueue()
+    }
+
     fun removeBatch(batchId: String) {
         _batches.value = _batches.value.filter { it.id != batchId }
     }

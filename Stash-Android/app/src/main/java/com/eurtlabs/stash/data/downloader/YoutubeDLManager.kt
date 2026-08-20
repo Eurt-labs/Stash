@@ -83,9 +83,10 @@ object YoutubeDLManager {
             addOption("--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
             if (format.isAudioOnly) {
+                addOption("-f", "ba/b")
                 addOption("-x")
                 addOption("--audio-format", format.ext)
-                addOption("--audio-quality", quality.valueOption)
+                addOption("--audio-quality", "0")
             } else {
                 addOption("-f", quality.valueOption)
                 addOption("--merge-output-format", format.ext)

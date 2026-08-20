@@ -6,9 +6,6 @@ import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
 import com.yausername.youtubedl_android.YoutubeDL
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class StashApplication : Application() {
 
@@ -39,13 +36,11 @@ class StashApplication : Application() {
     }
 
     private fun initNativeEngines() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                YoutubeDL.getInstance().init(this@StashApplication)
-                Log.d(TAG, "YoutubeDL native engine successfully initialized.")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize YoutubeDL engine", e)
-            }
+        try {
+            YoutubeDL.getInstance().init(this)
+            Log.d(TAG, "YoutubeDL native engine successfully initialized at startup.")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize YoutubeDL engine", e)
         }
     }
 }
