@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-004] Liquid Glass Sliding Bubble Navigation Bar Effect
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+- **Severity**: Visual Excellence & Interaction Polish
+
+#### 1. User Request
+- Implement a liquid glass effect when switching the navbar tabs with a dynamic liquid glass bubble indicator over the selected tab.
+
+#### 2. Technical Implementation
+- **Liquid Glass Bubble**: Replaced individual static pills with a single continuous sliding **Liquid Glass Bubble** utilizing Spring physics (`dampingRatio = 0.72f, stiffness = 380f`).
+- **Glassmorphic Gradients**:
+  - Translucent multi-stop glass reflection (`Brush.linearGradient(listOf(Color.White.copy(0.20f), Color.White.copy(0.07f)))`).
+  - Specular rim light top border (`Brush.verticalGradient(listOf(Color.White.copy(0.45f), Color.White.copy(0.08f)))`).
+- **Subtle Tab Morphing & Scale**: As tabs switch, active icons and labels spring-scale (`1.06f`) while inactive elements smoothly recess (`0.95f`).
+
+---
+
 ### 📌 [ANDROID-FEAT-003] Interactive Search Engine & First-Launch Storage Prompt
 - **Date**: 2026-08-20
 - **Files Modified/Created**: 
