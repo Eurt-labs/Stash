@@ -2,6 +2,21 @@
 
 ---
 
+### 📌 [BUG-027] YouTube "Please sign in" Bot Block Bypass
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt
+- **Severity**: Critical
+
+#### 1. Problem Description & Observed Symptoms
+Downloads and metadata extractions randomly started failing on certain devices (e.g. OnePlus CPH2717, OPPO CPH2729) with the error: ERROR: [youtube] <id>: Please sign in. 
+
+#### 2. Technical Root Cause Analysis
+YouTube recently rolled out aggressive anti-bot protections targeting generic web scrapers like yt-dlp. If a device's IP or request pattern is flagged, YouTube throws an age-restriction/bot-wall demanding an authenticated session, causing the download extraction pipeline to instantly crash.
+
+#### 3. Exact Solution & Implementation Details
+Added --extractor-args "youtube:player_client=android,web" directly to the core YoutubeDLRequest payloads (extractMetadata, downloadTrack, and searchMedia). This forces the yt-dlp extraction engine to spoof the User-Agent and hidden API headers of the official YouTube Android App, tricking YouTube into bypassing the login wall and treating the connection as a legitimate native mobile stream.
+
+---
 ### 📌 [FEAT-025] Cross-Platform Playlist & Artist Subfolder Organization
 - **Date**: 2026-08-20
 - **Files Modified**: 

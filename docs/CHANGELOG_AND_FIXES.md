@@ -33,6 +33,22 @@ How was it fixed? Include before-and-after code diffs or mathematical formulas.
 
 ---
 
+### 📌 [BUG-027] YouTube "Please sign in" Bot Block Bypass
+- **Date**: 2026-08-20
+- **Target Files**: `src/main/features/downloader/DownloadEngine.ts`
+- **Severity**: Critical
+
+#### 1. Problem Description & Observed Symptoms
+Downloads and metadata extractions randomly started failing on certain connections with the error: `ERROR: [youtube] <id>: Please sign in`. 
+
+#### 2. Technical Root Cause Analysis
+YouTube recently rolled out aggressive anti-bot protections targeting generic web scrapers like `yt-dlp`. If a device's IP or request pattern is flagged, YouTube throws an age-restriction/bot-wall demanding an authenticated session, causing the download extraction pipeline to instantly crash.
+
+#### 3. Exact Solution & Implementation Details
+Added `--extractor-args "youtube:player_client=android,web"` directly to the core extraction arguments inside `DownloadEngine.ts`. This forces the `yt-dlp` extraction engine to spoof the User-Agent and hidden API headers of the official YouTube Android App, tricking YouTube into bypassing the login wall and treating the connection as a legitimate native mobile stream.
+
+---
+
 ### 📌 [FEAT-026] Cross-Platform Playlist & Artist Subfolder Organization
 - **Date**: 2026-08-20
 - **Target Files**: `src/main/features/downloader/DownloadEngine.ts`, `src/main/features/downloader/StashOrchestrator.ts`, `src/shared/types/index.ts`
