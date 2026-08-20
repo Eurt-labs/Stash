@@ -2,6 +2,24 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-011] Interactive Download Queue Controls, Manual Link Pasting & Glass Polish
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackCardItem.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BatchQueueList.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Core Features & Interaction Control
+
+#### 1. User Requests Addressed
+- **Fixed `enqueueTrackFromSearch` compilation error**: Resolved reference in `MainActivity.kt`.
+- **Removed Auto-Clipboard Pasting**: Removed automatic clipboard inspection on app resume/focus to give users complete manual control over when links are pasted.
+- **Interactive Download Controls**: Added **Cancel (✕)**, **Pause (❚❚)**, **Resume (▶)**, and **Retry (↻)** controls with live process termination via `YoutubeDL.destroyProcessById(itemId)`.
+- **Refined Liquid Glass UI in Settings**: Enhanced translucent glass gradients, multi-stop specular borders, and luminous selection badges across all settings sections.
+
+---
+
 ### 📌 [ANDROID-FIX-018] DownloadBatch & DownloadItem Model Property Alignment
 - **Date**: 2026-08-20
 - **Files Modified**: 

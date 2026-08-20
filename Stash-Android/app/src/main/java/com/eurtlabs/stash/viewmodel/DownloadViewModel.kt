@@ -374,7 +374,38 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         processQueue()
     }
 
+    fun cancelItem(itemId: String) {
+        try {
+            com.yausername.youtubedl_android.YoutubeDL.getInstance().destroyProcessById(itemId)
+        } catch (e: Exception) {
+            // Ignore if process already completed/not found
+        }
+        updateItemState(itemId, DownloadState.CANCELLED, 0f, "Download cancelled")
+    }
+
+    fun pauseItem(itemId: String) {
+        try {
+            com.yausername.youtubedl_android.YoutubeDL.getInstance().destroyProcessById(itemId)
+        } catch (e: Exception) {
+            // Ignore
+        }
+        updateItemState(itemId, DownloadState.IDLE, 0f, "Paused")
+    }
+
+    fun cancelBatch(batchId: String) {
+        val batch = _batches.value.find { it.id == batchId }
+        batch?.items?.forEach { item ->
+            if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.QUEUED) {
+                try {
+                    com.yausername.youtubedl_android.YoutubeDL.getInstance().destroyProcessById(item.id)
+                } catch (e: Exception) {}
+                updateItemState(item.id, DownloadState.CANCELLED, 0f, "Batch cancelled")
+            }
+        }
+    }
+
     fun removeBatch(batchId: String) {
+        cancelBatch(batchId)
         _batches.value = _batches.value.filter { it.id != batchId }
         viewModelScope.launch(Dispatchers.IO) {
             LibraryStore.saveLibrary(getApplication(), _batches.value)

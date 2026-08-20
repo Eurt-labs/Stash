@@ -102,7 +102,7 @@ fun SettingsScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+        contentPadding = PaddingValues(bottom = 90.dp, top = 12.dp, start = 20.dp, end = 20.dp)
     ) {
         // Section: Media Mode Toggle (Music / Video)
         item {
@@ -115,33 +115,41 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Liquid Glass Mode Card
+            // Refined Liquid Glass Mode Card
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.85f))
+                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
                         )
                     )
                     .border(
-                        width = 1.dp,
+                        width = 1.2.dp,
                         brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(18.dp)
                     )
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 MediaType.values().forEach { mode ->
                     val isSelected = currentMediaType == mode
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) palette.primary else Color.Transparent)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (isSelected) {
+                                    Brush.verticalGradient(
+                                        listOf(palette.primary, palette.primary.copy(alpha = 0.85f))
+                                    )
+                                } else {
+                                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                                }
+                            )
                             .clickable { onSelectMediaType(mode) }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -188,21 +196,21 @@ fun SettingsScreen(
 
                     Box(
                         modifier = Modifier
-                            .width(105.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .width(108.dp)
+                            .clip(RoundedCornerShape(16.dp))
                             .background(
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.25f), palette.primary.copy(alpha = 0.10f))
-                                    else listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.28f), palette.primary.copy(alpha = 0.12f))
+                                    else listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
                                 )
                             )
                             .border(
                                 width = if (isSelected) 1.5.dp else 1.dp,
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.8f), palette.primary.copy(alpha = 0.3f))
-                                    else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.05f))
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.90f), palette.primary.copy(alpha = 0.35f))
+                                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
                                 ),
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                             .clickable { onSelectFormat(format) }
                             .padding(horizontal = 10.dp, vertical = 12.dp),
@@ -235,8 +243,8 @@ fun SettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(palette.primary.copy(alpha = 0.2f))
-                                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                                        .background(palette.primary.copy(alpha = 0.22f))
+                                        .padding(horizontal = 5.dp, vertical = 1.5.dp)
                                 ) {
                                     Text(
                                         text = "LOSSLESS",
@@ -278,13 +286,13 @@ fun SettingsScreen(
                         .clip(RoundedCornerShape(16.dp))
                         .background(
                             brush = Brush.verticalGradient(
-                                listOf(palette.primary.copy(alpha = 0.15f), palette.surface.copy(alpha = 0.90f))
+                                listOf(palette.primary.copy(alpha = 0.18f), palette.surface.copy(alpha = 0.90f))
                             )
                         )
                         .border(
-                            width = 1.dp,
+                            width = 1.2.dp,
                             brush = Brush.verticalGradient(
-                                listOf(palette.primary.copy(alpha = 0.50f), Color.White.copy(alpha = 0.08f))
+                                listOf(palette.primary.copy(alpha = 0.60f), Color.White.copy(alpha = 0.10f))
                             ),
                             shape = RoundedCornerShape(16.dp)
                         )
@@ -329,22 +337,22 @@ fun SettingsScreen(
 
                         Box(
                             modifier = Modifier
-                                .width(120.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.25f), palette.primary.copy(alpha = 0.10f))
-                                        else listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
-                                    )
+                                .width(122.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.28f), palette.primary.copy(alpha = 0.12f))
+                                    else listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
                                 )
-                                .border(
-                                    width = if (isSelected) 1.5.dp else 1.dp,
-                                    brush = Brush.verticalGradient(
-                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.8f), palette.primary.copy(alpha = 0.3f))
-                                        else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.05f))
-                                    ),
-                                    shape = RoundedCornerShape(14.dp)
-                                )
+                            )
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                brush = Brush.verticalGradient(
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.90f), palette.primary.copy(alpha = 0.35f))
+                                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                                 .clickable { onSelectQuality(quality) }
                                 .padding(horizontal = 10.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center
@@ -407,7 +415,7 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .width(96.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(
                                 brush = Brush.verticalGradient(
                                     listOf(themePal.surface.copy(alpha = 0.95f), themePal.background)
@@ -416,7 +424,7 @@ fun SettingsScreen(
                             .border(
                                 width = if (isSelected) 2.dp else 1.dp,
                                 color = if (isSelected) palette.primary else Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                             .clickable { onSelectTheme(theme) }
                             .padding(10.dp),
@@ -459,18 +467,18 @@ fun SettingsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
                         )
                     )
                     .border(
-                        width = 1.dp,
+                        width = 1.2.dp,
                         brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.05f))
+                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(18.dp)
                     )
                     .clickable { onChangeStorage() }
                     .padding(16.dp)
@@ -530,18 +538,18 @@ fun SettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                            listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
                         )
                     )
                     .border(
-                        width = 1.dp,
+                        width = 1.2.dp,
                         brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.05f))
+                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(18.dp)
                     )
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)

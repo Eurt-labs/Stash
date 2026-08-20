@@ -21,7 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -32,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +51,8 @@ import com.eurtlabs.stash.ui.theme.LocalStashPalette
 fun TrackCardItem(
     item: DownloadItem,
     onRetry: (String) -> Unit = {},
+    onCancel: (String) -> Unit = {},
+    onPause: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -62,8 +68,18 @@ fun TrackCardItem(
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 5.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.05f))
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
             .padding(14.dp)
     ) {
         Row(
@@ -130,23 +146,29 @@ fun TrackCardItem(
 
                     Text(
                         text = item.format.name,
-                        color = palette.textPrimary,
+                        color = palette.primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 // Dynamic live status line (speed, ETA, or error detail)
-                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING || item.state == DownloadState.FAILED) {
+                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING || item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED) {
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = if (item.state == DownloadState.FAILED) {
-                            item.errorMessage?.take(50) ?: "Stream resolution error"
+                            item.errorMessage?.take(50) ?: "Download error"
+                        } else if (item.state == DownloadState.CANCELLED) {
+                            "Cancelled"
                         } else {
                             item.statusMessage
                         },
                         fontSize = 11.sp,
-                        color = if (item.state == DownloadState.FAILED) palette.error else palette.secondary,
+                        color = when (item.state) {
+                            DownloadState.FAILED -> palette.error
+                            DownloadState.CANCELLED -> palette.textSecondary
+                            else -> palette.primary
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -155,76 +177,115 @@ fun TrackCardItem(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Action / Status Pill
-            if (item.state == DownloadState.FAILED) {
-                // Retry Button Pill
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(palette.error.copy(alpha = 0.15f))
-                        .clickable { onRetry(item.id) }
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Retry",
-                        tint = palette.error,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = "Retry",
-                        color = palette.error,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                val (badgeBg, badgeText) = when (item.state) {
-                    DownloadState.COMPLETED -> palette.success.copy(alpha = 0.15f) to palette.success
-                    DownloadState.DOWNLOADING, DownloadState.CONVERTING, DownloadState.TAGGING -> palette.primary.copy(alpha = 0.15f) to palette.primary
-                    else -> palette.surfaceVariant to palette.textSecondary
-                }
+            // Action / Control Pills
+            when (item.state) {
+                DownloadState.DOWNLOADING, DownloadState.FETCHING, DownloadState.TAGGING -> {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Pause Button
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(palette.surfaceVariant)
+                                .clickable { onPause(item.id) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Pause,
+                                contentDescription = "Pause",
+                                tint = palette.textPrimary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(badgeBg)
-                        .padding(horizontal = 9.dp, vertical = 4.5.dp)
-                ) {
-                    Text(
-                        text = when (item.state) {
-                            DownloadState.COMPLETED -> "Done"
-                            DownloadState.DOWNLOADING -> "${item.progress.toInt()}%"
-                            DownloadState.CONVERTING -> "Transcode"
-                            DownloadState.TAGGING -> "Tagging"
-                            else -> "Queued"
-                        },
-                        color = badgeText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        // Cancel Button
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(palette.surfaceVariant)
+                                .clickable { onCancel(item.id) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel",
+                                tint = palette.error,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
                 }
+                DownloadState.FAILED -> {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(palette.error.copy(alpha = 0.15f))
+                            .clickable { onRetry(item.id) }
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Retry",
+                            tint = palette.error,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "Retry",
+                            color = palette.error,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                DownloadState.IDLE, DownloadState.CANCELLED -> {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(palette.primary.copy(alpha = 0.15f))
+                            .clickable { onRetry(item.id) }
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Resume",
+                            tint = palette.primary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "Resume",
+                            color = palette.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                else -> {}
             }
         }
 
-        // Live Progress Indicator
+        // Animated Progress Bar when downloading
         AnimatedVisibility(
-            visible = item.state == DownloadState.DOWNLOADING || item.state == DownloadState.CONVERTING || item.state == DownloadState.TAGGING,
+            visible = item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Column {
-                Spacer(modifier = Modifier.height(10.dp))
+            Column(modifier = Modifier.padding(top = 10.dp)) {
                 LinearProgressIndicator(
-                    progress = if (item.state == DownloadState.DOWNLOADING) animatedProgress else 0.85f,
-                    color = palette.primary,
-                    trackColor = palette.surfaceVariant,
+                    progress = animatedProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.5.dp)
-                        .clip(RoundedCornerShape(2.dp))
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = palette.primary,
+                    trackColor = palette.surfaceVariant
                 )
             }
         }

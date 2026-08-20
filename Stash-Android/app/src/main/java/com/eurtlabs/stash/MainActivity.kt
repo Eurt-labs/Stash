@@ -187,7 +187,9 @@ class MainActivity : ComponentActivity() {
                                             BatchQueueList(
                                                 batches = batches,
                                                 onRemoveBatch = { batchId -> viewModel.removeBatch(batchId) },
-                                                onRetryItem = { itemId -> viewModel.retryItem(itemId) }
+                                                onRetryItem = { itemId -> viewModel.retryItem(itemId) },
+                                                onCancelItem = { itemId -> viewModel.cancelItem(itemId) },
+                                                onPauseItem = { itemId -> viewModel.pauseItem(itemId) }
                                             )
                                         }
                                     }
@@ -199,7 +201,7 @@ class MainActivity : ComponentActivity() {
                                             onFilterChanged = { viewModel.setSearchFilter(it) },
                                             onSearch = { query -> viewModel.performSearch(query) },
                                             onDownloadItem = { item ->
-                                                viewModel.enqueueSearchResult(item)
+                                                viewModel.enqueueTrackFromSearch(item)
                                                 activeTabState = NavigationTab.QUEUE
                                             },
                                             onDownloadAll = { items, artistName ->
@@ -277,36 +279,6 @@ class MainActivity : ComponentActivity() {
 
         if (permissionsToRequest.isNotEmpty()) {
             appPermissionsLauncher.launch(permissionsToRequest.toTypedArray())
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        checkAndAutoPasteClipboard()
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            checkAndAutoPasteClipboard()
-        }
-    }
-
-    private var lastAutoPastedUrl: String? = null
-
-    private fun checkAndAutoPasteClipboard() {
-        try {
-            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
-            val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()?.trim()
-            if (!clip.isNullOrBlank() && (clip.startsWith("http://", ignoreCase = true) || clip.startsWith("https://", ignoreCase = true))) {
-                if (clip != lastAutoPastedUrl) {
-                    lastAutoPastedUrl = clip
-                    viewModel.parseAndEnqueue(clip)
-                    activeTabState = NavigationTab.QUEUE
-                }
-            }
-        } catch (e: Exception) {
-            // Ignore clipboard access exceptions
         }
     }
 
