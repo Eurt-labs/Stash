@@ -2,6 +2,21 @@
 
 ---
 
+### 📌 [ANDROID-FIX-002] Incompatible Gradle JVM Version & Wrapper Upgrade
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/gradle/wrapper/gradle-wrapper.properties`
+- **Severity**: Build Environment Setup
+
+#### 1. Problem Description & Symptoms
+- Android Studio showed `Incompatible Gradle JVM version` error when syncing:
+  `The project's Gradle version 8.4 is incompatible with the Gradle JVM version currently selected to run Gradle build.`
+
+#### 2. Technical Solution & Implementation
+- Upgraded Gradle distribution wrapper to `gradle-8.9-bin.zip` in `gradle-wrapper.properties`.
+- Documented steps to select the compatible embedded Android Studio JDK (JDK 17/21).
+
+---
+
 ### 📌 [ANDROID-FIX-001] Root & App build.gradle.kts Plugin Resolution and Version Catalog Errors
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/build.gradle.kts`, `Stash-Android/app/build.gradle.kts`, `Stash-Android/gradle/wrapper/gradle-wrapper.properties`
