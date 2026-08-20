@@ -205,7 +205,7 @@ fun SettingsScreen(
         // Section: Dynamic Quality / Bitrate / Resolution
         item {
             SettingsSectionHeader(
-                icon = Icons.Default.Speed,
+                icon = Icons.Filled.Tune,
                 title = if (currentMediaType == MediaType.AUDIO) "Audio Bitrate & Compression" else "Video Resolution Quality",
                 subtitle = if (currentMediaType == MediaType.AUDIO) "Target bitrate for downloaded music" else "Target resolution for downloaded video stream"
             )
