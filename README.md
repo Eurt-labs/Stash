@@ -20,6 +20,8 @@ Built with Electron, Vite, React 18, TypeScript, and Hardware-Accelerated Canvas
 
 Stash is an open-source media downloader that lets you pull tracks, full albums, playlists, or individual videos from YouTube and YouTube Music directly to your local storage. It automatically handles format transcoding (up to 320kbps MP3, AAC, FLAC, OPUS, WAV, MP4 video up to 4K Ultra HD) and embeds high-resolution cover artwork and metadata tags into your files.
 
+Stash is available as both a **Desktop Application** (Electron + React) and a **Native Android Application** (Kotlin + Jetpack Compose). Both versions share a sleek design language, reliable extraction engines, and cross-platform quality-of-life features like automatic playlist folder organization.
+
 ---
 
 ## 🔄 How It Works
@@ -134,8 +136,9 @@ The compiled installer will be generated in the **`release/`** folder:
   - **Audio Quality Presets**: High (320kbps), Mid (192kbps), Low (128kbps), Lossless (Bit-Perfect / Maximum).
 - **Automated Metadata & Cover Art**: Embeds ID3v2, RIFF INFO, and Vorbis comments with normalized 600x600 Baseline JPEG artwork across all formats.
 - **Full Playlist Extraction & Auto-Fallback**: Instantly extracts 100% of playlist items and uses automatic search fallback for hidden or region-restricted songs.
+- **Cross-Platform Playlist Organization**: Downloads of multiple tracks (like playlists or artist pages) are automatically grouped into cleanly named subfolders within your main download directory.
+- **Micro-Animations & Liquid Glass UI**: Spring-loaded chevrons, CSS Grid playlist accordions, staggered cascading track cards, and 120Hz-optimized Liquid Glass UI on Android.
 - **13 Built-in Color & Artist Signature Themes**: 7 Core Palettes + 6 Artist Styles (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey) with slow-breathing animated backdrops.
-- **Micro-Animations & Liquid Glass UI**: Spring-loaded chevrons, CSS Grid playlist accordions, staggered cascading track cards, and chromatic theme bloom transitions.
 - **In-App Self-Healing Update Engine**: 1-click update tool in Settings to automatically pull the newest upstream nightly patches without reinstalling the app.
 
 ---
