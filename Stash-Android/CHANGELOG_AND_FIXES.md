@@ -2,6 +2,33 @@
 
 ---
 
+### 📌 [ANDROID-FIX-004] youtubedl-android Maven Central Coordinates Migration
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/build.gradle.kts`, `Stash-Android/app/src/main/AndroidManifest.xml`, `Stash-Android/app/proguard-rules.pro`
+- **Severity**: Critical (Dependency Resolution & AAR Packaging)
+
+#### 1. Problem Description & Symptoms
+- Build failed during `:app:checkDebugAarMetadata`:
+  ```text
+  Could not find com.github.yausername.youtubedl-android:library:0.17.0
+  Could not find com.github.yausername.youtubedl-android:ffmpeg:0.17.0
+  Searched in: dl.google.com, repo.maven.apache.org, jitpack.io
+  ```
+
+#### 2. Technical Root Cause Analysis
+- The legacy `yausername/youtubedl-android` group ID on JitPack is deprecated and unmaintained. The active, production-ready build for Android is published directly to Maven Central under `io.github.junkfood02.youtubedl-android`.
+
+#### 3. Exact Solution & Code Implementation
+- Migrated dependencies in `app/build.gradle.kts` to:
+  ```kotlin
+  implementation("io.github.junkfood02.youtubedl-android:library:0.17.4")
+  implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.4")
+  ```
+- Added `android:extractNativeLibs="true"` to `AndroidManifest.xml` as required for native NDK binary extraction.
+- Updated Proguard rules for `io.github.junkfood02.youtubedl_android.**`.
+
+---
+
 ### 📌 [ANDROID-FIX-003] Android 15 & 16 (API 35/36) Edge-to-Edge & SDK Optimizations
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/build.gradle.kts`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`

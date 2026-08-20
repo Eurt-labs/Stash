@@ -75,9 +75,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // youtubedl-android Native Engine (yt-dlp + ffmpeg compiled for Android NDK)
-    implementation("com.github.yausername.youtubedl-android:library:0.17.0")
-    implementation("com.github.yausername.youtubedl-android:ffmpeg:0.17.0")
+    // youtubedl-android Native Engine (yt-dlp + ffmpeg compiled for Android NDK on Maven Central)
+    implementation("io.github.junkfood02.youtubedl-android:library:0.17.4")
+    implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.4")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
