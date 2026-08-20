@@ -20,16 +20,20 @@
 
 ### 📌 [ANDROID-FIX-002] Incompatible Gradle JVM Version & Wrapper Upgrade
 - **Date**: 2026-08-20
-- **Files Modified**: `Stash-Android/gradle/wrapper/gradle-wrapper.properties`
+- **Files Modified**: `Stash-Android/gradle/wrapper/gradle-wrapper.properties`, `Stash-Android/gradle.properties`, `Stash-Android/.idea/gradle.xml`
 - **Severity**: Build Environment Setup
 
 #### 1. Problem Description & Symptoms
 - Android Studio showed `Incompatible Gradle JVM version` error when syncing:
-  `The project's Gradle version 8.4 is incompatible with the Gradle JVM version currently selected to run Gradle build.`
+  `The project's Gradle version 8.9 is incompatible with the Gradle JVM version 25 currently selected to run Gradle build.`
 
-#### 2. Technical Solution & Implementation
+#### 2. Technical Root Cause Analysis
+- The latest Android Studio Canary build bundles OpenJDK 25.0.2 preview, which is too new for Gradle 8.9 (Gradle 8.9 officially supports Java 17 and Java 21 LTS).
+
+#### 3. Exact Solution & Code Implementation
 - Upgraded Gradle distribution wrapper to `gradle-8.9-bin.zip` in `gradle-wrapper.properties`.
-- Documented steps to select the compatible embedded Android Studio JDK (JDK 17/21).
+- Added `org.gradle.java.home=C:\\Users\\Dhruv Saraswat\\.jdks\\jbr-21.0.11` to `gradle.properties` to automatically lock builds to Java 21 LTS.
+- Configured `.idea/gradle.xml` to `jbr-21`.
 
 ---
 
