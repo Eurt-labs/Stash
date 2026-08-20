@@ -2,6 +2,25 @@
 
 ---
 
+### 📌 [BUG-031] The "Default Client" Trap (Error 152 on YT Music)
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts
+- **Severity**: High
+
+#### 1. Problem Description & Observed Symptoms
+Even after adding the 	v client to the front of the cascade, the user encountered: ERROR: [youtube] r7Rn4ryE_w8: This video is unavailable. Error code: 152 when downloading a YouTube Music URL. During metadata extraction, it threw The page needs to be reloaded. (CAPTCHA block).
+
+#### 2. Technical Root Cause Analysis
+The previous extractor-args string was: youtube:player_client=tv,web_embedded,web_creator,default. 
+The default argument acts as a macro for yt-dlp. For standard videos, it appends clients like ndroid and ios. However, for music.youtube.com URLs, it automatically appends web_music and ios_music. 
+Because the user's IP is heavily shadowed by YouTube, the web_music and web_creator clients returned a fatal Error 152 or a CAPTCHA page. In yt-dlp, if *any* client in the cascade sequence throws a fatal error, the *entire* process aborts instantly, throwing away the successful formats already fetched by 	v!
+
+#### 3. Exact Solution & Implementation Details
+Removed default and web_creator entirely from the extractor args string.
+The new, strictly controlled cascade is: youtube:player_client=tv,android,web_embedded.
+This prevents yt-dlp from ever initializing the blocked web_music, ios, or web_creator clients. If web_embedded fails, it falls back cleanly to the 	v and ndroid clients which bypass the IP blocks, guaranteeing success on both normal and Music URLs.
+
+---
 ### 📌 [BUG-030] Severe Error 152 IP Block & Robust Audio Fallback
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts

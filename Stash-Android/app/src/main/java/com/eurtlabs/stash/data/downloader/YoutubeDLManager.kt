@@ -147,7 +147,7 @@ object YoutubeDLManager {
                 addOption("--force-ipv4")
                 addOption("--flat-playlist")
                 addOption("--dump-json")
-                addOption("--extractor-args", "youtube:player_client=tv,web_embedded,web_creator,default")
+                addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
             }
             
             var lastUpdate = 0L
@@ -257,7 +257,7 @@ object YoutubeDLManager {
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
             addOption("--force-ipv4")
-            addOption("--extractor-args", "youtube:player_client=tv,web_embedded,web_creator,default")
+            addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/18/b")
