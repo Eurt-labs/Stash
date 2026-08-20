@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.eurtlabs.stash"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.eurtlabs.stash"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "2.0.0"
 

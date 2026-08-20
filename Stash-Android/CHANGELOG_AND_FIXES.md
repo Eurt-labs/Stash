@@ -2,6 +2,22 @@
 
 ---
 
+### 📌 [ANDROID-FIX-003] Android 15 & 16 (API 35/36) Edge-to-Edge & SDK Optimizations
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/build.gradle.kts`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: Platform Modernization & UX Enhancement
+
+#### 1. Problem Description & Target
+- The user is testing on Android 16 (API 36 preview).
+- Android 15 and 16 enforce mandatory Edge-to-Edge window rendering and require runtime notification permission handling.
+
+#### 2. Technical Solution & Implementation
+- Upgraded `compileSdk` and `targetSdk` to **35** (with forward runtime compatibility for Android 16 API 36).
+- Added `enableEdgeToEdge()` in `MainActivity.kt` with `navigationBarsPadding()` and `statusBarsPadding()` so the UI seamlessly extends underneath translucent gesture bars without letterboxing.
+- Implemented automatic runtime `POST_NOTIFICATIONS` permission prompt on Android 13+ (API 33-36).
+
+---
+
 ### 📌 [ANDROID-FIX-002] Incompatible Gradle JVM Version & Wrapper Upgrade
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/gradle/wrapper/gradle-wrapper.properties`
