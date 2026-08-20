@@ -91,7 +91,8 @@ data class TrackInfo(
     val releaseYear: String? = null,
     val trackNumber: Int? = null,
     val genre: String? = null,
-    val safeFileName: String
+    val safeFileName: String,
+    val playlistName: String? = null
 )
 
 data class ParsedLink(

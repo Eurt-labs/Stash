@@ -125,13 +125,24 @@ export class StashOrchestrator {
     outputDir: string = this.outputDir
   ): DownloadBatch {
     const batchId = crypto.randomUUID()
+    
+    // Subfolder logic for playlists or artist bulk downloads
+    let finalOutputDir = outputDir
+    if (tracks.length > 1) {
+      const subfolderName = tracks[0]?.playlistName || tracks[0]?.artists[0] || name
+      finalOutputDir = path.join(outputDir, FileManager.sanitizeFileName(subfolderName))
+      if (!fs.existsSync(finalOutputDir)) {
+        fs.mkdirSync(finalOutputDir, { recursive: true })
+      }
+    }
+
     const items: DownloadItem[] = tracks.map((track) => ({
       id: crypto.randomUUID(),
       batchId,
       trackInfo: track,
       quality,
       format,
-      outputDir,
+      outputDir: finalOutputDir,
       state: 'QUEUED' as DownloadState,
       progress: 0,
       speed: '',
@@ -143,7 +154,7 @@ export class StashOrchestrator {
       id: batchId,
       name,
       items,
-      outputDir,
+      outputDir: finalOutputDir,
       quality,
       format,
       createdAt: Date.now(),

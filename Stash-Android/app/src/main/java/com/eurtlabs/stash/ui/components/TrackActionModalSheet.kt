@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -89,35 +90,51 @@ fun TrackActionModalSheet(
             .clickable(interactionSource = interactionSource, indication = null) { onDismiss() },
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Highly Refractive Liquid Glass Sheet (Opaque Frosted Core + Refraction Rim)
+        // Liquid Glass Modal Sheet — WebGL shader refraction aesthetic
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp)
-                .shadow(elevation = 24.dp, shape = RoundedCornerShape(34.dp), ambientColor = Color.Black, spotColor = palette.primary)
-                .clip(RoundedCornerShape(34.dp))
+                .padding(horizontal = 14.dp, vertical = 16.dp)
+                .shadow(elevation = 24.dp, shape = RoundedCornerShape(30.dp), ambientColor = Color.Black, spotColor = palette.primary)
+                .clip(RoundedCornerShape(30.dp))
                 .background(
                     brush = Brush.verticalGradient(
                         listOf(
-                            Color(0xFF222228),
-                            Color(0xFF16161B),
-                            Color(0xFF0E0E12)
+                            Color(0xFF1F1F26),   // specular top offset (shader gradient)
+                            Color(0xFF17171C),   // frosted core
+                            Color(0xFF111115)    // bottom edge
                         )
                     )
                 )
+                .drawBehind {
+                    // Inner lens luminance glow (simulates shader lens distortion center brightness)
+                    drawOval(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.04f),
+                                Color.White.copy(alpha = 0.015f),
+                                Color.Transparent
+                            ),
+                            center = Offset(size.width * 0.5f, size.height * 0.2f),
+                            radius = size.width * 0.6f
+                        ),
+                        topLeft = Offset(size.width * 0.1f, 0f),
+                        size = androidx.compose.ui.geometry.Size(size.width * 0.8f, size.height * 0.5f)
+                    )
+                }
                 .border(
-                    width = 1.5.dp,
+                    width = 1.dp,
                     brush = Brush.verticalGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.70f),
-                            Color.White.copy(alpha = 0.20f),
-                            Color.White.copy(alpha = 0.04f)
+                            Color.White.copy(alpha = 0.60f),  // bright meniscus top (rb2 rim)
+                            Color.White.copy(alpha = 0.18f),  // mid fade
+                            Color.White.copy(alpha = 0.03f)   // invisible bottom
                         )
                     ),
-                    shape = RoundedCornerShape(34.dp)
+                    shape = RoundedCornerShape(30.dp)
                 )
                 .clickable(interactionSource = interactionSource, indication = null) { /* Consume taps */ }
-                .padding(22.dp)
+                .padding(20.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),

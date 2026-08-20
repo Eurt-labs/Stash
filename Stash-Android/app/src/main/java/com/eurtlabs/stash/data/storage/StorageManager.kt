@@ -73,4 +73,67 @@ object StorageManager {
             uri.lastPathSegment?.substringAfterLast(":") ?: "Custom Folder"
         }
     }
+
+    fun copyToCustomStorage(context: Context, sourceFile: File, subfolderName: String? = null): Boolean {
+        val customUriStr = getCustomStorageUri(context)
+        if (customUriStr.isNullOrBlank()) return false
+        
+        try {
+            val treeUri = Uri.parse(customUriStr)
+            var docFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return false
+            
+            // If subfolder is provided, find or create it
+            if (!subfolderName.isNullOrBlank()) {
+                val subfolder = docFile.findFile(subfolderName) ?: docFile.createDirectory(subfolderName)
+                if (subfolder != null) {
+                    docFile = subfolder
+                }
+            }
+            
+            // Check if file already exists in the SAF directory and delete it to overwrite
+            val existingFile = docFile.findFile(sourceFile.name)
+            existingFile?.delete()
+            
+            val mimeType = if (sourceFile.extension.equals("mp4", true) || sourceFile.extension.equals("mkv", true) || sourceFile.extension.equals("webm", true)) {
+                "video/${sourceFile.extension}"
+            } else {
+                "audio/${sourceFile.extension}"
+            }
+            
+            val newFile = docFile.createFile(mimeType, sourceFile.name) ?: return false
+            
+            context.contentResolver.openOutputStream(newFile.uri)?.use { outStream ->
+                sourceFile.inputStream().use { inStream ->
+                    inStream.copyTo(outStream)
+                }
+            }
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun deleteFromCustomStorage(context: Context, fileName: String, subfolderName: String? = null): Boolean {
+        val customUriStr = getCustomStorageUri(context)
+        if (customUriStr.isNullOrBlank()) return false
+        
+        try {
+            val treeUri = Uri.parse(customUriStr)
+            var docFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return false
+            
+            if (!subfolderName.isNullOrBlank()) {
+                val subfolder = docFile.findFile(subfolderName)
+                if (subfolder != null) {
+                    docFile = subfolder
+                }
+            }
+            
+            val existingFile = docFile.findFile(fileName)
+            return existingFile?.delete() ?: false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
 }

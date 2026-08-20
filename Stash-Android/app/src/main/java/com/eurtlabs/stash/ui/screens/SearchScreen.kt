@@ -67,6 +67,7 @@ fun SearchScreen(
     selectedFilter: SearchFilter,
     onFilterChanged: (SearchFilter) -> Unit,
     onSearch: (String) -> Unit,
+    onClearSearch: () -> Unit = {},
     onDownloadItem: (SearchResultItem) -> Unit,
     onDownloadAll: (List<SearchResultItem>, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
@@ -81,9 +82,16 @@ fun SearchScreen(
         "Billie Eilish",
         "Taylor Swift",
         "Travis Scott",
+        "Travis Scott",
         "Eminem",
         "Lofi Hip Hop"
     )
+
+    if (searchResults.isNotEmpty()) {
+        androidx.activity.compose.BackHandler {
+            onClearSearch()
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),

@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -64,11 +65,218 @@ import com.eurtlabs.stash.data.model.DownloadFormat
 import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.MediaType
 import com.eurtlabs.stash.data.model.StashSettings
+import com.eurtlabs.stash.ui.components.LiquidGlassCard
+import com.eurtlabs.stash.ui.components.LiquidGlassPill
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 import com.eurtlabs.stash.ui.theme.getThemePalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import kotlin.math.roundToInt
+
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
+@Composable
+fun <T> AnimatedSelectorTab(
+    items: List<T>,
+    selectedItem: T,
+    onItemSelected: (T) -> Unit,
+    itemContent: @Composable (T, Boolean) -> Unit
+) {
+    var itemLayouts by remember { mutableStateOf(mapOf<T, Pair<Float, Float>>()) }
+    var dragXOffset by remember { mutableStateOf<Float?>(null) }
+    val scrollState = rememberScrollState()
+    var viewportWidth by remember { mutableStateOf(0f) }
+    
+    val selectedLayout = itemLayouts[selectedItem] ?: Pair(0f, 0f)
+    val targetOffset = selectedLayout.first
+    val targetWidth = selectedLayout.second
+    
+    val dragTargetOffset = dragXOffset?.coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f) ?: targetOffset
+    
+    // Find closest item for width interpolation during drag
+    val closestItemEntry = if (dragXOffset != null) {
+        val dragCenter = dragXOffset!! + targetWidth / 2
+        itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }
+    } else null
+    val dragTargetWidth = closestItemEntry?.value?.second ?: targetWidth
+    
+    val animatedOffset by animateFloatAsState(
+        targetValue = dragTargetOffset,
+        animationSpec = if (dragXOffset != null) {
+            androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
+        } else {
+            tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        },
+        label = "offset"
+    )
+    val animatedWidth by animateFloatAsState(
+        targetValue = dragTargetWidth,
+        animationSpec = if (dragXOffset != null) {
+            androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
+        } else {
+            tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        },
+        label = "width"
+    )
+
+    // Calculate squish effect
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val distanceToTarget = Math.abs(animatedOffset - dragTargetOffset)
+    val isDragging = dragXOffset != null
+    val isTraveling = distanceToTarget > 2f && !isDragging
+    
+    // Continuous Auto-scroll Effect during Drag
+    androidx.compose.runtime.LaunchedEffect(isDragging, viewportWidth) {
+        if (isDragging && viewportWidth > 0f) {
+            while (true) {
+                val currentDragX = dragXOffset ?: break
+                
+                val scrollPos = scrollState.value.toFloat()
+                val visibleLeft = scrollPos
+                val visibleRight = scrollPos + viewportWidth
+                val bubbleLeft = currentDragX
+                val bubbleRight = bubbleLeft + targetWidth
+                val edgeThreshold = 80f
+                
+                var scrollDelta = 0f
+                if (bubbleRight > visibleRight - edgeThreshold) {
+                    val depth = (bubbleRight - (visibleRight - edgeThreshold)) / edgeThreshold
+                    scrollDelta = 12f * depth.coerceIn(0.1f, 1f)
+                } else if (bubbleLeft < visibleLeft + edgeThreshold) {
+                    val depth = ((visibleLeft + edgeThreshold) - bubbleLeft) / edgeThreshold
+                    scrollDelta = -12f * depth.coerceIn(0.1f, 1f)
+                }
+                
+                if (scrollDelta != 0f) {
+                    scrollState.dispatchRawDelta(scrollDelta)
+                    dragXOffset = (currentDragX + scrollDelta).coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f)
+                }
+                
+                kotlinx.coroutines.delay(16)
+            }
+        }
+    }
+    
+    val targetScaleX = if (isDragging) 1.05f else if (isTraveling) 1.15f else 1.0f
+    val targetScaleY = if (isDragging) 0.95f else if (isTraveling) 0.85f else 1.0f
+    
+    val liquidStretchX by animateFloatAsState(
+        targetValue = targetScaleX,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+        label = "stretchX"
+    )
+    val liquidShrinkY by animateFloatAsState(
+        targetValue = targetScaleY,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+        label = "shrinkY"
+    )
+
+    val palette = com.eurtlabs.stash.ui.theme.LocalStashPalette.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { 
+                val w = it.size.width.toFloat()
+                if (viewportWidth != w) viewportWidth = w
+            }
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        palette.surfaceVariant,
+                        palette.surface
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.05f))),
+                RoundedCornerShape(24.dp)
+            )
+            .padding(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.horizontalScroll(scrollState),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box {
+                if (dragTargetWidth > 0f) {
+                    LiquidGlassPill(
+                        isSelected = true,
+                        cornerRadius = 20.dp,
+                        modifier = Modifier
+                            .offset { androidx.compose.ui.unit.IntOffset(animatedOffset.roundToInt(), 0) }
+                            .width(with(density) { animatedWidth.toDp() })
+                            .height(38.dp)
+                            .scale(scaleX = liquidStretchX, scaleY = liquidShrinkY)
+                    ) { }
+                }
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items.forEach { item ->
+                        val isSelected = selectedItem == item
+                        val scale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.02f else 0.98f,
+                            animationSpec = tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            label = "scale"
+                        )
+                        Box(
+                            modifier = Modifier
+                                .onGloballyPositioned { coords -> 
+                                    val current = itemLayouts[item]
+                                    val nextX = coords.positionInParent().x
+                                    val nextWidth = coords.size.width.toFloat()
+                                    if (current?.first != nextX || current?.second != nextWidth) {
+                                        itemLayouts = itemLayouts + (item to Pair(nextX, nextWidth))
+                                    }
+                                }
+                                .height(38.dp)
+                                .scale(scale)
+                                .clip(RoundedCornerShape(20.dp))
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.pointerInput(Unit) {
+                                            detectHorizontalDragGestures(
+                                                onDragStart = { dragXOffset = animatedOffset },
+                                                onDragEnd = {
+                                                    if (dragXOffset != null) {
+                                                        val dragCenter = dragXOffset!! + targetWidth / 2
+                                                        val closest = itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }?.key
+                                                        if (closest != null) onItemSelected(closest)
+                                                    }
+                                                    dragXOffset = null
+                                                },
+                                                onDragCancel = { dragXOffset = null },
+                                                onHorizontalDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    val current = dragXOffset ?: animatedOffset
+                                                    dragXOffset = (current + dragAmount).coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f)
+                                                }
+                                            )
+                                        }
+                                    } else Modifier
+                                )
+                                .clickable { onItemSelected(item) }
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            itemContent(item, isSelected)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun SettingsScreen(
@@ -103,11 +311,26 @@ fun SettingsScreen(
 
     var updateStatus by remember { mutableStateOf<String?>(null) }
     var isUpdating by remember { mutableStateOf(false) }
+    var appUpdateStatus by remember { mutableStateOf<String?>(null) }
+    var isCheckingAppUpdate by remember { mutableStateOf(false) }
+    var cacheSize by remember { mutableStateOf("Calculating...") }
     val scope = rememberCoroutineScope()
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val sizeBytes = context.cacheDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                val sizeMb = sizeBytes / (1024f * 1024f)
+                cacheSize = if (sizeMb >= 1f) String.format("%.1f MB", sizeMb) else String.format("%d KB", sizeBytes / 1024)
+            } catch (e: Exception) {
+                cacheSize = "Unknown"
+            }
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 90.dp, top = 10.dp, start = 18.dp, end = 18.dp)
+        contentPadding = PaddingValues(bottom = 130.dp, top = 10.dp, start = 18.dp, end = 18.dp)
     ) {
         // Section: Media Mode Toggle with Compact Animated Floating Cloud Capsule
         item {
@@ -121,15 +344,17 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Compact Animated Cloud Liquid Glass Mode Track
+            var modeDragXOffset by remember { mutableStateOf<Float?>(null) }
+            
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp))
                     .background(
-                        brush = Brush.verticalGradient(
+                        Brush.verticalGradient(
                             listOf(
-                                Color(0xFF1B1B20),
-                                Color(0xFF111115)
+                                palette.surfaceVariant,
+                                palette.surface
                             )
                         )
                     )
@@ -142,36 +367,58 @@ fun SettingsScreen(
                     )
                     .padding(4.dp)
             ) {
+                val density = androidx.compose.ui.platform.LocalDensity.current
                 val halfWidth = maxWidth / 2
+                val defaultTargetOffset = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth
+                
+                val targetOffset = if (modeDragXOffset != null) {
+                    val dragDp = with(density) { modeDragXOffset!!.toDp() }
+                    (dragDp - halfWidth / 2).coerceIn(0.dp, halfWidth)
+                } else {
+                    defaultTargetOffset
+                }
+                
                 val bubbleOffset by animateDpAsState(
-                    targetValue = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth,
-                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 400f),
+                    targetValue = targetOffset,
+                    animationSpec = if (modeDragXOffset != null) {
+                        androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
+                    } else {
+                        tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    },
                     label = "modeBubble"
                 )
 
-                // Floating Cloud Capsule
-                Box(
+                // Calculate squish effect
+                val distanceToTarget = with(density) { Math.abs(bubbleOffset.toPx() - targetOffset.toPx()) }
+                val isDragging = modeDragXOffset != null
+                val isTraveling = distanceToTarget > 2f && !isDragging
+                
+                val targetScaleX = if (isDragging) 1.05f else if (isTraveling) 1.15f else 1.0f
+                val targetScaleY = if (isDragging) 0.95f else if (isTraveling) 0.85f else 1.0f
+                
+                val liquidStretchX by animateFloatAsState(
+                    targetValue = targetScaleX,
+                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+                    label = "stretchX"
+                )
+                val liquidShrinkY by animateFloatAsState(
+                    targetValue = targetScaleY,
+                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+                    label = "shrinkY"
+                )
+
+                // Floating Cloud Capsule (LiquidGlassPill for selection thumb)
+                LiquidGlassPill(
+                    isSelected = true,
+                    cornerRadius = 20.dp,
                     modifier = Modifier
                         .offset(x = bubbleOffset)
                         .width(halfWidth)
                         .height(38.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            brush = Brush.verticalGradient(
-                                listOf(
-                                    palette.surfaceVariant.copy(alpha = 0.95f),
-                                    palette.surface.copy(alpha = 0.85f)
-                                )
-                            )
-                        )
-                        .border(
-                            width = 1.2.dp,
-                            brush = Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.10f))
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                )
+                        .scale(scaleX = liquidStretchX, scaleY = liquidShrinkY)
+                ) {
+                    // Empty body, just the glass pill
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -181,7 +428,7 @@ fun SettingsScreen(
                         val isSelected = currentMediaType == mode
                         val scale by animateFloatAsState(
                             targetValue = if (isSelected) 1.02f else 0.98f,
-                            animationSpec = spring(stiffness = 500f),
+                            animationSpec = tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "scale"
                         )
 
@@ -191,6 +438,29 @@ fun SettingsScreen(
                                 .height(38.dp)
                                 .scale(scale)
                                 .clip(RoundedCornerShape(20.dp))
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.pointerInput(Unit) {
+                                            detectHorizontalDragGestures(
+                                                onDragStart = { modeDragXOffset = with(density) { bubbleOffset.toPx() } },
+                                                onDragEnd = {
+                                                    if (modeDragXOffset != null) {
+                                                        val totalWidth = size.width.toFloat()
+                                                        val isRightSide = modeDragXOffset!! > totalWidth / 2
+                                                        onSelectMediaType(if (isRightSide) MediaType.VIDEO else MediaType.AUDIO)
+                                                    }
+                                                    modeDragXOffset = null
+                                                },
+                                                onDragCancel = { modeDragXOffset = null },
+                                                onHorizontalDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    val current = modeDragXOffset ?: with(density) { bubbleOffset.toPx() }
+                                                    modeDragXOffset = (current + dragAmount).coerceIn(0f, size.width.toFloat())
+                                                }
+                                            )
+                                        }
+                                    } else Modifier
+                                )
                                 .clickable { onSelectMediaType(mode) },
                             contentAlignment = Alignment.Center
                         ) {
@@ -228,83 +498,43 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(availableFormats) { format ->
-                    val isSelected = currentFormat == format
-                    val scale by animateFloatAsState(
-                        targetValue = if (isSelected) 1.02f else 1.0f,
-                        animationSpec = spring(stiffness = 500f),
-                        label = "formatScale"
+            AnimatedSelectorTab(
+                items = availableFormats,
+                selectedItem = currentFormat,
+                onItemSelected = { onSelectFormat(it) }
+            ) { format, isSelected ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = format.ext.uppercase(),
+                        color = if (isSelected) palette.primary else palette.textPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
                     )
-
-                    Box(
-                        modifier = Modifier
-                            .scale(scale)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    if (isSelected) {
-                                        listOf(
-                                            palette.surfaceVariant.copy(alpha = 0.95f),
-                                            palette.surface.copy(alpha = 0.85f)
-                                        )
-                                    } else {
-                                        listOf(
-                                            Color(0xFF1B1B20),
-                                            Color(0xFF111115)
-                                        )
-                                    }
-                                )
-                            )
-                            .border(
-                                width = if (isSelected) 1.3.dp else 1.dp,
-                                brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(Color.White.copy(alpha = 0.65f), Color.White.copy(alpha = 0.15f))
-                                    else listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
-                                ),
-                                shape = RoundedCornerShape(18.dp)
-                            )
-                            .clickable { onSelectFormat(format) }
-                            .padding(horizontal = 16.dp, vertical = 9.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    if (format == DownloadFormat.FLAC || format == DownloadFormat.WAV) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(palette.primary.copy(alpha = 0.20f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = format.ext.uppercase(),
-                                color = if (isSelected) palette.primary else palette.textPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
+                                text = "LOSSLESS",
+                                color = palette.primary,
+                                fontSize = 7.5.sp,
+                                fontWeight = FontWeight.Black
                             )
-                            if (format == DownloadFormat.FLAC || format == DownloadFormat.WAV) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(5.dp))
-                                        .background(palette.primary.copy(alpha = 0.20f))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                ) {
-                                    Text(
-                                        text = "LOSSLESS",
-                                        color = palette.primary,
-                                        fontSize = 7.5.sp,
-                                        fontWeight = FontWeight.Black
-                                    )
-                                }
-                            }
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = palette.primary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                            }
                         }
+                    }
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = palette.primary,
+                            modifier = Modifier.size(13.dp)
+                        )
                     }
                 }
             }
@@ -323,23 +553,10 @@ fun SettingsScreen(
 
             if (isLosslessAudio) {
                 // FLAC / WAV: Compact Lossless Studio Audio Banner
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(
-                            brush = Brush.verticalGradient(
-                                listOf(palette.primary.copy(alpha = 0.16f), Color(0xFF131317))
-                            )
-                        )
-                        .border(
-                            width = 1.dp,
-                            brush = Brush.verticalGradient(
-                                listOf(palette.primary.copy(alpha = 0.55f), Color.White.copy(alpha = 0.08f))
-                            ),
-                            shape = RoundedCornerShape(18.dp)
-                        )
-                        .padding(14.dp)
+                LiquidGlassCard(
+                    cornerRadius = 18.dp,
+                    innerPadding = 14.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -368,70 +585,29 @@ fun SettingsScreen(
                 }
             } else {
                 // Horizontal Compact Cloud Lossy Bitrates or Video Resolutions
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(availableQualities) { quality ->
-                        val isSelected = currentQuality == quality
-                        val scale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.02f else 1.0f,
-                            animationSpec = spring(stiffness = 500f),
-                            label = "qualityScale"
+                AnimatedSelectorTab(
+                    items = availableQualities,
+                    selectedItem = currentQuality,
+                    onItemSelected = { onSelectQuality(it) }
+                ) { quality, isSelected ->
+                    val shortLabel = quality.label.substringBefore(" (")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(
+                            text = shortLabel,
+                            color = if (isSelected) palette.primary else palette.textPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.5.sp
                         )
-
-                        val shortLabel = quality.label.substringBefore(" (")
-
-                        Box(
-                            modifier = Modifier
-                                .scale(scale)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        if (isSelected) {
-                                            listOf(
-                                                palette.surfaceVariant.copy(alpha = 0.95f),
-                                                palette.surface.copy(alpha = 0.85f)
-                                            )
-                                        } else {
-                                            listOf(
-                                                Color(0xFF1B1B20),
-                                                Color(0xFF111115)
-                                            )
-                                        }
-                                    )
-                                )
-                                .border(
-                                    width = if (isSelected) 1.3.dp else 1.dp,
-                                    brush = Brush.verticalGradient(
-                                        if (isSelected) listOf(Color.White.copy(alpha = 0.65f), Color.White.copy(alpha = 0.15f))
-                                        else listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
-                                    ),
-                                    shape = RoundedCornerShape(18.dp)
-                                )
-                                .clickable { onSelectQuality(quality) }
-                                .padding(horizontal = 14.dp, vertical = 9.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                Text(
-                                    text = shortLabel,
-                                    color = if (isSelected) palette.primary else palette.textPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.5.sp
-                                )
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = palette.primary,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                }
-                            }
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = palette.primary,
+                                modifier = Modifier.size(13.dp)
+                            )
                         }
                     }
                 }
@@ -449,50 +625,30 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(ColorTheme.values()) { theme ->
-                    val isSelected = settings.theme == theme
-                    val themePal = getThemePalette(theme)
-
+            AnimatedSelectorTab(
+                items = ColorTheme.values().toList(),
+                selectedItem = settings.theme,
+                onItemSelected = { onSelectTheme(it) }
+            ) { theme, isSelected ->
+                val themePal = getThemePalette(theme)
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    listOf(themePal.surface.copy(alpha = 0.95f), themePal.background)
-                                )
-                            )
-                            .border(
-                                width = if (isSelected) 1.8.dp else 1.dp,
-                                color = if (isSelected) palette.primary else Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(18.dp)
-                            )
-                            .clickable { onSelectTheme(theme) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(7.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(themePal.primary)
-                                    .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                            )
-                            Text(
-                                text = theme.displayName,
-                                color = themePal.textPrimary,
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
-                        }
-                    }
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(themePal.primary)
+                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                    )
+                    Text(
+                        text = theme.displayName,
+                        color = themePal.textPrimary,
+                        fontSize = 11.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    )
                 }
             }
 
@@ -508,27 +664,12 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            Box(
+            LiquidGlassCard(
+                cornerRadius = 20.dp,
+                innerPadding = 14.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(
-                                Color(0xFF1B1B20),
-                                Color(0xFF111115)
-                            )
-                        )
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.05f))
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
                     .clickable { onChangeStorage() }
-                    .padding(14.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -583,28 +724,15 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(
-                                Color(0xFF1B1B20),
-                                Color(0xFF111115)
-                            )
-                        )
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.05f))
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            LiquidGlassCard(
+                cornerRadius = 20.dp,
+                innerPadding = 14.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                 // Export Logs Action
                 Row(
                     modifier = Modifier
@@ -670,7 +798,7 @@ fun SettingsScreen(
                             fontSize = 12.5.sp
                         )
                         Text(
-                            text = updateStatus ?: "Fetch latest binary updates from official release channel",
+                            text = updateStatus ?: "Fetch latest binary updates from official yt-dlp GitHub release channel",
                             color = if (updateStatus != null) palette.primary else palette.textSecondary,
                             fontSize = 10.5.sp
                         )
@@ -682,9 +810,149 @@ fun SettingsScreen(
                         fontSize = 11.5.sp
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                // Check App Update Action
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(palette.surfaceVariant)
+                        .clickable {
+                            if (!isCheckingAppUpdate) {
+                                isCheckingAppUpdate = true
+                                appUpdateStatus = "Checking GitHub..."
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        val url = java.net.URL("https://api.github.com/repos/Eurt-labs/Stash/releases/latest")
+                                        val connection = url.openConnection() as java.net.HttpURLConnection
+                                        connection.requestMethod = "GET"
+                                        connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                                        
+                                        if (connection.responseCode == 200) {
+                                            val response = connection.inputStream.bufferedReader().use { it.readText() }
+                                            val tagMatch = Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"").find(response)
+                                            val urlMatch = Regex("\"html_url\"\\s*:\\s*\"([^\"]+)\"").find(response)
+                                            
+                                            val latestVersion = tagMatch?.groupValues?.get(1)
+                                            val releaseUrl = urlMatch?.groupValues?.get(1)
+                                            
+                                            withContext(Dispatchers.Main) {
+                                                if (latestVersion != null && releaseUrl != null) {
+                                                    val currentVersion = try {
+                                                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "v2.0.0"
+                                                    } catch (e: Exception) { "v2.0.0" }
+                                                    
+                                                    val normLatest = latestVersion.removePrefix("v")
+                                                    val normCurrent = currentVersion.removePrefix("v")
+                                                    
+                                                    if (normLatest != normCurrent) {
+                                                        appUpdateStatus = "Update found: $latestVersion!"
+                                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(releaseUrl))
+                                                        context.startActivity(intent)
+                                                    } else {
+                                                        appUpdateStatus = "You are on the latest version ($currentVersion)"
+                                                    }
+                                                } else {
+                                                    appUpdateStatus = "Could not parse release info"
+                                                }
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                appUpdateStatus = "No updates found (HTTP ${connection.responseCode})"
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            appUpdateStatus = "Network error: ${e.message}"
+                                        }
+                                    } finally {
+                                        withContext(Dispatchers.Main) {
+                                            isCheckingAppUpdate = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Check for App Updates",
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.5.sp
+                        )
+                        Text(
+                            text = appUpdateStatus ?: "Check GitHub for new Stash App releases",
+                            color = if (appUpdateStatus != null) palette.primary else palette.textSecondary,
+                            fontSize = 10.5.sp
+                        )
+                    }
+                    Text(
+                        text = if (isCheckingAppUpdate) "..." else "Check",
+                        color = palette.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
+                    )
+                }
+
+                // Clear Cache Storage Action
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(palette.surfaceVariant)
+                        .clickable {
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    context.cacheDir.deleteRecursively()
+                                    context.cacheDir.mkdirs() // Recreate the directory just in case
+                                    
+                                    // Recalculate cache size
+                                    val sizeBytes = context.cacheDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                                    val sizeMb = sizeBytes / (1024f * 1024f)
+                                    val newSize = if (sizeMb >= 1f) String.format("%.1f MB", sizeMb) else String.format("%d KB", sizeBytes / 1024)
+                                    
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        cacheSize = newSize
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        cacheSize = "Error"
+                                    }
+                                }
+                            }
+                        }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Clear Cache Storage",
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.5.sp
+                        )
+                        Text(
+                            text = "Frees up space by deleting temporary thumbnails, logs, and interrupted download chunks ($cacheSize)",
+                            color = palette.textSecondary,
+                            fontSize = 10.5.sp
+                        )
+                    }
+                    Text(
+                        text = "Clear 🗑",
+                        color = palette.error,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
 
             // Footer Text
             Row(
@@ -693,7 +961,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Stash Media Downloader",
+                    text = "Developed by @DhruvSaraswat",
                     color = palette.textSecondary.copy(alpha = 0.6f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium

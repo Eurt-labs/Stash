@@ -24,9 +24,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SwipeToDismissBox
@@ -141,72 +141,10 @@ fun BatchQueueList(
             ) {
                 batches.forEach { batch ->
                     item(key = "header_${batch.id}") {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = batch.name,
-                                    color = palette.textPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = "${batch.items.size} track(s) • ${batch.format.name} • ${batch.quality.label.substringBefore(" ")}",
-                                    color = palette.textSecondary,
-                                    fontSize = 11.5.sp
-                                )
-                            }
-
-                            // Pill-shaped Clear button (Clears from Queue without deleting Library)
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(palette.surfaceVariant)
-                                    .border(
-                                        width = 1.dp,
-                                        brush = Brush.verticalGradient(
-                                            listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
-                                        ),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .clickable { onRemoveBatch(batch.id) }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = "Clear from Queue",
-                                        tint = palette.textSecondary,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = "Clear",
-                                        color = palette.textSecondary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Swipeable Track Item Rows
-                    items(items = batch.items, key = { it.id }) { item ->
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
                                 if (value == SwipeToDismissBoxValue.EndToStart || value == SwipeToDismissBoxValue.StartToEnd) {
-                                    onDeleteItem(item.id)
+                                    onRemoveBatch(batch.id)
                                     true
                                 } else false
                             }
@@ -217,24 +155,107 @@ fun BatchQueueList(
                             backgroundContent = {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 18.dp, vertical = 5.dp)
-                                        .clip(RoundedCornerShape(20.dp))
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(
                                             brush = Brush.horizontalGradient(
                                                 listOf(
-                                                    palette.error.copy(alpha = 0.25f),
-                                                    palette.error.copy(alpha = 0.35f)
+                                                    palette.error.copy(alpha = 0.15f),
+                                                    palette.error.copy(alpha = 0.25f)
                                                 )
                                             )
                                         )
                                         .border(
                                             width = 1.dp,
-                                            color = palette.error.copy(alpha = 0.40f),
-                                            shape = RoundedCornerShape(20.dp)
+                                            color = palette.error.copy(alpha = 0.30f),
+                                            shape = RoundedCornerShape(12.dp)
                                         )
-                                        .padding(horizontal = 20.dp),
+                                        .padding(horizontal = 14.dp),
                                     contentAlignment = if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val clearColor = palette.error
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteOutline,
+                                            contentDescription = "Clear",
+                                            tint = clearColor,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            text = "Clear",
+                                            color = clearColor,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(palette.background) // Hide background swipe
+                                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = batch.name,
+                                        color = palette.textPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "${batch.items.size} track(s) • ${batch.format.name} • ${batch.quality.label.substringBefore(" ")}",
+                                        color = palette.textSecondary,
+                                        fontSize = 11.5.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Track Item Rows (Pop-out Modal on Click, Swipe to Delete)
+                    items(items = batch.items, key = { it.id }) { item ->
+                        val itemDismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                if (value == SwipeToDismissBoxValue.EndToStart || value == SwipeToDismissBoxValue.StartToEnd) {
+                                    onDeleteItem(item.id)
+                                    true
+                                } else false
+                            }
+                        )
+
+                        SwipeToDismissBox(
+                            state = itemDismissState,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                            brush = Brush.horizontalGradient(
+                                                listOf(
+                                                    palette.error.copy(alpha = 0.15f),
+                                                    palette.error.copy(alpha = 0.25f)
+                                                )
+                                            )
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = palette.error.copy(alpha = 0.30f),
+                                            shape = RoundedCornerShape(18.dp)
+                                        )
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = if (itemDismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -242,26 +263,28 @@ fun BatchQueueList(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.DeleteOutline,
-                                            contentDescription = "Remove from Queue",
+                                            contentDescription = "Clear",
                                             tint = palette.error,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(24.dp)
                                         )
                                         Text(
-                                            text = "Remove",
+                                            text = "Clear",
                                             color = palette.error,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp
+                                            fontSize = 13.sp
                                         )
                                     }
                                 }
                             }
                         ) {
-                            TrackCardItem(
-                                item = item,
-                                onClick = {
-                                    selectedItemForModal = item
-                                }
-                            )
+                            Box(modifier = Modifier.background(palette.background)) {
+                                TrackCardItem(
+                                    item = item,
+                                    onClick = {
+                                        selectedItemForModal = item
+                                    }
+                                )
+                            }
                         }
                     }
                 }

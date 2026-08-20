@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,28 +78,29 @@ fun BottomNavBar(
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        // Frosted Glass Island Container
+        // Liquid Glass Island — WebGL shader refraction aesthetic
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(26.dp))
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            palette.surface.copy(alpha = 0.90f),
-                            palette.surfaceVariant.copy(alpha = 0.82f)
+                            palette.surfaceVariant,
+                            palette.surface
                         )
                     )
                 )
                 .border(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.35f),
-                            Color.White.copy(alpha = 0.08f)
+                            Color.White.copy(alpha = 0.50f),
+                            Color.White.copy(alpha = 0.12f),
+                            Color.White.copy(alpha = 0.03f)
                         )
                     ),
-                    shape = RoundedCornerShape(28.dp)
+                    shape = RoundedCornerShape(26.dp)
                 )
                 .padding(vertical = 6.dp, horizontal = 6.dp)
         ) {
@@ -135,64 +137,63 @@ fun BottomNavBar(
                 val tabCount = NavigationTab.values().size
                 val tabWidth = totalWidth / tabCount
                 val bubbleWidth = (tabWidth - 6.dp).coerceAtLeast(54.dp)
-                val bubbleHeight = 36.dp
+                val bubbleHeight = 54.dp // Increased to cover both icon and text
 
                 val defaultOffset = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2
-                val animatedOffset by animateDpAsState(
-                    targetValue = defaultOffset,
-                    animationSpec = spring(
-                        dampingRatio = 0.80f,
-                        stiffness = 320f
-                    ),
-                    label = "bubbleSpring"
-                )
-
-                val currentBubbleOffset = if (dragXOffset != null) {
+                val targetOffset = if (dragXOffset != null) {
                     val dragDp = with(density) { dragXOffset!!.toDp() }
                     (dragDp - bubbleWidth / 2).coerceIn(0.dp, totalWidth - bubbleWidth)
                 } else {
-                    animatedOffset
+                    defaultOffset
                 }
 
-                val isDragging = dragXOffset != null
-                val liquidStretchX by animateFloatAsState(
-                    targetValue = if (isDragging) 1.08f else 1.0f,
-                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 300f),
-                    label = "liquidStretch"
+                val animatedOffset by animateDpAsState(
+                    targetValue = targetOffset,
+                    animationSpec = if (dragXOffset != null) {
+                        androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
+                    } else {
+                        tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    },
+                    label = "bubbleSpring"
                 )
 
-                // Refractive Liquid Glass Bubble with Ambient Glow
-                Box(
+                val currentBubbleOffset = animatedOffset
+                val isDragging = dragXOffset != null
+                
+                // Determine if we are actively traveling to a new target
+                val distanceToTarget = with(density) { Math.abs(animatedOffset.toPx() - targetOffset.toPx()) }
+                val isTraveling = distanceToTarget > 2f && !isDragging
+                
+                val targetScaleX = if (isDragging) 1.05f else if (isTraveling) 1.15f else 1.0f
+                val targetScaleY = if (isDragging) 0.95f else if (isTraveling) 0.85f else 1.0f
+                
+                val liquidStretchX by animateFloatAsState(
+                    targetValue = targetScaleX,
+                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+                    label = "stretchX"
+                )
+                val liquidShrinkY by animateFloatAsState(
+                    targetValue = targetScaleY,
+                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
+                    label = "shrinkY"
+                )
+
+                // Liquid Glass Selection Bubble — specular rim + lens glow
+                LiquidGlassPill(
+                    isSelected = true,
+                    cornerRadius = 24.dp,
                     modifier = Modifier
-                        .offset(x = currentBubbleOffset, y = 2.dp)
+                        .offset(x = currentBubbleOffset, y = 0.dp)
                         .width(bubbleWidth)
                         .height(bubbleHeight)
-                        .scale(scaleX = liquidStretchX, scaleY = 1.0f)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.28f),
-                                    Color.White.copy(alpha = 0.08f),
-                                    Color.White.copy(alpha = 0.20f)
-                                )
-                            )
-                        )
-                        .border(
-                            width = 1.2.dp,
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.70f),
-                                    Color.White.copy(alpha = 0.15f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                )
+                        .scale(scaleX = liquidStretchX, scaleY = liquidShrinkY)
+                ) {
+                    // Empty body
+                }
 
                 // Tab Items Row
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(bubbleHeight),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -208,38 +209,36 @@ fun BottomNavBar(
 
                         val iconColor by animateColorAsState(
                             targetValue = if (isSelected) palette.textPrimary else palette.textSecondary.copy(alpha = 0.65f),
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
+                            animationSpec = tween(durationMillis = 350, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "iconColor"
                         )
 
                         val labelColor by animateColorAsState(
                             targetValue = if (isSelected) palette.textPrimary else palette.textSecondary.copy(alpha = 0.65f),
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
+                            animationSpec = tween(durationMillis = 350, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "labelColor"
                         )
 
                         val itemScale by animateFloatAsState(
                             targetValue = if (isSelected) 1.02f else 0.97f,
-                            animationSpec = spring(dampingRatio = 0.80f, stiffness = 300f),
+                            animationSpec = tween(durationMillis = 350, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "itemScale"
                         )
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                             modifier = Modifier
                                 .width(tabWidth)
+                                .height(bubbleHeight)
                                 .scale(itemScale)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) { onTabSelected(tab) }
-                                .padding(vertical = 2.dp)
                         ) {
                             // Icon Area
                             Box(
-                                modifier = Modifier
-                                    .height(bubbleHeight)
-                                    .fillMaxWidth(),
                                 contentAlignment = Alignment.Center
                             ) {
                                 BadgedBox(

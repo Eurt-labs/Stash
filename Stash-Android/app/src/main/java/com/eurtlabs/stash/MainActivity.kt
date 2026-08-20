@@ -183,7 +183,8 @@ class MainActivity : ComponentActivity() {
                                             SearchInputBar(
                                                 isFetching = isFetching,
                                                 fetchingMessage = fetchingMessage,
-                                                onAnalyzeUrl = { url -> viewModel.parseAndEnqueue(url) }
+                                                onAnalyzeUrl = { url -> viewModel.parseAndEnqueue(url) },
+                                                onCancelFetch = { viewModel.cancelFetch() }
                                             )
                                             BatchQueueList(
                                                 batches = batches,
@@ -202,6 +203,7 @@ class MainActivity : ComponentActivity() {
                                             selectedFilter = searchFilter,
                                             onFilterChanged = { viewModel.setSearchFilter(it) },
                                             onSearch = { query -> viewModel.performSearch(query) },
+                                            onClearSearch = { viewModel.clearSearch() },
                                             onDownloadItem = { item ->
                                                 viewModel.enqueueTrackFromSearch(item)
                                                 activeTabState = NavigationTab.QUEUE
@@ -213,7 +215,11 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                     NavigationTab.LIBRARY -> {
-                                        LibraryScreen(batches = libraryBatches)
+                                        LibraryScreen(
+                                            batches = libraryBatches,
+                                            onRemoveFromLibrary = { itemId -> viewModel.deleteLibraryItem(itemId, deleteFile = false) },
+                                            onDeleteFromDevice = { itemId -> viewModel.deleteLibraryItem(itemId, deleteFile = true) }
+                                        )
                                     }
                                     NavigationTab.SETTINGS -> {
                                         SettingsScreen(

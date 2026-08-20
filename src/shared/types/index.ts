@@ -48,6 +48,7 @@ export interface TrackInfo {
   trackNumber?: number
   genre?: string
   safeFileName: string
+  playlistName?: string
 }
 
 export interface ParsedLink {

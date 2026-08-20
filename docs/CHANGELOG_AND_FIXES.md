@@ -1,6 +1,58 @@
 # 📘 Stash Downloader — Master Engineering Changelog, Architecture Guide & Technical Fixes Log
 
 > **Repository**: [https://github.com/Eurt-labs/Stash](https://github.com/Eurt-labs/Stash)  
+> **Application Version**: 2.0.0  
+> **Platform**: Electron + React 18 + TypeScript + Vite + Native Binaries (yt-dlp & FFmpeg)  
+> **Design System**: Liquid Glass Architecture (Ultra-Translucent Frosted Acrylic, Hardware-Accelerated 60fps Canvas Shaders, Dynamic Theming Engine)
+
+---
+
+## 🧭 How to Use and Maintain This Document
+
+This document serves as the **single source of truth** for architectural decisions, historical bug investigations, root-cause analyses, code fixes, and development workflows for Stash Media Downloader.
+
+### 📝 Template for Logging Future Challenges & Fixes
+When resolving new issues or adding features, append an entry following this exact schema:
+
+`markdown
+### [ISSUE-XXX] Short Descriptive Title of Challenge or Feature
+- **Date**: YYYY-MM-DD
+- **Target Files**: path/to/file1.ts, path/to/file2.css
+- **Git Commit**: <commit-hash>
+- **Severity**: Low | Medium | High | Critical
+
+#### 1. Problem Description & Observed Symptoms
+What happened? What error messages or visual defects appeared in the UI or console?
+
+#### 2. Technical Root Cause Analysis
+Why did it happen? Detail the underlying JavaScript, Electron, CSS specificity, Chromium rendering, or binary execution mechanism.
+
+#### 3. Exact Solution & Implementation Details
+How was it fixed? Include before-and-after code diffs or mathematical formulas.
+`
+
+---
+
+### 📌 [FEAT-026] Cross-Platform Playlist & Artist Subfolder Organization
+- **Date**: 2026-08-20
+- **Target Files**: `src/main/features/downloader/DownloadEngine.ts`, `src/main/features/downloader/StashOrchestrator.ts`, `src/shared/types/index.ts`
+- **Severity**: Quality of Life / File Organization
+
+#### 1. Problem Description & Observed Symptoms
+Users were downloading entire playlists or artist discographies, which caused their primary custom storage directory to become cluttered with dozens of loose media files. There was no native organization.
+
+#### 2. Technical Root Cause Analysis
+The architecture utilized a flat file structure logic (outputDir) where all incoming files were dynamically dropped directly into the root chosen download path. yt-dlp's metadata payload contains playlist_title but the application was ignoring it during the JSON parsing phase, thus losing the grouping context.
+
+#### 3. Exact Solution & Implementation Details
+- **Metadata Extraction**: Upgraded jsonToTrackInfo inside DownloadEngine.ts to actively capture json.playlist_title or json.playlist, defaulting to the artist/channel name if a playlist title wasn't applicable. Appended this to TrackInfo type definitions as playlistName.
+- **Pre-download Directory Generation**: Inside StashOrchestrator.ts's enqueueBatch function, logic was injected to intercept batches with 	racks.length > 1. 
+- **Native File Handling**: For these bulk batches, a sanitized subfolderName is calculated. The system verifies existence natively via Node s.existsSync and recursively builds the folder via s.mkdirSync before generating DownloadItems, thus grouping all incoming stream files seamlessly.
+
+---
+# 📘 Stash Downloader — Master Engineering Changelog, Architecture Guide & Technical Fixes Log
+
+> **Repository**: [https://github.com/Eurt-labs/Stash](https://github.com/Eurt-labs/Stash)  
 > **Application Version**: `v2.0.0`  
 > **Platform**: Electron + React 18 + TypeScript + Vite + Native Binaries (`yt-dlp` & `FFmpeg`)  
 > **Design System**: Liquid Glass Architecture (Ultra-Translucent Frosted Acrylic, Hardware-Accelerated 60fps Canvas Shaders, Dynamic Theming Engine)

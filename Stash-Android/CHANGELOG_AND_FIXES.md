@@ -1,4 +1,121 @@
-# 📱 Stash Android — Changelog & Technical Fixes Archive
+﻿# 📱 Stash Android — Changelog & Technical Fixes Archive
+
+---
+
+### 📌 [FEAT-025] Cross-Platform Playlist & Artist Subfolder Organization
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt
+  - Stash-Android/app/src/main/java/com/eurtlabs/stash/data/model/Models.kt
+  - Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt
+  - Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/StorageManager.kt
+  - Stash/src/shared/types/index.ts
+  - Stash/src/main/features/downloader/DownloadEngine.ts
+  - Stash/src/main/features/downloader/StashOrchestrator.ts
+- **Severity**: Quality of Life / File Organization
+
+#### 1. User Requests Addressed
+- **Subfolder Generation**: Whenever a user pastes a playlist link or an artist discography link, the application now automatically detects the playlist name (or artist name) and groups all downloaded tracks into a cleanly named subfolder within the user's selected storage directory!
+- **Cross-Platform Implementation**: This logic was successfully integrated into both the **Android Application** (via the Storage Access Framework) and the **Desktop Application** (via Node s & Path), keeping storage organization consistent across all platforms!
+
+---
+### 📌 [ANDROID-FEAT-018] Real-time Cache Storage Cleanup & Diagnostics
+- **Date**: 2026-08-20
+- **Files Modified**: Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt
+- **Severity**: Quality of Life / Device Storage Optimization
+
+#### 1. User Requests Addressed
+- **Cache Storage Cleanup**: Added a new diagnostic card inside the Settings screen that allows users to instantly clear the application cache to free up space from temporary thumbnails, ffmpeg processing logs, and interrupted download chunks!
+- **Real-Time Size Calculation**: Engineered a LaunchedEffect that asynchronously crawls the cacheDir via walkTopDown() upon entering Settings, formatting the exact size (e.g., 45.2 MB) and injecting it dynamically into the subtext!
+
+---
+### 📌 [ANDROID-FIX-024] Library File Deletion from Custom SAF Storage
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/StorageManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+- **Severity**: Core Storage / Data Leak Bug
+
+#### 1. Problem Description
+- When swiping to delete a track from the Library and confirming "Delete from Device", the file was only being deleted from the app's internal cache path. 
+- If the user had selected a Custom Storage folder (via Android's Storage Access Framework / DocumentFile), the physical file was left permanently stranded in their custom folder, causing storage space to leak.
+
+#### 2. Root Cause & Solution
+- **SAF Deletion Implementation**: Engineered a new deleteFromCustomStorage() function inside StorageManager.kt that utilizes DocumentFile.findFile() to securely locate and delete the media file within the user's custom chosen SAF directory tree.
+- **ViewModel Integration**: Updated DownloadViewModel.deleteLibraryItem() to simultaneously execute java.io.File(path).delete() for the cached internal copy, and StorageManager.deleteFromCustomStorage() for the external user-visible copy, ensuring a completely clean and sync'd uninstallation of the media file from the device!
+
+---
+### 📌 [ANDROID-FIX-023] Library Sort Direction & Text Alignment Fix
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/LibraryScreen.kt`
+- **Severity**: UI/UX Flow Bug
+
+#### 1. Problem Description
+- The sort option buttons ("Recent", "Name", "Size") in the Library had weird, uncentered text alignment making them look broken.
+- There was no ability to toggle sort direction (Ascending/Descending), making the sorting feature feel incomplete.
+
+#### 2. Root Cause & Solution
+- **Alignment Fix**: The inner `Box` inside the `LiquidGlassPill` wrapper was lacking a `fillMaxHeight()` modifier, causing the text to cling to the top of the 32dp pill. I explicitly bound its constraints to fully center the labels vertically.
+- **Directional Sorting**: Re-engineered the click engine. Clicking an already active sort filter now gracefully toggles the direction (Ascending vs Descending) and visually displays an animated `KeyboardArrowUp`/`KeyboardArrowDown` icon indicator right beside the text label!
+
+---
+
+### 📌 [ANDROID-FEAT-017] Full-Height Encompassing Navigation Bubble
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+- **Severity**: UI / Aesthetic Polish
+
+#### 1. User Requests Addressed
+- **Bubble Text Encompassing**: Expanded the height of the sliding `LiquidGlassPill` in the Bottom Navigation Bar from `36.dp` to `54.dp`. It now beautifully encapsulates both the active Icon and the Text label simultaneously, rather than sitting awkwardly only over the icon.
+- Adjusted the corner radius to `24.dp` for perfectly symmetrical, softer pill edges.
+
+---
+
+### 📌 [ANDROID-FIX-022] DownloadQueue Concurrency & Overlapping Job Serialization
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+- **Severity**: Critical Data Corruption & Performance Bug
+
+#### 1. Problem Description
+- Massive concurrency bug in `DownloadViewModel.kt`: Every time a batch of items was queued, `processQueue()` was spawning an entirely new parallel coroutine that iterated the entire queue. If multiple items were queued rapidly, multiple overlapping `processQueue()` loops would see the same track as `QUEUED` and simultaneously launch duplicate `yt-dlp` download processes for the exact same track ID, causing file writing corruption, frozen queues, and massive CPU lag.
+
+#### 2. Root Cause & Solution
+- **Job Serialization Check**: Wrapped the queue processing loop in a `processingJob` state tracker. 
+- `processQueue()` now instantly returns if the loop is already actively processing (`processingJob?.isActive == true`). 
+- Inside the active loop, I added a dynamic state resolution check (`_queueBatches.value.flatMap { it.items }.find { it.id == item.id }?.state`) to ensure mid-loop state updates (like Cancel/Pause) are instantly respected before extraction starts. This completely eliminates redundant overlapping downloads.
+
+---
+
+### 📌 [ANDROID-FIX-021] UI Polish: Lens Glow Removal, Liquid Glass Pill Sizing & 120Hz Animation Unification
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/LiquidGlassCard.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/LibraryScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BatchQueueList.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+- **Severity**: UI/UX Refinement
+
+#### 1. What got fixed this time around:
+- **Button Sizing & Padding**: The `LiquidGlassPill` buttons in the Settings screen (like the format and quality selectors) were looking super squeezed. Turns out the padding was being applied as an outer margin instead of pushing the text inward. I moved the padding inside the button row, so they now have proper breathing room.
+- **Removed the Weird Circular Backdrop**: There was an aggressive oval shape (`drawLensGlow`) rendering behind the glass cards that was totally killing the clean vibe. I ripped it out of both `LiquidGlassCard` and `LiquidGlassPill` so we're back to a sleek, minimal look.
+- **Unified 120Hz Animations**: Hunted down the remaining bouncy `spring` animations across the app (like in the Bottom Navigation Bar and Track Cards) and swapped them out for our buttery-smooth `tween` setup (`duration 350ms`, `FastOutSlowInEasing`). The whole app feels incredibly snappy and consistent now.
+- **Green "Clear" Swipe Action**: Swiping a track in the Queue or Library no longer shows an aggressive red "Remove" action. It now says "Clear" and uses a satisfying green color (`#4CAF50`). We kept the red specifically for physically deleting a file from the device though, to prevent accidents!
+- **Fixed Low Video Quality & Resolution Limits**: YT recently started limiting the `android` player API to 720p maximum, which caused all 1080p/4K requests to silently download 720p (because 720p is technically `<= 1080p`). I reorganized the internal `yt-dlp` extractor arguments to prioritize `web` and `ios` clients instead, unlocking full 1080p, 2K, and 4K downloads once again!
+- **Fixed Custom Storage Folder Saving**: On Android 11+, the native download engine couldn't directly write to folders you selected via the Storage picker due to Scoped Storage restrictions, leaving the files hidden in the app's internal cache. Now, once the download finishes, the app seamlessly copies the final media file directly into your selected custom folder using Android's native `ContentResolver`!
+- **Squish Physics & Drag to Select**: Upgraded the Bottom Navigation Bar and Settings Menu selection bubbles with dynamic "squish" physics! When traveling between options, the bubble now dynamically stretches horizontally and shrinks vertically based on the distance it needs to travel, mimicking real liquid/bubble physics. I also added zero-lag spring physics when you drag the bubble with your finger, making it perfectly track your thumb!
+- **Unified Settings Traveling Bubbles**: Completely overhauled the Format, Quality, and Theme selectors in the Settings menu. Instead of standard pill buttons that just highlight in-place, they now use a brand new `AnimatedSelectorTab` engine! This means a single liquid glass bubble physically travels underneath your selections across the entire row. What's even better—you can now **swipe/drag** the bubble across the different options in the Settings menu just like you can on the Bottom Nav Bar! I've also refined the drag gesture so that it perfectly coexists with horizontal scrolling—meaning you can drag the bubble *or* swipe the background to seamlessly scroll through hidden options! (Fixed a bug where tap targets were blocking the drag gesture).
+- **Drag-to-Scroll & Dynamic Liquid Glass**: I've engineered real-time drag-to-scroll into the settings! When you're physically dragging the selection bubble and get near the edge of the screen, the row will now automatically fluidly scroll with your finger, allowing you to seamlessly glide through off-screen options without letting go! Furthermore, the physical `LiquidGlassPill` and the backdrops of the Bottom Nav Bar, Settings options, and Link Paste Box now dynamically pipe in colors from your active theme (Obsidian, Titanium, etc.) for a perfectly cohesive aesthetic.
+- **Lightning Fast Playlist Extraction**: Radically improved playlist fetching performance! I re-engineered `YoutubeDLManager` to inject the `--flat-playlist` flag into the `yt-dlp` engine. Instead of downloading the full webpage for every single video, it now only grabs the sparse surface-level metadata (Titles, IDs), allowing massive playlists to be parsed and queued in seconds!
+- **Real-Time Fetching View & Cancellation Engine**: You now have complete visibility and control over background fetching operations! The Search Input Bar now displays raw, real-time terminal logs piped directly from `yt-dlp` instead of a generic "Analyzing..." message. Furthermore, when a fetch is active, the PASTE button dynamically morphs into a red CANCEL button, allowing you to instantly destroy the background `yt-dlp` process and halt the queue.
+- **Search Back-Navigation**: Seamlessly integrated Android's native `BackHandler` into the `SearchScreen`. Performing the system "Swipe Back" gesture while viewing search results will now instantly clear the screen and return you to the initial clean search state.
+- **Queue Swipe UI Fix**: Fixed a mathematical misalignment in the `BatchQueueList` where the red "Clear" swipe background was slightly taller than the inner `TrackCardItem` surface.
+- **App Update Checker**: Engineered a brand new "Check for App Updates" engine in the Settings menu! It securely hits the GitHub API (`Eurt-labs/Stash`) to check for the latest releases. If a new version of Stash is detected, it will immediately prompt you and securely open the GitHub Releases page directly so you can download the latest APK!
+- **yt-dlp Extractor Engine Fix**: Critical fix for the persistent `Requested format is not available` error! I removed a hardcoded extractor argument (`--extractor-args youtube:player_client=web,ios,mweb`) that was forcing yt-dlp to use the `ios` client. YouTube recently blocked the iOS API from returning standard formats, which is exactly why the download kept failing. Removing this safely forces yt-dlp back to its default, stable clients (`android`/`web`), fixing all downloads!
+- **Audio Quality & Format Fix**: Fixed a critical bug in `YoutubeDLManager` where audio formats were hardcoded to `--audio-quality 0` and requested an invalid format from yt-dlp (`bestaudio/best`) causing some videos to fail with `Requested format is not available`. It now correctly maps to `ba/b` and dynamically passes your selected audio bitrate (e.g., 320k) directly to ffmpeg!
+- **UI Details & Personalization**: The PASTE chip in the Search bar now dynamically inherits colors from your active theme! Additionally, the Settings footer has been customized to feature your GitHub handle, and the Swipe-to-Dismiss "Clear" action in the Queue has been enlarged, moved closer to the edge, and recolored to a proper semantic red (`palette.error`) for better UX.
+
+---
 
 ---
 

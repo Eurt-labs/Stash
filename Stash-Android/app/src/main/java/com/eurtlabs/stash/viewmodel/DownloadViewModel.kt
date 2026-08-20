@@ -49,6 +49,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private val _fetchingMessage = MutableStateFlow("")
     val fetchingMessage: StateFlow<String> = _fetchingMessage.asStateFlow()
 
+    private var fetchProcessId: String? = null
+
     // Search State
     private val _searchResults = MutableStateFlow<List<SearchResultItem>>(emptyList())
     val searchResults: StateFlow<List<SearchResultItem>> = _searchResults.asStateFlow()
@@ -167,6 +169,19 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun clearSearch() {
+        _searchResults.value = emptyList()
+    }
+
+    fun cancelFetch() {
+        fetchProcessId?.let { id ->
+            YoutubeDLManager.cancelFetch(id)
+            fetchProcessId = null
+        }
+        _isFetching.value = false
+        _fetchingMessage.value = "Cancelled"
+    }
+
     fun parseAndEnqueue(url: String) {
         val parsedLink = LinkParser.parse(url)
         if (parsedLink == null) {
@@ -177,12 +192,22 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _isFetching.value = true
             _fetchingMessage.value = "Analyzing link and fetching metadata..."
+            val processId = UUID.randomUUID().toString()
+            fetchProcessId = processId
 
             try {
-                val tracks = YoutubeDLManager.extractMetadata(url)
+                val tracks = YoutubeDLManager.extractMetadata(url, processId) { progressLine ->
+                    _fetchingMessage.value = progressLine
+                }
                 if (tracks.isNotEmpty()) {
                     val batchId = UUID.randomUUID().toString()
-                    val batchTitle = tracks.firstOrNull()?.title ?: "Download Batch"
+                    
+                    val batchTitle = if (tracks.size > 1) {
+                        tracks.firstOrNull()?.playlistName ?: tracks.firstOrNull()?.artists?.firstOrNull() ?: "Download Batch"
+                    } else {
+                        tracks.firstOrNull()?.title ?: "Download Batch"
+                    }
+                    
                     val currentSettings = _settings.value
                     val currentFormat = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioFormat else currentSettings.videoFormat
                     val currentQuality = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioQuality else currentSettings.videoQuality
@@ -211,10 +236,17 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                     processQueue()
                 }
             } catch (e: Exception) {
-                LogManager.append("DownloadViewModel", "Error fetching metadata: ${e.message}")
+                if (e.message?.contains("destroy") == true || e.message?.contains("cancel") == true) {
+                    LogManager.append("DownloadViewModel", "Fetch was cancelled")
+                } else {
+                    LogManager.append("DownloadViewModel", "Error fetching metadata: ${e.message}")
+                }
             } finally {
-                _isFetching.value = false
-                _fetchingMessage.value = ""
+                if (fetchProcessId == processId) {
+                    fetchProcessId = null
+                    _isFetching.value = false
+                    _fetchingMessage.value = ""
+                }
             }
         }
     }
@@ -299,55 +331,79 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         processQueue()
     }
 
+    private var processingJob: kotlinx.coroutines.Job? = null
+
     private fun processQueue() {
-        viewModelScope.launch(Dispatchers.IO) {
+        if (processingJob?.isActive == true) return
+
+        processingJob = viewModelScope.launch(Dispatchers.IO) {
             val context = getApplication<Application>()
             val outputDir = StorageManager.getTargetOutputDir(context)
 
-            val currentBatches = _queueBatches.value
-            for (batch in currentBatches) {
-                for (item in batch.items) {
-                    if (item.state == DownloadState.QUEUED) {
-                        updateItemState(item.id, DownloadState.DOWNLOADING, 0f, "Starting download...")
-                        DownloadForegroundService.start(context, "Downloading ${item.trackInfo.title}")
+            var hasMoreItems = true
+            while (hasMoreItems) {
+                hasMoreItems = false
+                val currentBatches = _queueBatches.value
 
-                        try {
-                            val downloadedFile = YoutubeDLManager.downloadTrack(
-                                context = context,
-                                trackInfo = item.trackInfo,
-                                quality = item.quality,
-                                format = item.format,
-                                outputDir = outputDir,
-                                processId = item.id
-                            ) { progress, speed, eta ->
-                                val speedText = if (speed.isNotBlank()) " • $speed" else ""
-                                val etaText = if (eta.isNotBlank()) " (ETA: $eta)" else ""
-                                updateItemState(
-                                    item.id,
-                                    DownloadState.DOWNLOADING,
-                                    progress,
-                                    "Downloading: ${progress.toInt()}%$speedText$etaText"
+                for (batch in currentBatches) {
+                    for (item in batch.items) {
+                        // Dynamically resolve state in case it was cancelled/paused
+                        val currentItemState = _queueBatches.value.flatMap { it.items }.find { it.id == item.id }?.state
+                        
+                        if (currentItemState == DownloadState.QUEUED) {
+                            hasMoreItems = true
+                            updateItemState(item.id, DownloadState.DOWNLOADING, 0f, "Starting download...")
+                            DownloadForegroundService.start(context, "Downloading ${item.trackInfo.title}")
+
+                            try {
+                                val downloadedFile = YoutubeDLManager.downloadTrack(
+                                    context = context,
+                                    trackInfo = item.trackInfo,
+                                    quality = item.quality,
+                                    format = item.format,
+                                    outputDir = outputDir,
+                                    processId = item.id
+                                ) { progress, speed, eta ->
+                                    val speedText = if (speed.isNotBlank()) " • $speed" else ""
+                                    val etaText = if (eta.isNotBlank()) " (ETA: $eta)" else ""
+                                    updateItemState(
+                                        item.id,
+                                        DownloadState.DOWNLOADING,
+                                        progress,
+                                        "Downloading: ${progress.toInt()}%$speedText$etaText"
+                                    )
+                                    DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
+                                }
+
+                                updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
+                                val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
+
+                                val completedItem = item.copy(
+                                    state = DownloadState.COMPLETED,
+                                    progress = 100f,
+                                    statusMessage = "Completed",
+                                    finalFilePath = finalFile.absolutePath
                                 )
-                                DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
+
+                                // Copy the completed file to the user's custom storage folder if they selected one
+                                val subfolderName = if (batch.items.size > 1) {
+                                    batch.name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
+                                } else null
+                                
+                                StorageManager.copyToCustomStorage(context, finalFile, subfolderName)
+
+                                updateItemState(item.id, DownloadState.COMPLETED, 100f, "Completed", finalPath = finalFile.absolutePath)
+
+                                // Add to Persistent Library Batches (Independent from Queue)
+                                addToLibrary(completedItem, batch)
+                            } catch (e: Exception) {
+                                if (e.message?.contains("destroy") == true || e.message?.contains("cancel") == true) {
+                                    updateItemState(item.id, DownloadState.CANCELLED, 0f, "Cancelled")
+                                } else {
+                                    Log.e("DownloadViewModel", "Failed to download item ${item.trackInfo.title}", e)
+                                    updateItemState(item.id, DownloadState.FAILED, 0f, "Failed", error = e.message)
+                                }
                             }
-
-                            updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
-                            val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
-
-                            val completedItem = item.copy(
-                                state = DownloadState.COMPLETED,
-                                progress = 100f,
-                                statusMessage = "Completed",
-                                finalFilePath = finalFile.absolutePath
-                            )
-
-                            updateItemState(item.id, DownloadState.COMPLETED, 100f, "Completed", finalPath = finalFile.absolutePath)
-
-                            // Add to Persistent Library Batches (Independent from Queue)
-                            addToLibrary(completedItem, batch)
-                        } catch (e: Exception) {
-                            Log.e("DownloadViewModel", "Failed to download item ${item.trackInfo.title}", e)
-                            updateItemState(item.id, DownloadState.FAILED, 0f, "Failed", error = e.message)
                         }
                     }
                 }
@@ -451,8 +507,32 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // Removes an item from Library
-    fun deleteLibraryItem(itemId: String) {
+    // Removes an item from Library, optionally deleting the file from device
+    fun deleteLibraryItem(itemId: String, deleteFile: Boolean = false) {
+        if (deleteFile) {
+            val batch = _libraryBatches.value.find { it.items.any { item -> item.id == itemId } }
+            val itemToDelete = batch?.items?.find { it.id == itemId }
+            
+            val subfolderName = if (batch != null && batch.items.size > 1) {
+                batch.name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
+            } else null
+            
+            itemToDelete?.finalFilePath?.let { path ->
+                try {
+                    val file = java.io.File(path)
+                    val fileName = file.name
+                    if (file.exists()) {
+                        file.delete()
+                    }
+                    
+                    // The file may also have been copied to a custom SAF storage folder, delete it from there too
+                    StorageManager.deleteFromCustomStorage(getApplication(), fileName, subfolderName)
+                    
+                } catch (e: Exception) {
+                    com.eurtlabs.stash.data.downloader.LogManager.append("Library", "Failed to delete file: ${e.message}")
+                }
+            }
+        }
         _libraryBatches.value = _libraryBatches.value.mapNotNull { batch ->
             val remaining = batch.items.filter { it.id != itemId }
             if (remaining.isEmpty()) null else batch.copy(items = remaining)

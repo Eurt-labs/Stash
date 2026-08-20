@@ -55,6 +55,7 @@ fun SearchInputBar(
     isFetching: Boolean,
     fetchingMessage: String,
     onAnalyzeUrl: (String) -> Unit,
+    onCancelFetch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var text by remember { mutableStateOf("") }
@@ -62,31 +63,32 @@ fun SearchInputBar(
     val focusManager = LocalFocusManager.current
     val palette = LocalStashPalette.current
 
-    // Pill-Shaped Liquid Glass Capsule
+    // Liquid Glass Search Capsule — WebGL shader refraction aesthetic
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(32.dp))
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(28.dp))
             .background(
                 brush = Brush.verticalGradient(
                     listOf(
-                        palette.surface.copy(alpha = 0.95f),
-                        palette.surfaceVariant.copy(alpha = 0.70f)
+                        palette.surfaceVariant,
+                        palette.surface
                     )
                 )
             )
             .border(
-                width = 1.2.dp,
+                width = 1.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.45f),
-                        Color.White.copy(alpha = 0.08f)
+                        Color.White.copy(alpha = 0.50f),   // meniscus top rim
+                        Color.White.copy(alpha = 0.15f),
+                        Color.White.copy(alpha = 0.03f)
                     )
                 ),
-                shape = RoundedCornerShape(32.dp)
+                shape = RoundedCornerShape(28.dp)
             )
-            .padding(horizontal = 16.dp, vertical = 9.dp)
+            .padding(horizontal = 14.dp, vertical = 9.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -132,58 +134,75 @@ fun SearchInputBar(
                 }
             )
 
-            if (text.isEmpty()) {
-                // Liquid Glass Pill PASTE Chip
+            if (text.isEmpty() && !isFetching) {
+                // Liquid Glass PASTE Chip
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(
                             brush = Brush.verticalGradient(
                                 listOf(
-                                    palette.surfaceVariant,
-                                    palette.surface.copy(alpha = 0.85f)
+                                    palette.border.copy(alpha = 0.5f),
+                                    palette.surfaceVariant.copy(alpha = 0.5f)
                                 )
                             )
                         )
                         .border(
                             width = 0.8.dp,
-                            brush = Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.35f),
-                                    Color.White.copy(alpha = 0.08f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(20.dp)
+                            color = palette.border.copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(16.dp)
                         )
                         .clickable {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
-                            if (!clip.isNullOrBlank()) {
-                                // Only paste into field — user must press Go to submit
-                                text = clip.trim()
+                            val pasteData = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+                            if (!pasteData.isNullOrBlank()) {
+                                text = pasteData
+                                onAnalyzeUrl(pasteData)
+                                text = ""
                             }
                         }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.ContentPaste,
                             contentDescription = "Paste",
-                            tint = palette.primary,
-                            modifier = Modifier.size(13.dp)
+                            tint = palette.textPrimary,
+                            modifier = Modifier.size(11.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "PASTE",
-                            color = palette.primary,
-                            fontSize = 10.5.sp,
+                            color = palette.textPrimary,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         )
                     }
+                }
+            } else if (isFetching) {
+                // Red CANCEL Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(palette.error.copy(alpha = 0.15f))
+                        .border(
+                            width = 0.8.dp,
+                            color = palette.error.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .clickable { onCancelFetch() }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "CANCEL",
+                        color = palette.error,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
                 }
             } else {
                 Row(

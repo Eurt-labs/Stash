@@ -227,6 +227,9 @@ export class DownloadEngine {
     const rawFileName = `${rawArtist} - ${title}`
     const safeFileName = FileManager.sanitizeFileName(rawFileName)
 
+    const playlistName = json.playlist_title || json.playlist || undefined
+    const finalPlaylistName = playlistName && playlistName !== 'NA' ? FileManager.sanitizeFileName(playlistName) : FileManager.sanitizeFileName(rawArtist)
+
     return {
       id: videoId || Math.random().toString(36).substring(2, 10),
       title,
@@ -240,7 +243,8 @@ export class DownloadEngine {
       releaseYear: json.release_year ? String(json.release_year) : (json.upload_date ? json.upload_date.substring(0, 4) : undefined),
       trackNumber: typeof json.track_number === 'number' ? json.track_number : undefined,
       genre: json.genre || undefined,
-      safeFileName
+      safeFileName,
+      playlistName: finalPlaylistName
     }
   }
 

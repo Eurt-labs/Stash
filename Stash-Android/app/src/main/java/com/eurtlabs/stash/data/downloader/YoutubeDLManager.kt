@@ -66,7 +66,7 @@ object YoutubeDLManager {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "15")
                 addOption("--force-ipv4")
-                addOption("--extractor-args", "youtube:player_client=android,web,mweb")
+                addOption("--extractor-args", "youtube:player_client=web,ios,mweb")
             }
             val response = YoutubeDL.getInstance().execute(request, null, null)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
@@ -125,17 +125,90 @@ object YoutubeDLManager {
         }
     }
 
-    suspend fun extractMetadata(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
+    fun cancelFetch(processId: String) {
+        try {
+            YoutubeDL.getInstance().destroyProcessById(processId)
+            LogManager.append(TAG, "Cancelled fetch process: $processId")
+        } catch (e: Exception) {
+            LogManager.append(TAG, "Failed to cancel fetch process: ${e.message}")
+        }
+    }
+
+    suspend fun extractMetadata(
+        url: String, 
+        processId: String = UUID.randomUUID().toString(),
+        onProgress: ((String) -> Unit)? = null
+    ): List<TrackInfo> = withContext(Dispatchers.IO) {
         LogManager.append(TAG, "Extracting metadata for URL: $url")
         try {
             val request = YoutubeDLRequest(url).apply {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "20")
                 addOption("--force-ipv4")
-                addOption("--extractor-args", "youtube:player_client=android,web,mweb")
+                addOption("--flat-playlist")
+                addOption("--dump-json")
             }
-            val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
-            listOf(videoInfoToTrackInfo(videoInfo, url))
+            
+            var lastUpdate = 0L
+            val response = YoutubeDL.getInstance().execute(request, processId) { progress, eta, line ->
+                if (!line.isNullOrBlank()) {
+                    // Only pass non-JSON log lines to the UI progress to avoid spamming huge JSON blobs
+                    if (!line.trim().startsWith("{")) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastUpdate > 150) {
+                            onProgress?.invoke(line)
+                            lastUpdate = now
+                        }
+                    }
+                }
+            }
+            
+            val jsonOutput = response.out ?: ""
+            val tracks = mutableListOf<TrackInfo>()
+            
+            jsonOutput.lines().forEach { line ->
+                if (line.isNotBlank() && line.startsWith("{")) {
+                    try {
+                        val json = JSONObject(line)
+                        val id = json.optString("id", "")
+                        val title = json.optString("title", "Unknown Title")
+                        val uploader = json.optString("uploader", json.optString("channel", "Unknown Artist"))
+                        val duration = json.optLong("duration", 0L) * 1000L
+                        val thumb = json.optString("thumbnail", "")
+                        val playlistTitle = json.optString("playlist_title", json.optString("playlist", uploader))
+                        
+                        // yt-dlp might output just 'url' or 'webpage_url' depending on extraction
+                        var trackUrl = json.optString("webpage_url", "")
+                        if (trackUrl.isBlank()) trackUrl = json.optString("url", "")
+                        
+                        val finalUrl = if (trackUrl.startsWith("http")) trackUrl else "https://www.youtube.com/watch?v=$id"
+                        
+                        if (id.isNotBlank() && title != "Unknown Title") {
+                            tracks.add(
+                                TrackInfo(
+                                    id = id,
+                                    title = title,
+                                    artists = listOf(uploader),
+                                    durationMs = duration,
+                                    albumArtUrl = thumb.ifBlank { "https://i.ytimg.com/vi/$id/hqdefault.jpg" },
+                                    source = Platform.YOUTUBE,
+                                    sourceUrl = finalUrl,
+                                    safeFileName = sanitizeFileName("$uploader - $title"),
+                                    playlistName = if (playlistTitle.isNotBlank() && playlistTitle != "NA") sanitizeFileName(playlistTitle) else sanitizeFileName(uploader)
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        LogManager.append(TAG, "Error parsing JSON line: ${e.message}")
+                    }
+                }
+            }
+            
+            if (tracks.isEmpty()) {
+                throw Exception("No tracks parsed from output")
+            }
+            
+            tracks
         } catch (e: Exception) {
             LogManager.append(TAG, "Metadata extraction failed for $url: ${e.localizedMessage}")
             val videoId = Regex("v=([a-zA-Z0-9_-]{11})").find(url)?.groupValues?.getOrNull(1) ?: UUID.randomUUID().toString().take(11)
@@ -183,29 +256,38 @@ object YoutubeDLManager {
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
             addOption("--force-ipv4")
-            addOption("--extractor-args", "youtube:player_client=android,web,mweb")
 
             if (format.isAudioOnly) {
-                addOption("-f", "bestaudio/best")
+                addOption("-f", "ba/b")
                 addOption("-x")
                 addOption("--audio-format", format.ext)
-                addOption("--audio-quality", "0")
+                addOption("--audio-quality", quality.valueOption)
             } else {
                 addOption("-f", quality.valueOption)
                 addOption("--merge-output-format", format.ext)
-                addOption("--format-sort", "res,fps,codec:h264,size,br")
             }
         }
 
         try {
+            var lastUpdate = 0L
             YoutubeDL.getInstance().execute(request, processId) { progress: Float, etaInSeconds: Long, line: String? ->
-                val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
-                val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
-                val speedStr = speedMatch?.value ?: ""
+                val now = System.currentTimeMillis()
+                
                 if (line != null && line.isNotBlank()) {
-                    LogManager.append(TAG, "[yt-dlp] $line")
+                    // Prevent spamming the system logs with hundreds of progress percentage ticks
+                    if (!(line.contains("[download]") && line.contains("%"))) {
+                        LogManager.append(TAG, "[yt-dlp] $line")
+                    }
                 }
-                onProgress(progress, speedStr, etaStr)
+                
+                // Throttle UI progress updates to ~4fps (250ms) to prevent UI thread lag / jank
+                if (now - lastUpdate > 250 || progress >= 100f) {
+                    val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
+                    val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
+                    val speedStr = speedMatch?.value ?: ""
+                    onProgress(progress, speedStr, etaStr)
+                    lastUpdate = now
+                }
             }
         } catch (e: Exception) {
             LogManager.append(TAG, "Download execution failed for $targetUrl: ${e.message}")
