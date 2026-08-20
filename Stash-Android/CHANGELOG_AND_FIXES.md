@@ -2,6 +2,22 @@
 
 ---
 
+### 📌 [BUG-029] Web Creator Sign-In Bypass Failure
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts
+- **Severity**: High
+
+#### 1. Problem Description & Observed Symptoms
+On certain Android IP connections (e.g., OPPO), the web_creator API client unexpectedly failed with the ERROR: [youtube] <id>: Please sign in error. It then automatically fell back to the ios default client, which also threw a "Please sign in" error, effectively halting the download completely.
+
+#### 2. Technical Root Cause Analysis
+YouTube actively profiles connections and occasionally blocks the web_creator client entirely on flagged IP addresses. If yt-dlp cannot use web_creator, it falls back to the rest of the clients in the list (like iOS or Web), which require PO tokens or are heavily rate-limited by age restrictions.
+
+#### 3. Exact Solution & Implementation Details
+Expanded the yt-dlp player_client cascade string to: youtube:player_client=web_embedded,web_creator,default. 
+The web_embedded client interacts with YouTube's iframe API, which has the lowest probability of encountering sign-in blocks (since anonymous users can watch embedded videos on random websites). If embedded is blocked, it cycles to web_creator, and finally to default. By chaining these web variants, yt-dlp has maximum flexibility to avoid PO-Token errors and SABR stream blocks while still fetching both video and audio streams seamlessly.
+
+---
 ### 📌 [MAINTENANCE] Pre-Emptive Bug Sweep & Crash Prevention
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/.../SettingsScreen.kt, LibraryScreen.kt, TrackActionModalSheet.kt, BottomNavBar.kt, src/main/features/downloader/StashOrchestrator.ts, DownloadEngine.ts

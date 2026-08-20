@@ -32,6 +32,56 @@ How was it fixed? Include before-and-after code diffs or mathematical formulas.
 `
 
 ---
+### 📌 [BUG-029] Web Creator Sign-In Bypass Failure
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts
+- **Severity**: High
+
+#### 1. Problem Description & Observed Symptoms
+On certain Android IP connections (e.g., OPPO), the web_creator API client unexpectedly failed with the ERROR: [youtube] <id>: Please sign in error. It then automatically fell back to the ios default client, which also threw a "Please sign in" error, effectively halting the download completely.
+
+#### 2. Technical Root Cause Analysis
+YouTube actively profiles connections and occasionally blocks the web_creator client entirely on flagged IP addresses. If yt-dlp cannot use web_creator, it falls back to the rest of the clients in the list (like iOS or Web), which require PO tokens or are heavily rate-limited by age restrictions.
+
+#### 3. Exact Solution & Implementation Details
+Expanded the yt-dlp player_client cascade string to: youtube:player_client=web_embedded,web_creator,default. 
+The web_embedded client interacts with YouTube's iframe API, which has the lowest probability of encountering sign-in blocks (since anonymous users can watch embedded videos on random websites). If embedded is blocked, it cycles to web_creator, and finally to default. By chaining these web variants, yt-dlp has maximum flexibility to avoid PO-Token errors and SABR stream blocks while still fetching both video and audio streams seamlessly.
+
+---
+# 📘 Stash Downloader — Master Engineering Changelog, Architecture Guide & Technical Fixes Log
+
+> **Repository**: [https://github.com/Eurt-labs/Stash](https://github.com/Eurt-labs/Stash)  
+> **Application Version**: 2.0.0  
+> **Platform**: Electron + React 18 + TypeScript + Vite + Native Binaries (yt-dlp & FFmpeg)  
+> **Design System**: Liquid Glass Architecture (Ultra-Translucent Frosted Acrylic, Hardware-Accelerated 60fps Canvas Shaders, Dynamic Theming Engine)
+
+---
+
+## 🧭 How to Use and Maintain This Document
+
+This document serves as the **single source of truth** for architectural decisions, historical bug investigations, root-cause analyses, code fixes, and development workflows for Stash Media Downloader.
+
+### 📝 Template for Logging Future Challenges & Fixes
+When resolving new issues or adding features, append an entry following this exact schema:
+
+`markdown
+### [ISSUE-XXX] Short Descriptive Title of Challenge or Feature
+- **Date**: YYYY-MM-DD
+- **Target Files**: path/to/file1.ts, path/to/file2.css
+- **Git Commit**: <commit-hash>
+- **Severity**: Low | Medium | High | Critical
+
+#### 1. Problem Description & Observed Symptoms
+What happened? What error messages or visual defects appeared in the UI or console?
+
+#### 2. Technical Root Cause Analysis
+Why did it happen? Detail the underlying JavaScript, Electron, CSS specificity, Chromium rendering, or binary execution mechanism.
+
+#### 3. Exact Solution & Implementation Details
+How was it fixed? Include before-and-after code diffs or mathematical formulas.
+`
+
+---
 ### 📌 [MAINTENANCE] Pre-Emptive Bug Sweep & Crash Prevention
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/.../SettingsScreen.kt, LibraryScreen.kt, TrackActionModalSheet.kt, BottomNavBar.kt, src/main/features/downloader/StashOrchestrator.ts, DownloadEngine.ts
