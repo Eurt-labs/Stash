@@ -2,6 +2,28 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-013] Pop-Out Liquid Glass Action Modal & Unified Pill Redesign
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackActionModalSheet.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackCardItem.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BatchQueueList.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/SearchInputBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SearchScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/LibraryScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: UI Architecture & Liquid Glass Redesign
+
+#### 1. User Requests Addressed
+- **Pop-out Liquid Glass Action Modal Sheet**:
+  - Removed cluttered inline pause/cancel buttons from queue rows.
+  - Tapping any track card now smoothly pops out a high-refraction Liquid Glass Modal Sheet (`TrackActionModalSheet.kt`) with large artwork, active progress / ETA, and quick liquid action pills: **Pause / Resume**, **Cancel Download**, **Play Media**, **Share File**, **Copy URL**, and **Remove**.
+- **Unified Pill-Shaped Liquid Glass Styling**:
+  - Re-engineered the Link Pasting & Search Bar into a fully rounded pill capsule (`RoundedCornerShape(32.dp)`) with convex specular gradient borders and inner liquid pill chips.
+  - Aligned all cards in **Queue**, **Search**, **Library**, and **Settings** to pill-shaped liquid glass cards (`RoundedCornerShape(20.dp)`) matching the reference aesthetics.
+
+---
+
 ### 📌 [ANDROID-FIX-019] BoxWithConstraints & offset Imports in SettingsScreen
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`

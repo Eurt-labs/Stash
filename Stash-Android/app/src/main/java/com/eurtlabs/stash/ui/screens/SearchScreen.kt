@@ -102,7 +102,7 @@ fun SearchScreen(
         item {
             Spacer(modifier = Modifier.height(4.dp))
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 20.dp),
+                contentPadding = PaddingValues(horizontal = 18.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -110,11 +110,28 @@ fun SearchScreen(
                     val isSelected = selectedFilter == filter
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) palette.primary else palette.surface)
-                            .border(1.dp, if (isSelected) palette.primary else palette.border, RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (isSelected) {
+                                    Brush.verticalGradient(
+                                        listOf(palette.primary, palette.primary.copy(alpha = 0.85f))
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        listOf(palette.surface.copy(alpha = 0.90f), palette.surfaceVariant.copy(alpha = 0.65f))
+                                    )
+                                }
+                            )
+                            .border(
+                                width = if (isSelected) 1.2.dp else 1.dp,
+                                brush = Brush.verticalGradient(
+                                    if (isSelected) listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.10f))
+                                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
                             .clickable { onFilterChanged(filter) }
-                            .padding(horizontal = 14.dp, vertical = 7.dp),
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -430,15 +447,31 @@ private fun SearchResultCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 5.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+            .padding(horizontal = 18.dp, vertical = 5.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(
+                        palette.surface.copy(alpha = 0.92f),
+                        palette.surfaceVariant.copy(alpha = 0.70f)
+                    )
+                )
+            )
+            .border(
+                width = 1.2.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.05f)
+                    )
+                ),
+                shape = RoundedCornerShape(20.dp)
+            )
             .clickable {
                 isAdded = true
                 onDownload()
             }
-            .padding(10.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Thumbnail with duration overlay

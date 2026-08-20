@@ -171,19 +171,19 @@ private fun LibraryItemCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .padding(horizontal = 18.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
                     listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
                 )
             )
             .border(
-                width = 1.dp,
+                width = 1.2.dp,
                 brush = Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                    listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(20.dp)
             )
             .clickable {
                 // Open file in external player

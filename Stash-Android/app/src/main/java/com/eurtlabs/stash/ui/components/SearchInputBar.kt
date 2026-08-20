@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -61,14 +62,31 @@ fun SearchInputBar(
     val focusManager = LocalFocusManager.current
     val palette = LocalStashPalette.current
 
+    // Pill-Shaped Liquid Glass Capsule
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = 18.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(
+                        palette.surface.copy(alpha = 0.95f),
+                        palette.surfaceVariant.copy(alpha = 0.70f)
+                    )
+                )
+            )
+            .border(
+                width = 1.2.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.45f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                ),
+                shape = RoundedCornerShape(32.dp)
+            )
+            .padding(horizontal = 16.dp, vertical = 9.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -78,7 +96,7 @@ fun SearchInputBar(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
                 tint = palette.textSecondary,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(19.dp)
             )
 
             Spacer(modifier = Modifier.width(10.dp))
@@ -88,7 +106,7 @@ fun SearchInputBar(
                 onValueChange = { text = it },
                 textStyle = TextStyle(
                     color = palette.textPrimary,
-                    fontSize = 14.sp,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.Medium
                 ),
                 cursorBrush = SolidColor(palette.primary),
@@ -106,8 +124,8 @@ fun SearchInputBar(
                     if (text.isEmpty()) {
                         Text(
                             text = if (isFetching) fetchingMessage.ifEmpty { "Analyzing media..." } else "Paste link or search song/album...",
-                            color = palette.textSecondary,
-                            fontSize = 13.5.sp
+                            color = palette.textSecondary.copy(alpha = 0.75f),
+                            fontSize = 13.sp
                         )
                     }
                     innerTextField()
@@ -115,11 +133,28 @@ fun SearchInputBar(
             )
 
             if (text.isEmpty()) {
-                // Quick PASTE chip
-                Row(
+                // Liquid Glass Pill PASTE Chip
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(palette.surfaceVariant)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(
+                                    palette.surfaceVariant,
+                                    palette.surface.copy(alpha = 0.85f)
+                                )
+                            )
+                        )
+                        .border(
+                            width = 0.8.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.35f),
+                                    Color.White.copy(alpha = 0.08f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
                         .clickable {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
@@ -129,23 +164,27 @@ fun SearchInputBar(
                                 text = ""
                             }
                         }
-                        .padding(horizontal = 9.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentPaste,
-                        contentDescription = "Paste",
-                        tint = palette.textPrimary,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = "PASTE",
-                        color = palette.textPrimary,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentPaste,
+                            contentDescription = "Paste",
+                            tint = palette.primary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "PASTE",
+                            color = palette.primary,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             } else {
                 Row(
@@ -155,7 +194,7 @@ fun SearchInputBar(
                     // Clear button
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(26.dp)
                             .clip(CircleShape)
                             .background(palette.surfaceVariant)
                             .clickable { text = "" },
@@ -169,12 +208,16 @@ fun SearchInputBar(
                         )
                     }
 
-                    // Submit button
+                    // Submit Go button
                     Box(
                         modifier = Modifier
                             .size(34.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(palette.primary)
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.linearGradient(
+                                    listOf(palette.primary, palette.primary.copy(alpha = 0.85f))
+                                )
+                            )
                             .clickable(enabled = !isFetching) {
                                 if (text.isNotBlank()) {
                                     focusManager.clearFocus()
@@ -195,7 +238,7 @@ fun SearchInputBar(
                                 imageVector = Icons.Default.ArrowForward,
                                 contentDescription = "Go",
                                 tint = palette.onPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }

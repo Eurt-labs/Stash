@@ -21,11 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -50,9 +49,7 @@ import com.eurtlabs.stash.ui.theme.LocalStashPalette
 @Composable
 fun TrackCardItem(
     item: DownloadItem,
-    onRetry: (String) -> Unit = {},
-    onCancel: (String) -> Unit = {},
-    onPause: (String) -> Unit = {},
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -66,33 +63,40 @@ fun TrackCardItem(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 5.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .padding(horizontal = 18.dp, vertical = 5.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                    listOf(
+                        palette.surface.copy(alpha = 0.92f),
+                        palette.surfaceVariant.copy(alpha = 0.70f)
+                    )
                 )
             )
             .border(
-                width = 1.dp,
+                width = 1.2.dp,
                 brush = Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.05f))
+                    listOf(
+                        Color.White.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.05f)
+                    )
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(20.dp)
             )
+            .clickable { onClick() }
             .padding(14.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Album Artwork with fallback
+            // Album Artwork Capsule
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .background(palette.surfaceVariant)
-                    .border(0.5.dp, palette.border, RoundedCornerShape(10.dp)),
+                    .border(0.5.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
@@ -100,7 +104,7 @@ fun TrackCardItem(
                         model = item.trackInfo.albumArtUrl,
                         contentDescription = "Cover",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(50.dp)
                     )
                 } else {
                     Icon(
@@ -130,7 +134,7 @@ fun TrackCardItem(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = item.trackInfo.artists.joinToString(", ").ifEmpty { "Audio Track" },
+                        text = item.trackInfo.artists.joinToString(", ").ifEmpty { "Media Track" },
                         fontSize = 12.sp,
                         color = palette.textSecondary,
                         maxLines = 1,
@@ -145,28 +149,30 @@ fun TrackCardItem(
                     )
 
                     Text(
-                        text = item.format.name,
+                        text = item.format.ext.uppercase(),
                         color = palette.primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                // Dynamic live status line (speed, ETA, or error detail)
-                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING || item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED) {
+                // Live dynamic status message
+                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING || item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED || item.state == DownloadState.IDLE) {
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = if (item.state == DownloadState.FAILED) {
-                            item.errorMessage?.take(50) ?: "Download error"
-                        } else if (item.state == DownloadState.CANCELLED) {
-                            "Cancelled"
-                        } else {
-                            item.statusMessage
+                        text = when (item.state) {
+                            DownloadState.DOWNLOADING -> "Downloading: ${item.progress.toInt()}%"
+                            DownloadState.TAGGING -> "Embedding tags..."
+                            DownloadState.FAILED -> item.errorMessage?.take(40) ?: "Error"
+                            DownloadState.CANCELLED -> "Cancelled (Tap to manage)"
+                            DownloadState.IDLE -> "Paused (Tap to manage)"
+                            else -> item.statusMessage
                         },
                         fontSize = 11.sp,
                         color = when (item.state) {
                             DownloadState.FAILED -> palette.error
                             DownloadState.CANCELLED -> palette.textSecondary
+                            DownloadState.IDLE -> palette.textSecondary
                             else -> palette.primary
                         },
                         maxLines = 1,
@@ -175,99 +181,72 @@ fun TrackCardItem(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-            // Action / Control Pills
-            when (item.state) {
-                DownloadState.DOWNLOADING, DownloadState.FETCHING, DownloadState.TAGGING -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Pause Button
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(palette.surfaceVariant)
-                                .clickable { onPause(item.id) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Pause,
-                                contentDescription = "Pause",
-                                tint = palette.textPrimary,
-                                modifier = Modifier.size(15.dp)
-                            )
+            // Right Status Badge / Pill
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        when (item.state) {
+                            DownloadState.COMPLETED -> palette.primary.copy(alpha = 0.18f)
+                            DownloadState.FAILED -> palette.error.copy(alpha = 0.15f)
+                            DownloadState.DOWNLOADING, DownloadState.TAGGING -> palette.primary.copy(alpha = 0.15f)
+                            else -> palette.surfaceVariant
                         }
-
-                        // Cancel Button
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(palette.surfaceVariant)
-                                .clickable { onCancel(item.id) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Cancel",
-                                tint = palette.error,
-                                modifier = Modifier.size(15.dp)
-                            )
-                        }
-                    }
-                }
-                DownloadState.FAILED -> {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(palette.error.copy(alpha = 0.15f))
-                            .clickable { onRetry(item.id) }
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    )
+                    .border(
+                        width = 0.8.dp,
+                        brush = Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                when (item.state) {
+                    DownloadState.COMPLETED -> {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Retry",
-                            tint = palette.error,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = "Retry",
-                            color = palette.error,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                DownloadState.IDLE, DownloadState.CANCELLED -> {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(palette.primary.copy(alpha = 0.15f))
-                            .clickable { onRetry(item.id) }
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Resume",
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Completed",
                             tint = palette.primary,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(14.dp)
                         )
+                    }
+                    DownloadState.DOWNLOADING, DownloadState.TAGGING -> {
                         Text(
-                            text = "Resume",
+                            text = "${item.progress.toInt()}%",
                             color = palette.primary,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    DownloadState.FAILED -> {
+                        Icon(
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = "Error",
+                            tint = palette.error,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    DownloadState.IDLE -> {
+                        Text(
+                            text = "PAUSED",
+                            color = palette.textSecondary,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = "QUEUED",
+                            color = palette.textSecondary,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                else -> {}
             }
         }
 
@@ -282,7 +261,7 @@ fun TrackCardItem(
                     progress = animatedProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp)
+                        .height(3.5.dp)
                         .clip(RoundedCornerShape(2.dp)),
                     color = palette.primary,
                     trackColor = palette.surfaceVariant

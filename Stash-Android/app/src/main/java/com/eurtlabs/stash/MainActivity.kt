@@ -189,7 +189,8 @@ class MainActivity : ComponentActivity() {
                                                 onRemoveBatch = { batchId -> viewModel.removeBatch(batchId) },
                                                 onRetryItem = { itemId -> viewModel.retryItem(itemId) },
                                                 onCancelItem = { itemId -> viewModel.cancelItem(itemId) },
-                                                onPauseItem = { itemId -> viewModel.pauseItem(itemId) }
+                                                onPauseItem = { itemId -> viewModel.pauseItem(itemId) },
+                                                onDeleteItem = { itemId -> viewModel.cancelItem(itemId) }
                                             )
                                         }
                                     }
