@@ -228,7 +228,7 @@ object YoutubeDLManager {
             source = detectedPlatform,
             sourceUrl = sourceUrl,
             youtubeUrl = if (detectedPlatform != Platform.OTHER) info.webpageUrl else null,
-            safeFileName = safeName
+            safeFileName = safeFileName
         )
     }
 

@@ -2,6 +2,21 @@
 
 ---
 
+### 📌 [ANDROID-FIX-013] safeFileName Identifier Resolution in YoutubeDLManager
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` failed with:
+  `YoutubeDLManager.kt: Unresolved reference: safeName :231`
+
+#### 2. Root Cause & Solution
+- In `videoInfoToTrackInfo()`, the local variable is declared as `val safeFileName = sanitizeFileName(...)`.
+- Fixed the constructor assignment parameter from `safeFileName = safeName` to `safeFileName = safeFileName`.
+
+---
+
 ### 📌 [ANDROID-FIX-012] FFmpeg Package Alignment & Execute Parameter Resolution
 - **Date**: 2026-08-20
 - **Files Modified**: 
