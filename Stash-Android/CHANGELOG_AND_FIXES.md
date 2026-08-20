@@ -2,6 +2,20 @@
 
 ---
 
+### 📌 [ANDROID-FIX-019] BoxWithConstraints & offset Imports in SettingsScreen
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` threw `Unresolved reference: BoxWithConstraints` and `offset` in `SettingsScreen.kt`.
+
+#### 2. Root Cause & Solution
+- Added `import androidx.compose.foundation.layout.BoxWithConstraints` and `import androidx.compose.foundation.layout.offset`.
+- Resolved `@Composable` context for the sliding liquid bubble in the mode toggle.
+
+---
+
 ### 📌 [ANDROID-FEAT-012] Full HD/4K/2K Stream Selector & Liquid Sliding Mode Bubble
 - **Date**: 2026-08-20
 - **Files Modified**: 
