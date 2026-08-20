@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-008] FLAC Lossless Rules, Full Liquid Glass UI, Draggable Nav & Auto-Paste
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: User Experience & Audiophile Audio Quality
+
+#### 1. User Requests Addressed
+- **Lossless Format Rules (FLAC / WAV)**: When FLAC or WAV is chosen, bitrate compression choices are automatically replaced with a bit-perfect uncompressed studio quality indicator (since lossless audio requires no lossy bitrate compression).
+- **Comprehensive Liquid Glassmorphism in Settings**: Converted all cards, theme choosers, and action buttons in `SettingsScreen.kt` to the frosted liquid glass design with specular highlights.
+- **Smooth Gesture-Draggable Navbar**: Implemented real-time touch position tracking with surface tension stretch (`scaleX = 1.15f`) and bouncy spring snap on drag release.
+- **Automatic Clipboard Link Detection**: When the app is launched or resumed, Stash automatically inspects clipboard for copied YouTube / music links and enqueues them instantly.
+- **Footer Text Rebranding**: Cleaned the footer label to `Stash Media Downloader`.
+
+---
+
 ### 📌 [ANDROID-FIX-015] YouTube Reload Page Workaround, .txt Diagnostic File Export & Storage Dialog
 - **Date**: 2026-08-20
 - **Files Modified**: 

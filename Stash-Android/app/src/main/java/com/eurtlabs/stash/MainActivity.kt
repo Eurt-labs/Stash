@@ -279,6 +279,36 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkAndAutoPasteClipboard()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            checkAndAutoPasteClipboard()
+        }
+    }
+
+    private var lastAutoPastedUrl: String? = null
+
+    private fun checkAndAutoPasteClipboard() {
+        try {
+            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()?.trim()
+            if (!clip.isNullOrBlank() && (clip.startsWith("http://", ignoreCase = true) || clip.startsWith("https://", ignoreCase = true))) {
+                if (clip != lastAutoPastedUrl) {
+                    lastAutoPastedUrl = clip
+                    viewModel.parseAndEnqueue(clip)
+                    activeTabState = NavigationTab.QUEUE
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore clipboard access exceptions
+        }
+    }
+
     private fun handleIncomingIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)

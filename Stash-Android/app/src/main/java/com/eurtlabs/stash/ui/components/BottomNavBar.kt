@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,13 +39,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +65,9 @@ fun BottomNavBar(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
+    val density = LocalDensity.current
+
+    var dragXOffset by remember { mutableStateOf<Float?>(null) }
 
     // Glassmorphic Nav Shell
     Column(
@@ -83,9 +91,9 @@ fun BottomNavBar(
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.03f),
-                            Color.White.copy(alpha = 0.20f),
-                            Color.White.copy(alpha = 0.03f)
+                            Color.White.copy(alpha = 0.04f),
+                            Color.White.copy(alpha = 0.25f),
+                            Color.White.copy(alpha = 0.04f)
                         )
                     )
                 )
@@ -95,6 +103,31 @@ fun BottomNavBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 6.dp)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { offset ->
+                            dragXOffset = offset.x
+                        },
+                        onDragEnd = {
+                            val currentX = dragXOffset
+                            if (currentX != null) {
+                                val totalWidthPx = size.width.toFloat()
+                                val tabWidthPx = totalWidthPx / NavigationTab.values().size
+                                val selectedIndex = (currentX / tabWidthPx).toInt().coerceIn(0, NavigationTab.values().size - 1)
+                                onTabSelected(NavigationTab.values()[selectedIndex])
+                            }
+                            dragXOffset = null
+                        },
+                        onDragCancel = {
+                            dragXOffset = null
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            val current = dragXOffset ?: change.position.x
+                            dragXOffset = (current + dragAmount).coerceIn(0f, size.width.toFloat())
+                        }
+                    )
+                }
         ) {
             val totalWidth = maxWidth
             val tabCount = NavigationTab.values().size
@@ -102,39 +135,51 @@ fun BottomNavBar(
             val bubbleWidth = 64.dp
             val bubbleHeight = 32.dp
 
-            val targetBubbleOffset = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2
-
-            // Liquid Sliding Glass Bubble with smooth spring physics (no lag)
-            val bubbleOffset by animateDpAsState(
-                targetValue = targetBubbleOffset,
+            val defaultOffset = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2
+            val animatedOffset by animateDpAsState(
+                targetValue = defaultOffset,
                 animationSpec = spring(
-                    dampingRatio = 0.76f,
-                    stiffness = Spring.StiffnessMediumLow
+                    dampingRatio = 0.72f,
+                    stiffness = 400f
                 ),
-                label = "liquidBubbleOffset"
+                label = "bubbleSpring"
             )
 
-            // Pure Liquid Glass Bubble (Flawless glassmorphic refraction)
+            val currentBubbleOffset = if (dragXOffset != null) {
+                val dragDp = with(density) { dragXOffset!!.toDp() }
+                (dragDp - bubbleWidth / 2).coerceIn(0.dp, totalWidth - bubbleWidth)
+            } else {
+                animatedOffset
+            }
+
+            val liquidStretchX by animateFloatAsState(
+                targetValue = if (dragXOffset != null) 1.15f else 1.0f,
+                animationSpec = spring(dampingRatio = 0.65f, stiffness = 420f),
+                label = "liquidStretch"
+            )
+
+            // Ultra-Smooth Liquid Glass Bubble
             Box(
                 modifier = Modifier
-                    .offset(x = bubbleOffset, y = 2.dp)
+                    .offset(x = currentBubbleOffset, y = 2.dp)
                     .width(bubbleWidth)
                     .height(bubbleHeight)
+                    .scale(scaleX = liquidStretchX, scaleY = 1.0f)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.22f),
+                                Color.White.copy(alpha = 0.24f),
                                 Color.White.copy(alpha = 0.05f),
-                                Color.White.copy(alpha = 0.12f)
+                                Color.White.copy(alpha = 0.15f)
                             )
                         )
                     )
                     .border(
-                        width = 1.dp,
+                        width = 1.2.dp,
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.50f),
+                                Color.White.copy(alpha = 0.55f),
                                 Color.White.copy(alpha = 0.10f)
                             )
                         ),
