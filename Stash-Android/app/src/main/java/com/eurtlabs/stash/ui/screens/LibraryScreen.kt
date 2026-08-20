@@ -207,10 +207,10 @@ private fun LibraryItemCard(
                 .background(palette.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            if (!item.track.albumArtUrl.isNullOrBlank()) {
+            if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = item.track.albumArtUrl,
-                    contentDescription = item.track.title,
+                    model = item.trackInfo.albumArtUrl,
+                    contentDescription = item.trackInfo.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -242,7 +242,7 @@ private fun LibraryItemCard(
         // Title and details
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = item.track.title,
+                text = item.trackInfo.title,
                 color = palette.textPrimary,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.5.sp,
@@ -257,7 +257,7 @@ private fun LibraryItemCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = item.track.artists.joinToString(", "),
+                    text = item.trackInfo.artists.joinToString(", "),
                     color = palette.textSecondary,
                     fontSize = 11.5.sp,
                     maxLines = 1,

@@ -2,6 +2,24 @@
 
 ---
 
+### 📌 [ANDROID-FIX-018] DownloadBatch & DownloadItem Model Property Alignment
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/LibraryStore.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/LibraryScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` threw compilation errors in `LibraryStore.kt`, `LibraryScreen.kt`, and `DownloadViewModel.kt` due to mismatched model constructor properties (`track` vs `trackInfo`, `title` vs `name`, and `outputDir`).
+
+#### 2. Root Cause & Solution
+- Aligned all `DownloadItem` constructors to use `trackInfo: TrackInfo`.
+- Aligned `DownloadBatch` constructors to use `name: String`, `outputDir: String`, `quality: DownloadQuality`, `format: DownloadFormat`, and `items: List<DownloadItem>`.
+- Verified all callers in `LibraryStore.kt`, `LibraryScreen.kt`, and `DownloadViewModel.kt`.
+
+---
+
 ### 📌 [ANDROID-FEAT-010] Persistent Library Storage, Disk Scanner & Floating Liquid Glass Island Nav
 - **Date**: 2026-08-20
 - **Files Modified**: 

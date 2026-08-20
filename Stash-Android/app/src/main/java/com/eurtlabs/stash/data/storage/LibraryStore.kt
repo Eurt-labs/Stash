@@ -1,7 +1,6 @@
 package com.eurtlabs.stash.data.storage
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import android.os.Environment
 import android.util.Log
 import com.eurtlabs.stash.data.downloader.LogManager
@@ -35,10 +34,10 @@ object LibraryStore {
         if (newDiskItems.isNotEmpty()) {
             val diskBatch = DownloadBatch(
                 id = "disk_scan_batch",
-                title = "Downloaded on Device",
-                platform = Platform.OTHER,
-                totalTracks = newDiskItems.size,
-                items = newDiskItems
+                name = "Downloaded on Device",
+                items = newDiskItems,
+                outputDir = StorageManager.getDisplayStoragePath(context),
+                isCompleted = true
             )
             persistedBatches.add(0, diskBatch)
         }
@@ -55,21 +54,22 @@ object LibraryStore {
                 if (completedItems.isNotEmpty()) {
                     val batchObj = JSONObject().apply {
                         put("id", batch.id)
-                        put("title", batch.title)
-                        put("platform", batch.platform.name)
-                        put("totalTracks", batch.totalTracks)
+                        put("name", batch.name)
+                        put("outputDir", batch.outputDir)
+                        put("format", batch.format.name)
+                        put("quality", batch.quality.name)
 
                         val itemsArray = JSONArray()
                         completedItems.forEach { item ->
                             val itemObj = JSONObject().apply {
                                 put("id", item.id)
-                                put("trackId", item.track.id)
-                                put("title", item.track.title)
-                                put("artists", JSONArray(item.track.artists))
-                                put("durationMs", item.track.durationMs)
-                                put("albumArtUrl", item.track.albumArtUrl ?: "")
-                                put("sourceUrl", item.track.sourceUrl)
-                                put("safeFileName", item.track.safeFileName)
+                                put("trackId", item.trackInfo.id)
+                                put("title", item.trackInfo.title)
+                                put("artists", JSONArray(item.trackInfo.artists))
+                                put("durationMs", item.trackInfo.durationMs)
+                                put("albumArtUrl", item.trackInfo.albumArtUrl ?: "")
+                                put("sourceUrl", item.trackInfo.sourceUrl)
+                                put("safeFileName", item.trackInfo.safeFileName)
                                 put("format", item.format.name)
                                 put("quality", item.quality.name)
                                 put("state", item.state.name)
@@ -103,9 +103,12 @@ object LibraryStore {
             for (i in 0 until jsonArray.length()) {
                 val batchObj = jsonArray.getJSONObject(i)
                 val batchId = batchObj.optString("id", UUID.randomUUID().toString())
-                val title = batchObj.optString("title", "Saved Batch")
-                val platformName = batchObj.optString("platform", Platform.OTHER.name)
-                val platform = runCatching { Platform.valueOf(platformName) }.getOrDefault(Platform.OTHER)
+                val name = batchObj.optString("name", "Saved Batch")
+                val outputDir = batchObj.optString("outputDir", StorageManager.getDisplayStoragePath(context))
+                val batchFormatName = batchObj.optString("format", DownloadFormat.MP3.name)
+                val batchFormat = runCatching { DownloadFormat.valueOf(batchFormatName) }.getOrDefault(DownloadFormat.MP3)
+                val batchQualityName = batchObj.optString("quality", DownloadQuality.AUDIO_320K.name)
+                val batchQuality = runCatching { DownloadQuality.valueOf(batchQualityName) }.getOrDefault(DownloadQuality.AUDIO_320K)
 
                 val itemsArray = batchObj.optJSONArray("items") ?: JSONArray()
                 val items = mutableListOf<DownloadItem>()
@@ -139,7 +142,7 @@ object LibraryStore {
                             artists = artists,
                             durationMs = durationMs,
                             albumArtUrl = albumArtUrl,
-                            source = platform,
+                            source = Platform.OTHER,
                             sourceUrl = sourceUrl,
                             safeFileName = safeFileName
                         )
@@ -148,7 +151,7 @@ object LibraryStore {
                             DownloadItem(
                                 id = itemObj.optString("id", UUID.randomUUID().toString()),
                                 batchId = batchId,
-                                track = track,
+                                trackInfo = track,
                                 quality = quality,
                                 format = format,
                                 state = DownloadState.COMPLETED,
@@ -163,10 +166,12 @@ object LibraryStore {
                     batches.add(
                         DownloadBatch(
                             id = batchId,
-                            title = title,
-                            platform = platform,
-                            totalTracks = items.size,
-                            items = items
+                            name = name,
+                            items = items,
+                            outputDir = outputDir,
+                            quality = batchQuality,
+                            format = batchFormat,
+                            isCompleted = true
                         )
                     )
                 }
@@ -199,7 +204,6 @@ object LibraryStore {
                 val artist = if (parts.size == 2) parts[0].trim() else "Stash Audio"
                 val title = if (parts.size == 2) parts[1].trim() else nameWithoutExt
 
-                val isAudio = file.extension.lowercase() in setOf("mp3", "m4a", "flac", "opus", "wav")
                 val format = when (file.extension.lowercase()) {
                     "flac" -> DownloadFormat.FLAC
                     "wav" -> DownloadFormat.WAV
@@ -226,7 +230,7 @@ object LibraryStore {
                     DownloadItem(
                         id = file.absolutePath,
                         batchId = "disk_scan_batch",
-                        track = track,
+                        trackInfo = track,
                         quality = DownloadQuality.AUDIO_320K,
                         format = format,
                         state = DownloadState.COMPLETED,

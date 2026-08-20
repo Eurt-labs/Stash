@@ -186,7 +186,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                         DownloadItem(
                             id = UUID.randomUUID().toString(),
                             batchId = batchId,
-                            track = track,
+                            trackInfo = track,
                             quality = currentQuality,
                             format = currentFormat,
                             state = DownloadState.QUEUED
@@ -195,10 +195,11 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
                     val newBatch = DownloadBatch(
                         id = batchId,
-                        title = batchTitle,
-                        platform = parsedLink.platform,
-                        totalTracks = items.size,
-                        items = items
+                        name = batchTitle,
+                        items = items,
+                        outputDir = currentSettings.outputDir,
+                        quality = currentQuality,
+                        format = currentFormat
                     )
 
                     _batches.value = listOf(newBatch) + _batches.value
@@ -233,7 +234,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         val downloadItem = DownloadItem(
             id = UUID.randomUUID().toString(),
             batchId = batchId,
-            track = trackInfo,
+            trackInfo = trackInfo,
             quality = currentQuality,
             format = currentFormat,
             state = DownloadState.QUEUED
@@ -241,10 +242,11 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
         val newBatch = DownloadBatch(
             id = batchId,
-            title = item.title,
-            platform = Platform.YOUTUBE,
-            totalTracks = 1,
-            items = listOf(downloadItem)
+            name = item.title,
+            items = listOf(downloadItem),
+            outputDir = currentSettings.outputDir,
+            quality = currentQuality,
+            format = currentFormat
         )
 
         _batches.value = listOf(newBatch) + _batches.value
@@ -272,7 +274,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             DownloadItem(
                 id = UUID.randomUUID().toString(),
                 batchId = batchId,
-                track = trackInfo,
+                trackInfo = trackInfo,
                 quality = currentQuality,
                 format = currentFormat,
                 state = DownloadState.QUEUED
@@ -281,10 +283,11 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
         val newBatch = DownloadBatch(
             id = batchId,
-            title = "$artistName - Full Discography (${items.size} Tracks)",
-            platform = Platform.YOUTUBE,
-            totalTracks = downloadItems.size,
-            items = downloadItems
+            name = "$artistName - Full Discography (${items.size} Tracks)",
+            items = downloadItems,
+            outputDir = currentSettings.outputDir,
+            quality = currentQuality,
+            format = currentFormat
         )
 
         _batches.value = listOf(newBatch) + _batches.value
@@ -301,12 +304,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                 for (item in batch.items) {
                     if (item.state == DownloadState.QUEUED) {
                         updateItemState(item.id, DownloadState.DOWNLOADING, 0f, "Starting download...")
-                        DownloadForegroundService.start(context, "Downloading ${item.track.title}")
+                        DownloadForegroundService.start(context, "Downloading ${item.trackInfo.title}")
 
                         try {
                             val downloadedFile = YoutubeDLManager.downloadTrack(
                                 context = context,
-                                trackInfo = item.track,
+                                trackInfo = item.trackInfo,
                                 quality = item.quality,
                                 format = item.format,
                                 outputDir = outputDir,
@@ -320,17 +323,17 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                                     progress,
                                     "Downloading: ${progress.toInt()}%$speedText$etaText"
                                 )
-                                DownloadForegroundService.updateProgress(context, item.track.title, progress.toInt())
+                                DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
                             }
 
                             updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
-                            val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.track)
+                            val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
 
                             updateItemState(item.id, DownloadState.COMPLETED, 100f, "Completed", finalPath = finalFile.absolutePath)
                             // Persist to LibraryStore
                             LibraryStore.saveLibrary(context, _batches.value)
                         } catch (e: Exception) {
-                            Log.e("DownloadViewModel", "Failed to download item ${item.track.title}", e)
+                            Log.e("DownloadViewModel", "Failed to download item ${item.trackInfo.title}", e)
                             updateItemState(item.id, DownloadState.FAILED, 0f, "Failed", error = e.message)
                         }
                     }
