@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-010] Persistent Library Storage, Disk Scanner & Floating Liquid Glass Island Nav
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/LibraryStore.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/LibraryScreen.kt`
+- **Severity**: Data Persistence & Visual Excellence
+
+#### 1. User Requests Addressed
+- **Persistent Library Storage**: Created `LibraryStore.kt` which automatically caches completed download batches and metadata into internal JSON storage (`stash_library_history.json`).
+- **Disk Auto-Discovery**: Automatically scans device download and music directories on startup so pre-existing downloaded media tracks are discovered, displayed, playable, and shareable even after process exit or device reboot.
+- **Floating Liquid Glass Island Navbar**: Redesigned the navigation bar into a detached floating frosted island (`shape = RoundedCornerShape(28.dp)`) with multi-stop specular highlights and high-refraction liquid glow bubbles for 120fps responsive gesture dragging and tapping.
+- **Library File Controls**: Added 1-tap playback via default Android media player (`Intent.ACTION_VIEW`), 1-tap sharing (`Intent.ACTION_SEND`), and live file size formatting (`MB`).
+
+---
+
 ### 📌 [ANDROID-FEAT-009] Horizontal Format & Quality Selectors + 120 Hz Hardware Display Optimizer
 - **Date**: 2026-08-20
 - **Files Modified**: 

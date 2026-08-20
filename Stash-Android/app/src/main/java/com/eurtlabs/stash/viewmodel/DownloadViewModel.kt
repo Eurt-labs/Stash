@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.eurtlabs.stash.data.downloader.LogManager
 import com.eurtlabs.stash.data.downloader.YoutubeDLManager
 import com.eurtlabs.stash.data.model.ColorTheme
 import com.eurtlabs.stash.data.model.DownloadBatch
@@ -13,11 +14,14 @@ import com.eurtlabs.stash.data.model.DownloadItem
 import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.DownloadState
 import com.eurtlabs.stash.data.model.MediaType
+import com.eurtlabs.stash.data.model.NavigationTab
+import com.eurtlabs.stash.data.model.Platform
 import com.eurtlabs.stash.data.model.SearchFilter
 import com.eurtlabs.stash.data.model.SearchResultItem
 import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.eurtlabs.stash.data.parser.LinkParser
+import com.eurtlabs.stash.data.storage.LibraryStore
 import com.eurtlabs.stash.data.storage.StorageManager
 import com.eurtlabs.stash.data.transcoder.MediaTagger
 import com.eurtlabs.stash.service.DownloadForegroundService
@@ -67,6 +71,17 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         )
     )
     val settings: StateFlow<StashSettings> = _settings.asStateFlow()
+
+    init {
+        // Load persisted library records and scan disk on startup
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val stored = LibraryStore.loadLibrary(app)
+            if (stored.isNotEmpty()) {
+                _batches.value = stored
+            }
+        }
+    }
 
     fun updateTheme(theme: ColorTheme) {
         _settings.value = _settings.value.copy(theme = theme)
@@ -132,24 +147,14 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun performSearch(query: String) {
-        if (query.isBlank()) {
-            _searchResults.value = emptyList()
-            return
-        }
-
-        // If user typed a direct URL, parse and download directly
-        if (query.startsWith("http://", ignoreCase = true) || query.startsWith("https://", ignoreCase = true)) {
-            parseAndEnqueue(query)
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
             _isSearching.value = true
             try {
-                val results = YoutubeDLManager.searchMedia(query, _searchFilter.value)
+                val results = YoutubeDLManager.searchMedia(query.trim(), _searchFilter.value)
                 _searchResults.value = results
             } catch (e: Exception) {
-                Log.e("DownloadViewModel", "Search execution error", e)
+                Log.e("DownloadViewModel", "Search error: ${e.message}", e)
                 _searchResults.value = emptyList()
             } finally {
                 _isSearching.value = false
@@ -157,72 +162,50 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun enqueueSearchResult(item: SearchResultItem) {
-        parseAndEnqueue(item.url)
-    }
-
-    fun enqueueAllSearchResults(items: List<SearchResultItem>, batchName: String) {
-        if (items.isEmpty()) return
-        val currentSettings = _settings.value
-        val currentFormat = currentSettings.format
-        val currentQuality = currentSettings.quality
-        val batchId = UUID.randomUUID().toString()
-
-        val tracks = items.map { item ->
-            val safeName = "${item.artist} - ${item.title}".replace(Regex("[\\\\/:*?\"<>|]"), "_").take(100)
-            TrackInfo(
-                id = item.id,
-                title = item.title,
-                artists = listOf(item.artist),
-                durationMs = 0L,
-                albumArtUrl = item.thumbnailUrl ?: "https://i.ytimg.com/vi/${item.id}/hqdefault.jpg",
-                source = com.eurtlabs.stash.data.model.Platform.YOUTUBE,
-                sourceUrl = item.url,
-                youtubeUrl = item.url,
-                safeFileName = safeName
-            )
+    fun parseAndEnqueue(url: String) {
+        val parsedLink = LinkParser.parse(url)
+        if (parsedLink == null) {
+            LogManager.append("DownloadViewModel", "Invalid URL: $url")
+            return
         }
 
-        val downloadItems = tracks.map { track ->
-            DownloadItem(
-                id = UUID.randomUUID().toString(),
-                batchId = batchId,
-                trackInfo = track,
-                quality = currentQuality,
-                format = currentFormat,
-                state = DownloadState.QUEUED
-            )
-        }
-
-        val batch = DownloadBatch(
-            id = batchId,
-            name = "$batchName (${tracks.size} Songs)",
-            items = downloadItems,
-            outputDir = currentSettings.outputDir,
-            quality = currentQuality,
-            format = currentFormat
-        )
-
-        _batches.value = listOf(batch) + _batches.value
-        processQueue()
-    }
-
-    fun parseAndEnqueue(input: String) {
-        val parsed = LinkParser.parse(input) ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _isFetching.value = true
-            _fetchingMessage.value = "Analyzing media link..."
+            _fetchingMessage.value = "Analyzing link and fetching metadata..."
 
             try {
-                val tracks = YoutubeDLManager.extractMetadata(parsed.originalUrl)
+                val tracks = YoutubeDLManager.extractMetadata(url)
                 if (tracks.isNotEmpty()) {
-                    enqueueBatch(
-                        name = tracks.firstOrNull()?.title ?: "Download Batch",
-                        tracks = tracks
+                    val batchId = UUID.randomUUID().toString()
+                    val batchTitle = tracks.firstOrNull()?.title ?: "Download Batch"
+                    val currentSettings = _settings.value
+                    val currentFormat = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioFormat else currentSettings.videoFormat
+                    val currentQuality = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioQuality else currentSettings.videoQuality
+
+                    val items = tracks.map { track ->
+                        DownloadItem(
+                            id = UUID.randomUUID().toString(),
+                            batchId = batchId,
+                            track = track,
+                            quality = currentQuality,
+                            format = currentFormat,
+                            state = DownloadState.QUEUED
+                        )
+                    }
+
+                    val newBatch = DownloadBatch(
+                        id = batchId,
+                        title = batchTitle,
+                        platform = parsedLink.platform,
+                        totalTracks = items.size,
+                        items = items
                     )
+
+                    _batches.value = listOf(newBatch) + _batches.value
+                    processQueue()
                 }
             } catch (e: Exception) {
-                Log.e("DownloadViewModel", "Error scraping metadata", e)
+                LogManager.append("DownloadViewModel", "Error fetching metadata: ${e.message}")
             } finally {
                 _isFetching.value = false
                 _fetchingMessage.value = ""
@@ -230,33 +213,81 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun enqueueBatch(name: String, tracks: List<TrackInfo>) {
-        val currentSettings = _settings.value
-        val currentFormat = currentSettings.format
-        val currentQuality = currentSettings.quality
+    fun enqueueTrackFromSearch(item: SearchResultItem) {
         val batchId = UUID.randomUUID().toString()
+        val currentSettings = _settings.value
+        val currentFormat = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioFormat else currentSettings.videoFormat
+        val currentQuality = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioQuality else currentSettings.videoQuality
 
-        val items = tracks.map { track ->
+        val trackInfo = TrackInfo(
+            id = item.id,
+            title = item.title,
+            artists = listOf(item.artist),
+            durationMs = 0L,
+            albumArtUrl = item.thumbnailUrl,
+            source = Platform.YOUTUBE,
+            sourceUrl = item.url,
+            safeFileName = "${item.artist} - ${item.title}".replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
+        )
+
+        val downloadItem = DownloadItem(
+            id = UUID.randomUUID().toString(),
+            batchId = batchId,
+            track = trackInfo,
+            quality = currentQuality,
+            format = currentFormat,
+            state = DownloadState.QUEUED
+        )
+
+        val newBatch = DownloadBatch(
+            id = batchId,
+            title = item.title,
+            platform = Platform.YOUTUBE,
+            totalTracks = 1,
+            items = listOf(downloadItem)
+        )
+
+        _batches.value = listOf(newBatch) + _batches.value
+        processQueue()
+    }
+
+    fun enqueueAllSearchResults(items: List<SearchResultItem>, artistName: String) {
+        if (items.isEmpty()) return
+        val batchId = UUID.randomUUID().toString()
+        val currentSettings = _settings.value
+        val currentFormat = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioFormat else currentSettings.videoFormat
+        val currentQuality = if (currentSettings.mediaType == MediaType.AUDIO) currentSettings.audioQuality else currentSettings.videoQuality
+
+        val downloadItems = items.map { item ->
+            val trackInfo = TrackInfo(
+                id = item.id,
+                title = item.title,
+                artists = listOf(item.artist),
+                durationMs = 0L,
+                albumArtUrl = item.thumbnailUrl,
+                source = Platform.YOUTUBE,
+                sourceUrl = item.url,
+                safeFileName = "${item.artist} - ${item.title}".replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
+            )
             DownloadItem(
                 id = UUID.randomUUID().toString(),
                 batchId = batchId,
-                trackInfo = track,
+                track = trackInfo,
                 quality = currentQuality,
                 format = currentFormat,
                 state = DownloadState.QUEUED
             )
         }
 
-        val batch = DownloadBatch(
+        val newBatch = DownloadBatch(
             id = batchId,
-            name = name,
-            items = items,
-            outputDir = currentSettings.outputDir,
-            quality = currentQuality,
-            format = currentFormat
+            title = "$artistName - Full Discography (${items.size} Tracks)",
+            platform = Platform.YOUTUBE,
+            totalTracks = downloadItems.size,
+            items = downloadItems
         )
 
-        _batches.value = listOf(batch) + _batches.value
+        _batches.value = listOf(newBatch) + _batches.value
         processQueue()
     }
 
@@ -270,12 +301,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                 for (item in batch.items) {
                     if (item.state == DownloadState.QUEUED) {
                         updateItemState(item.id, DownloadState.DOWNLOADING, 0f, "Starting download...")
-                        DownloadForegroundService.start(context, "Downloading ${item.trackInfo.title}")
+                        DownloadForegroundService.start(context, "Downloading ${item.track.title}")
 
                         try {
                             val downloadedFile = YoutubeDLManager.downloadTrack(
                                 context = context,
-                                trackInfo = item.trackInfo,
+                                trackInfo = item.track,
                                 quality = item.quality,
                                 format = item.format,
                                 outputDir = outputDir,
@@ -289,15 +320,17 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                                     progress,
                                     "Downloading: ${progress.toInt()}%$speedText$etaText"
                                 )
-                                DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
+                                DownloadForegroundService.updateProgress(context, item.track.title, progress.toInt())
                             }
 
                             updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
-                            val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
+                            val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.track)
 
                             updateItemState(item.id, DownloadState.COMPLETED, 100f, "Completed", finalPath = finalFile.absolutePath)
+                            // Persist to LibraryStore
+                            LibraryStore.saveLibrary(context, _batches.value)
                         } catch (e: Exception) {
-                            Log.e("DownloadViewModel", "Failed to download item ${item.trackInfo.title}", e)
+                            Log.e("DownloadViewModel", "Failed to download item ${item.track.title}", e)
                             updateItemState(item.id, DownloadState.FAILED, 0f, "Failed", error = e.message)
                         }
                     }
@@ -340,5 +373,18 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
     fun removeBatch(batchId: String) {
         _batches.value = _batches.value.filter { it.id != batchId }
+        viewModelScope.launch(Dispatchers.IO) {
+            LibraryStore.saveLibrary(getApplication(), _batches.value)
+        }
+    }
+
+    fun refreshLibrary() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val stored = LibraryStore.loadLibrary(app)
+            if (stored.isNotEmpty()) {
+                _batches.value = stored
+            }
+        }
     }
 }

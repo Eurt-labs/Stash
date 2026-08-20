@@ -35,6 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -75,8 +77,18 @@ fun LibraryScreen(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(palette.surfaceVariant)
-                        .border(1.dp, palette.border, CircleShape),
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                            )
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.05f))
+                            ),
+                            shape = CircleShape
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -99,7 +111,7 @@ fun LibraryScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Completed media downloads will appear here for instant playback and sharing.",
+                    text = "Completed media downloads will appear here persistently for instant playback and sharing.",
                     color = palette.textSecondary,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
@@ -111,7 +123,7 @@ fun LibraryScreen(
     } else {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp, top = 8.dp)
+            contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
         ) {
             item {
                 Row(
@@ -122,7 +134,7 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "SAVED DOWNLOADS",
+                        text = "SAVED LIBRARY",
                         color = palette.textSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -131,8 +143,9 @@ fun LibraryScreen(
 
                     Text(
                         text = "${completedItems.size} files",
-                        color = palette.textSecondary,
-                        fontSize = 11.sp
+                        color = palette.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
                     )
                 }
             }
@@ -150,92 +163,145 @@ private fun LibraryItemCard(
     context: Context
 ) {
     val palette = LocalStashPalette.current
+    val file = item.finalFilePath?.let { File(it) }
+    val fileSizeMb = if (file != null && file.exists()) {
+        String.format("%.1f MB", file.length().toDouble() / (1024 * 1024))
+    } else ""
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 5.dp)
+            .padding(horizontal = 20.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
             .clickable {
                 // Open file in external player
-                item.finalFilePath?.let { path ->
-                    val file = File(path)
-                    if (file.exists()) {
-                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(Intent.createChooser(intent, "Play Media"))
+                if (file != null && file.exists()) {
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
+                    context.startActivity(Intent.createChooser(intent, "Play Media"))
                 }
             }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Album art with play overlay
+        // Album art with play icon overlay
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(48.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(palette.surfaceVariant)
-                .border(0.5.dp, palette.border, RoundedCornerShape(10.dp)),
+                .background(palette.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
+            if (!item.track.albumArtUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = item.trackInfo.albumArtUrl,
-                    contentDescription = "Cover",
+                    model = item.track.albumArtUrl,
+                    contentDescription = item.track.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(46.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.28f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             } else {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    tint = palette.textSecondary,
-                    modifier = Modifier.size(22.dp)
+                    tint = palette.primary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
+        // Title and details
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = item.trackInfo.title,
+                text = item.track.title,
                 color = palette.textPrimary,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.5.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "${item.trackInfo.artists.joinToString(", ").ifEmpty { "Audio Track" }} • ${item.format.name}",
-                fontSize = 11.5.sp,
-                color = palette.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = item.track.artists.joinToString(", "),
+                    color = palette.textSecondary,
+                    fontSize = 11.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+
+                if (fileSizeMb.isNotEmpty()) {
+                    Text(
+                        text = "• $fileSizeMb",
+                        color = palette.textSecondary.copy(alpha = 0.7f),
+                        fontSize = 10.5.sp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(palette.primary.copy(alpha = 0.15f))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                ) {
+                    Text(
+                        text = item.format.ext.uppercase(),
+                        color = palette.primary,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
-        // Share button
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Share Icon Button
         IconButton(
             onClick = {
-                item.finalFilePath?.let { path ->
-                    val file = File(path)
-                    if (file.exists()) {
-                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = if (item.format.isAudioOnly) "audio/*" else "video/*"
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(Intent.createChooser(shareIntent, "Share Media"))
+                if (file != null && file.exists()) {
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        type = if (item.format.isAudioOnly) "audio/*" else "video/*"
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share Track"))
                 }
             },
             modifier = Modifier.size(36.dp)
