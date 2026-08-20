@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Stash</string>
+    <string name="download_channel_name">Download Progress</string>
+    <string name="download_channel_description">Shows active download speed and progress notifications</string>
+    <string name="search_placeholder">Paste YouTube URL or search track...</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_fetching">Analyzing link...</string>
+    <string name="status_downloading">Downloading stream...</string>
+    <string name="status_converting">Transcoding audio...</string>
+    <string name="status_completed">Completed</string>
+</resources>
