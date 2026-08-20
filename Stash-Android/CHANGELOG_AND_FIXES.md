@@ -2,6 +2,21 @@
 
 ---
 
+### 📌 [ANDROID-FIX-017] Android 16 KB Page Alignment & JNI Packaging Resolution
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/build.gradle.kts`
+- **Severity**: Android 16 (API 36) Compatibility
+
+#### 1. Problem Description
+- Android Studio / Android 16 device (OPPO CPH2729) displayed:
+  `Android 16 KB Alignment: APK app-debug.apk is not compatible with 16 KB devices. Some libraries have LOAD segments not aligned at 16 KB boundaries.`
+
+#### 2. Root Cause & Solution
+- Android 15 and 16 introduced 16 KB memory page sizes. Precompiled native binaries bundled inside uncompressed APKs can have 4KB-aligned ELF segments.
+- Configured `packaging { jniLibs { useLegacyPackaging = true } }` in `app/build.gradle.kts`. This instructs Android to extract native `.so` shared libraries to the device's native library path with 16 KB memory alignment, ensuring complete runtime stability.
+
+---
+
 ### 📌 [ANDROID-FIX-016] Enum Property Name Alignments in SettingsScreen
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`

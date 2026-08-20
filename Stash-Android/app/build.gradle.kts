@@ -47,6 +47,9 @@ android {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
     packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             pickFirsts += "lib/**/libc++_shared.so"
