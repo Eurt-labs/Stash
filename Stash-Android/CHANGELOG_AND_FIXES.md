@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FIX-012] FFmpeg Package Alignment & Execute Parameter Resolution
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/StashApplication.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+- **Severity**: Compilation & Engine Initialization Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` threw `Unresolved reference: FFmpeg` in `StashApplication.kt`.
+
+#### 2. Root Cause & Solution
+- In `youtubedl-android`, `FFmpeg` is situated under package `com.yausername.ffmpeg.FFmpeg` (separate from `com.yausername.youtubedl_android.YoutubeDL`).
+- Corrected import to `import com.yausername.ffmpeg.FFmpeg`.
+- Fully typed Kotlin callback parameters for `YoutubeDL.getInstance().execute(request, processId) { progress: Float, etaInSeconds: Long, line: String? -> ... }`.
+
+---
+
 ### 📌 [ANDROID-FEAT-006] Full Artist Discography Grabber & Batch Downloader
 - **Date**: 2026-08-20
 - **Files Modified**: 

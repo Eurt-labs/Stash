@@ -51,7 +51,7 @@ object YoutubeDLManager {
                 addOption("--socket-timeout", "15")
                 addOption("--extractor-args", "youtube:player_client=android,web")
             }
-            val response = YoutubeDL.getInstance().execute(request)
+            val response = YoutubeDL.getInstance().execute(request, null, null)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
 
             val results = mutableListOf<SearchResultItem>()
@@ -175,7 +175,7 @@ object YoutubeDLManager {
         }
 
         try {
-            YoutubeDL.getInstance().execute(request, processId) { progress, etaInSeconds, line ->
+            YoutubeDL.getInstance().execute(request, processId) { progress: Float, etaInSeconds: Long, line: String? ->
                 val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
                 val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
                 val speedStr = speedMatch?.value ?: ""
