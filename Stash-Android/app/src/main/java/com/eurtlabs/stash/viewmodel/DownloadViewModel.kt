@@ -35,8 +35,13 @@ import java.util.UUID
 
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _batches = MutableStateFlow<List<DownloadBatch>>(emptyList())
-    val batches: StateFlow<List<DownloadBatch>> = _batches.asStateFlow()
+    // Distinct Queue batches (active downloads) vs Persistent Library batches
+    private val _queueBatches = MutableStateFlow<List<DownloadBatch>>(emptyList())
+    val queueBatches: StateFlow<List<DownloadBatch>> = _queueBatches.asStateFlow()
+    val batches: StateFlow<List<DownloadBatch>> = _queueBatches.asStateFlow() // Alias for Queue
+
+    private val _libraryBatches = MutableStateFlow<List<DownloadBatch>>(emptyList())
+    val libraryBatches: StateFlow<List<DownloadBatch>> = _libraryBatches.asStateFlow()
 
     private val _isFetching = MutableStateFlow(false)
     val isFetching: StateFlow<Boolean> = _isFetching.asStateFlow()
@@ -78,7 +83,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             val app = getApplication<Application>()
             val stored = LibraryStore.loadLibrary(app)
             if (stored.isNotEmpty()) {
-                _batches.value = stored
+                _libraryBatches.value = stored
             }
         }
     }
@@ -202,7 +207,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                         format = currentFormat
                     )
 
-                    _batches.value = listOf(newBatch) + _batches.value
+                    _queueBatches.value = listOf(newBatch) + _queueBatches.value
                     processQueue()
                 }
             } catch (e: Exception) {
@@ -249,7 +254,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             format = currentFormat
         )
 
-        _batches.value = listOf(newBatch) + _batches.value
+        _queueBatches.value = listOf(newBatch) + _queueBatches.value
         processQueue()
     }
 
@@ -290,7 +295,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             format = currentFormat
         )
 
-        _batches.value = listOf(newBatch) + _batches.value
+        _queueBatches.value = listOf(newBatch) + _queueBatches.value
         processQueue()
     }
 
@@ -299,7 +304,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             val context = getApplication<Application>()
             val outputDir = StorageManager.getTargetOutputDir(context)
 
-            val currentBatches = _batches.value
+            val currentBatches = _queueBatches.value
             for (batch in currentBatches) {
                 for (item in batch.items) {
                     if (item.state == DownloadState.QUEUED) {
@@ -329,9 +334,17 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                             updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
                             val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
 
+                            val completedItem = item.copy(
+                                state = DownloadState.COMPLETED,
+                                progress = 100f,
+                                statusMessage = "Completed",
+                                finalFilePath = finalFile.absolutePath
+                            )
+
                             updateItemState(item.id, DownloadState.COMPLETED, 100f, "Completed", finalPath = finalFile.absolutePath)
-                            // Persist to LibraryStore
-                            LibraryStore.saveLibrary(context, _batches.value)
+
+                            // Add to Persistent Library Batches (Independent from Queue)
+                            addToLibrary(completedItem, batch)
                         } catch (e: Exception) {
                             Log.e("DownloadViewModel", "Failed to download item ${item.trackInfo.title}", e)
                             updateItemState(item.id, DownloadState.FAILED, 0f, "Failed", error = e.message)
@@ -344,6 +357,25 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun addToLibrary(completedItem: DownloadItem, sourceBatch: DownloadBatch) {
+        val currentLib = _libraryBatches.value.toMutableList()
+        val existingBatchIndex = currentLib.indexOfFirst { it.id == sourceBatch.id }
+
+        if (existingBatchIndex >= 0) {
+            val existing = currentLib[existingBatchIndex]
+            val updatedItems = existing.items.filter { it.id != completedItem.id } + listOf(completedItem)
+            currentLib[existingBatchIndex] = existing.copy(items = updatedItems)
+        } else {
+            val singleBatch = sourceBatch.copy(items = listOf(completedItem))
+            currentLib.add(0, singleBatch)
+        }
+
+        _libraryBatches.value = currentLib
+        viewModelScope.launch(Dispatchers.IO) {
+            LibraryStore.saveLibrary(getApplication(), currentLib)
+        }
+    }
+
     private fun updateItemState(
         itemId: String,
         state: DownloadState,
@@ -352,7 +384,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         finalPath: String? = null,
         error: String? = null
     ) {
-        _batches.value = _batches.value.map { batch ->
+        _queueBatches.value = _queueBatches.value.map { batch ->
             batch.copy(
                 items = batch.items.map { item ->
                     if (item.id == itemId) {
@@ -393,7 +425,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelBatch(batchId: String) {
-        val batch = _batches.value.find { it.id == batchId }
+        val batch = _queueBatches.value.find { it.id == batchId }
         batch?.items?.forEach { item ->
             if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.QUEUED) {
                 try {
@@ -404,11 +436,29 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // Clears only from Queue (does NOT remove from Library)
     fun removeBatch(batchId: String) {
         cancelBatch(batchId)
-        _batches.value = _batches.value.filter { it.id != batchId }
+        _queueBatches.value = _queueBatches.value.filter { it.id != batchId }
+    }
+
+    // Removes an individual item from Queue (does NOT remove from Library)
+    fun removeItem(itemId: String) {
+        cancelItem(itemId)
+        _queueBatches.value = _queueBatches.value.mapNotNull { batch ->
+            val remaining = batch.items.filter { it.id != itemId }
+            if (remaining.isEmpty()) null else batch.copy(items = remaining)
+        }
+    }
+
+    // Removes an item from Library
+    fun deleteLibraryItem(itemId: String) {
+        _libraryBatches.value = _libraryBatches.value.mapNotNull { batch ->
+            val remaining = batch.items.filter { it.id != itemId }
+            if (remaining.isEmpty()) null else batch.copy(items = remaining)
+        }
         viewModelScope.launch(Dispatchers.IO) {
-            LibraryStore.saveLibrary(getApplication(), _batches.value)
+            LibraryStore.saveLibrary(getApplication(), _libraryBatches.value)
         }
     }
 
@@ -417,7 +467,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             val app = getApplication<Application>()
             val stored = LibraryStore.loadLibrary(app)
             if (stored.isNotEmpty()) {
-                _batches.value = stored
+                _libraryBatches.value = stored
             }
         }
     }

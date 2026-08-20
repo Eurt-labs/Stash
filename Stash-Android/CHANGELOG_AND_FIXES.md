@@ -2,6 +2,25 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-016] Optical Background Refraction, Swipe-to-Dismiss & Library Separation
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BatchQueueList.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: Core UX & Architecture Isolation
+
+#### 1. User Requests Addressed
+- **Real Optical Background Refraction Blur**:
+  - Attached dynamic `Modifier.blur(22.dp)` to the queue list when the Liquid Glass Modal Sheet is popped open, physically blurring all background text, album artwork, and cards (replicating genuine iPhone / WebGL liquid glass shaders).
+- **Swipe-to-Dismiss / Slide-to-Remove Queue Gesture**:
+  - Implemented `SwipeToDismissBox` on all queue item rows with animated red liquid glass action background and trash icon for effortless swipe-to-delete.
+- **Independent Queue vs Library Isolation**:
+  - Separated `_queueBatches` from `_libraryBatches` in `DownloadViewModel.kt`.
+  - Clearing or removing items/batches from the Queue now only removes them from the active Queue screen, preserving completed files and history intact inside the Library.
+
+---
+
 ### 📌 [ANDROID-FEAT-015] Compact WebGL Liquid Glass & Sleek Cloud Pills
 - **Date**: 2026-08-20
 - **Files Modified**: 

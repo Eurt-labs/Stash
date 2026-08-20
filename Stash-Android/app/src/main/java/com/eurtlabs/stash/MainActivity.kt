@@ -92,7 +92,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settings by viewModel.settings.collectAsState()
-            val batches by viewModel.batches.collectAsState()
+            val batches by viewModel.queueBatches.collectAsState()
+            val libraryBatches by viewModel.libraryBatches.collectAsState()
             val isFetching by viewModel.isFetching.collectAsState()
             val fetchingMessage by viewModel.fetchingMessage.collectAsState()
 
@@ -104,7 +105,7 @@ class MainActivity : ComponentActivity() {
             val activeDownloadsCount = batches.flatMap { it.items }.count {
                 it.state == DownloadState.DOWNLOADING || it.state == DownloadState.CONVERTING || it.state == DownloadState.TAGGING
             }
-            val completedCount = batches.flatMap { it.items }.count { it.state == DownloadState.COMPLETED }
+            val completedCount = libraryBatches.flatMap { it.items }.count { it.state == DownloadState.COMPLETED }
 
             StashTheme(theme = settings.theme) {
                 val palette = LocalStashPalette.current
@@ -190,7 +191,7 @@ class MainActivity : ComponentActivity() {
                                                 onRetryItem = { itemId -> viewModel.retryItem(itemId) },
                                                 onCancelItem = { itemId -> viewModel.cancelItem(itemId) },
                                                 onPauseItem = { itemId -> viewModel.pauseItem(itemId) },
-                                                onDeleteItem = { itemId -> viewModel.cancelItem(itemId) }
+                                                onDeleteItem = { itemId -> viewModel.removeItem(itemId) }
                                             )
                                         }
                                     }
@@ -212,7 +213,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                     NavigationTab.LIBRARY -> {
-                                        LibraryScreen(batches = batches)
+                                        LibraryScreen(batches = libraryBatches)
                                     }
                                     NavigationTab.SETTINGS -> {
                                         SettingsScreen(
