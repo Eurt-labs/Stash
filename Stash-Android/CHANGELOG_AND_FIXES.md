@@ -2,6 +2,20 @@
 
 ---
 
+### 📌 [ANDROID-FIX-014] Compose Runtime Imports & Icons Resolution in SettingsScreen
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` threw `Unresolved reference: Speed` and missing `setValue` delegate in `SettingsScreen.kt`.
+
+#### 2. Root Cause & Solution
+- Added `import androidx.compose.runtime.setValue`, `rememberCoroutineScope`, and `mutableStateOf`.
+- Used standard `Icons.Default.Tune` for the Diagnostics & Logs section header icon.
+
+---
+
 ### 📌 [ANDROID-FEAT-007] Diagnostics Exporter, Engine Updater, Runtime Permissions & Navbar Polish
 - **Date**: 2026-08-20
 - **Files Modified**: 
