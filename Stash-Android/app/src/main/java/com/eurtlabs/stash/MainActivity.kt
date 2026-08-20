@@ -200,6 +200,10 @@ class MainActivity : ComponentActivity() {
                                             onDownloadItem = { item ->
                                                 viewModel.enqueueSearchResult(item)
                                                 activeTabState = NavigationTab.QUEUE
+                                            },
+                                            onDownloadAll = { items, artistName ->
+                                                viewModel.enqueueAllSearchResults(items, artistName)
+                                                activeTabState = NavigationTab.QUEUE
                                             }
                                         )
                                     }

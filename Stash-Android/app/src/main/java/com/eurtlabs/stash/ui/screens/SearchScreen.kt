@@ -29,9 +29,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -66,6 +68,7 @@ fun SearchScreen(
     onFilterChanged: (SearchFilter) -> Unit,
     onSearch: (String) -> Unit,
     onDownloadItem: (SearchResultItem) -> Unit,
+    onDownloadAll: (List<SearchResultItem>, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -77,8 +80,9 @@ fun SearchScreen(
         "Coldplay",
         "Billie Eilish",
         "Taylor Swift",
-        "Lofi Hip Hop",
-        "Synthwave 80s"
+        "Travis Scott",
+        "Eminem",
+        "Lofi Hip Hop"
     )
 
     LazyColumn(
@@ -144,7 +148,7 @@ fun SearchScreen(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "Searching YouTube Music & Videos...",
+                            text = if (selectedFilter == SearchFilter.ARTISTS) "Fetching full artist catalog & songs..." else "Searching YouTube Music & Videos...",
                             color = palette.textSecondary,
                             fontSize = 12.5.sp
                         )
@@ -152,10 +156,109 @@ fun SearchScreen(
                 }
             }
         } else if (searchResults.isNotEmpty()) {
-            // Search Results List
+            // If in ARTISTS tab, show prominent Artist Header Card with "Download All" button
+            if (selectedFilter == SearchFilter.ARTISTS) {
+                val artistName = searchResults.firstOrNull()?.artist ?: "Artist Discography"
+                val artistThumb = searchResults.firstOrNull()?.thumbnailUrl ?: "https://i.ytimg.com/vi/${searchResults.firstOrNull()?.id}/hqdefault.jpg"
+
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(palette.surface)
+                            .border(1.dp, palette.border, RoundedCornerShape(20.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(54.dp)
+                                        .clip(CircleShape)
+                                        .background(palette.surfaceVariant)
+                                        .border(1.dp, palette.border, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = artistThumb,
+                                        contentDescription = artistName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = artistName,
+                                            color = palette.textPrimary,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.Verified,
+                                            contentDescription = "Verified",
+                                            tint = palette.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Complete Songs Catalog • ${searchResults.size} Tracks",
+                                        color = palette.textSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // "Download All Songs (Batch)" Button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(palette.primary)
+                                    .clickable { onDownloadAll(searchResults, artistName) }
+                                    .padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DownloadForOffline,
+                                    contentDescription = null,
+                                    tint = palette.onPrimary,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Download All ${searchResults.size} Songs (Batch)",
+                                    color = palette.onPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            // Results Counter Header
             item {
                 Text(
-                    text = "SEARCH RESULTS (${searchResults.size})",
+                    text = if (selectedFilter == SearchFilter.ARTISTS) "ALL SONGS (${searchResults.size})" else "SEARCH RESULTS (${searchResults.size})",
                     color = palette.textSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -230,7 +333,7 @@ fun SearchScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "POPULAR SEARCHES",
+                    text = if (selectedFilter == SearchFilter.ARTISTS) "POPULAR ARTISTS" else "POPULAR SEARCHES",
                     color = palette.textSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -258,7 +361,7 @@ fun SearchScreen(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Search,
+                                    imageVector = if (selectedFilter == SearchFilter.ARTISTS) Icons.Default.MusicNote else Icons.Default.Search,
                                     contentDescription = null,
                                     tint = palette.textSecondary,
                                     modifier = Modifier.size(13.dp)
@@ -298,7 +401,7 @@ fun SearchScreen(
                     SourceInfoRow(
                         icon = Icons.Default.MusicNote,
                         title = "YouTube Music Tracks & Artists",
-                        subtitle = "Lossless 320kbps audio with album cover artwork"
+                        subtitle = "Grab complete discographies or individual lossless tracks"
                     )
                     SourceInfoRow(
                         icon = Icons.Default.PlayCircleOutline,

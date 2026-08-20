@@ -2,6 +2,27 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-006] Full Artist Discography Grabber & Batch Downloader
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SearchScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: Major Feature & User Request
+
+#### 1. User Request
+- In the **Artists tab** in Search, grab all the songs of that artist and enable downloading their full discography.
+
+#### 2. Technical Implementation
+- **Deep Artist Catalog Scraper**: Configured `SearchFilter.ARTISTS` in `YoutubeDLManager.kt` to query `ytsearch30:$query songs`, pulling 30+ top tracks by that artist with verified channel metadata and album art.
+- **Artist Discography Card**:
+  - Displays artist avatar, verified badge, and track count header.
+  - Added a prominent **"Download All 30 Songs (Batch)"** action button.
+- **Batch Enqueue Engine**: Implemented `enqueueAllSearchResults` in `DownloadViewModel.kt` to batch-enqueue the entire artist discography into the parallel download queue in a single tap!
+
+---
+
 ### 📌 [ANDROID-FEAT-005] Real Liquid Glass Refraction, Draggable Bubble & YouTube Stream Resolution
 - **Date**: 2026-08-20
 - **Files Modified**: 

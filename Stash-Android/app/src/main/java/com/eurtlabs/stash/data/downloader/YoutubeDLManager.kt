@@ -37,10 +37,10 @@ object YoutubeDLManager {
         filter: SearchFilter = SearchFilter.ALL
     ): List<SearchResultItem> = withContext(Dispatchers.IO) {
         val searchPrefix = when (filter) {
-            SearchFilter.MUSIC -> "ytsearch10:$query music"
-            SearchFilter.ARTISTS -> "ytsearch10:$query official artist channel"
-            SearchFilter.VIDEOS -> "ytsearch10:$query"
-            SearchFilter.ALL -> "ytsearch10:$query"
+            SearchFilter.MUSIC -> "ytsearch15:$query music"
+            SearchFilter.ARTISTS -> "ytsearch30:$query songs"
+            SearchFilter.VIDEOS -> "ytsearch15:$query"
+            SearchFilter.ALL -> "ytsearch15:$query"
         }
 
         try {

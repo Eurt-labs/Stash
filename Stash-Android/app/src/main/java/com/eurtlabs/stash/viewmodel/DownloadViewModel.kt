@@ -161,6 +161,52 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         parseAndEnqueue(item.url)
     }
 
+    fun enqueueAllSearchResults(items: List<SearchResultItem>, batchName: String) {
+        if (items.isEmpty()) return
+        val currentSettings = _settings.value
+        val currentFormat = currentSettings.format
+        val currentQuality = currentSettings.quality
+        val batchId = UUID.randomUUID().toString()
+
+        val tracks = items.map { item ->
+            val safeName = "${item.artist} - ${item.title}".replace(Regex("[\\\\/:*?\"<>|]"), "_").take(100)
+            TrackInfo(
+                id = item.id,
+                title = item.title,
+                artists = listOf(item.artist),
+                durationMs = 0L,
+                albumArtUrl = item.thumbnailUrl ?: "https://i.ytimg.com/vi/${item.id}/hqdefault.jpg",
+                source = com.eurtlabs.stash.data.model.Platform.YOUTUBE,
+                sourceUrl = item.url,
+                youtubeUrl = item.url,
+                safeFileName = safeName
+            )
+        }
+
+        val downloadItems = tracks.map { track ->
+            DownloadItem(
+                id = UUID.randomUUID().toString(),
+                batchId = batchId,
+                trackInfo = track,
+                quality = currentQuality,
+                format = currentFormat,
+                state = DownloadState.QUEUED
+            )
+        }
+
+        val batch = DownloadBatch(
+            id = batchId,
+            name = "$batchName (${tracks.size} Songs)",
+            items = downloadItems,
+            outputDir = currentSettings.outputDir,
+            quality = currentQuality,
+            format = currentFormat
+        )
+
+        _batches.value = listOf(batch) + _batches.value
+        processQueue()
+    }
+
     fun parseAndEnqueue(input: String) {
         val parsed = LinkParser.parse(input) ?: return
         viewModelScope.launch(Dispatchers.IO) {
