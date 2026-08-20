@@ -120,24 +120,38 @@ object LinkParser {
             )
         }
 
-        // 7. Generic URL fallback
+        // 7. Generic URL fallback (only valid http/https URLs)
         if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
-            val hashId = md5(trimmed).take(12)
+            // Validate it looks like an actual URL (has a domain)
+            val domainMatch = Regex("^https?://[a-zA-Z0-9]").containsMatchIn(trimmed)
+            if (domainMatch) {
+                val hashId = md5(trimmed).take(12)
+                return ParsedLink(
+                    platform = Platform.OTHER,
+                    contentType = ContentType.VIDEO,
+                    id = hashId,
+                    originalUrl = trimmed
+                )
+            }
+        }
+
+        // 8. Reject file paths, random non-URL text
+        // Only allow input that doesn't contain backslashes or look like a local path
+        if (trimmed.contains("\\") || trimmed.contains(":/") || trimmed.startsWith("/") || trimmed.startsWith("C:")) {
+            return null
+        }
+
+        // 9. Plain text query — search fallback (only for clean query strings)
+        if (trimmed.length in 2..120 && !trimmed.contains("://")) {
             return ParsedLink(
-                platform = Platform.OTHER,
-                contentType = ContentType.VIDEO,
-                id = hashId,
-                originalUrl = trimmed
+                platform = Platform.YOUTUBE,
+                contentType = ContentType.TRACK,
+                id = trimmed,
+                originalUrl = "ytsearch1:$trimmed"
             )
         }
 
-        // 8. Plain Text Query search fallback
-        return ParsedLink(
-            platform = Platform.YOUTUBE,
-            contentType = ContentType.TRACK,
-            id = trimmed,
-            originalUrl = "ytsearch1:$trimmed"
-        )
+        return null
     }
 
     private fun md5(input: String): String {

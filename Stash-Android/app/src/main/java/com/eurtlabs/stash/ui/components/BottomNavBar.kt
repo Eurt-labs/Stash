@@ -141,8 +141,8 @@ fun BottomNavBar(
                 val animatedOffset by animateDpAsState(
                     targetValue = defaultOffset,
                     animationSpec = spring(
-                        dampingRatio = 0.76f,
-                        stiffness = 450f
+                        dampingRatio = 0.80f,
+                        stiffness = 320f
                     ),
                     label = "bubbleSpring"
                 )
@@ -156,8 +156,8 @@ fun BottomNavBar(
 
                 val isDragging = dragXOffset != null
                 val liquidStretchX by animateFloatAsState(
-                    targetValue = if (isDragging) 1.14f else 1.0f,
-                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 420f),
+                    targetValue = if (isDragging) 1.08f else 1.0f,
+                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 300f),
                     label = "liquidStretch"
                 )
 
@@ -219,8 +219,8 @@ fun BottomNavBar(
                         )
 
                         val itemScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.05f else 0.95f,
-                            animationSpec = spring(dampingRatio = 0.75f, stiffness = 380f),
+                            targetValue = if (isSelected) 1.02f else 0.97f,
+                            animationSpec = spring(dampingRatio = 0.80f, stiffness = 300f),
                             label = "itemScale"
                         )
 

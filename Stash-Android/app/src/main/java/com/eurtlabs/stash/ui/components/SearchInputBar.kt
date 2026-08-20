@@ -159,9 +159,8 @@ fun SearchInputBar(
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
                             if (!clip.isNullOrBlank()) {
-                                text = clip
-                                onAnalyzeUrl(clip)
-                                text = ""
+                                // Only paste into field — user must press Go to submit
+                                text = clip.trim()
                             }
                         }
                         .padding(horizontal = 12.dp, vertical = 6.dp),

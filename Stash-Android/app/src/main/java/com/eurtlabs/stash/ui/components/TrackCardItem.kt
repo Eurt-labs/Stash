@@ -2,7 +2,7 @@ package com.eurtlabs.stash.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -18,14 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -56,47 +53,47 @@ fun TrackCardItem(
 
     val animatedProgress by animateFloatAsState(
         targetValue = (item.progress / 100f).coerceIn(0f, 1f),
-        animationSpec = spring(stiffness = 300f),
+        animationSpec = tween(durationMillis = 350),
         label = "progress"
     )
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 5.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(18.dp))
             .background(
                 brush = Brush.verticalGradient(
                     listOf(
-                        palette.surface.copy(alpha = 0.92f),
-                        palette.surfaceVariant.copy(alpha = 0.70f)
+                        Color(0xFF1E1E24),
+                        Color(0xFF161619)
                     )
                 )
             )
             .border(
-                width = 1.2.dp,
+                width = 1.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.05f)
+                        Color.White.copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.04f)
                     )
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(18.dp)
             )
             .clickable { onClick() }
-            .padding(14.dp)
+            .padding(12.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Album Artwork Capsule
+            // Album Artwork
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(palette.surfaceVariant)
-                    .border(0.5.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(14.dp)),
+                    .border(0.5.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
@@ -104,26 +101,27 @@ fun TrackCardItem(
                         model = item.trackInfo.albumArtUrl,
                         contentDescription = "Cover",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(50.dp)
+                        modifier = Modifier.size(44.dp)
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.MusicNote,
                         contentDescription = null,
                         tint = palette.textSecondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
+            // Title + Artist + Status (Takes remaining space, constrained)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.trackInfo.title,
                     color = palette.textPrimary,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -131,11 +129,11 @@ fun TrackCardItem(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = item.trackInfo.artists.joinToString(", ").ifEmpty { "Media Track" },
-                        fontSize = 12.sp,
+                        text = item.trackInfo.artists.joinToString(", ").ifEmpty { "Media" },
+                        fontSize = 11.sp,
                         color = palette.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -143,7 +141,7 @@ fun TrackCardItem(
                     )
 
                     Text(
-                        text = "•",
+                        text = "·",
                         fontSize = 10.sp,
                         color = palette.textSecondary.copy(alpha = 0.5f)
                     )
@@ -156,19 +154,22 @@ fun TrackCardItem(
                     )
                 }
 
-                // Live dynamic status message
-                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING || item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED || item.state == DownloadState.IDLE) {
-                    Spacer(modifier = Modifier.height(3.dp))
+                // Live status text
+                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING ||
+                    item.state == DownloadState.FAILED || item.state == DownloadState.CANCELLED ||
+                    item.state == DownloadState.IDLE
+                ) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = when (item.state) {
                             DownloadState.DOWNLOADING -> "Downloading: ${item.progress.toInt()}%"
                             DownloadState.TAGGING -> "Embedding tags..."
-                            DownloadState.FAILED -> item.errorMessage?.take(40) ?: "Error"
-                            DownloadState.CANCELLED -> "Cancelled (Tap to manage)"
-                            DownloadState.IDLE -> "Paused (Tap to manage)"
+                            DownloadState.FAILED -> item.errorMessage?.take(50) ?: "Error"
+                            DownloadState.CANCELLED -> "Cancelled"
+                            DownloadState.IDLE -> "Paused"
                             else -> item.statusMessage
                         },
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         color = when (item.state) {
                             DownloadState.FAILED -> palette.error
                             DownloadState.CANCELLED -> palette.textSecondary
@@ -181,12 +182,12 @@ fun TrackCardItem(
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            // Right Status Badge / Pill
+            // Compact Right Status Badge
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(
                         when (item.state) {
                             DownloadState.COMPLETED -> palette.primary.copy(alpha = 0.18f)
@@ -195,30 +196,23 @@ fun TrackCardItem(
                             else -> palette.surfaceVariant
                         }
                     )
-                    .border(
-                        width = 0.8.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 when (item.state) {
                     DownloadState.COMPLETED -> {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Completed",
+                            contentDescription = "Done",
                             tint = palette.primary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                     }
                     DownloadState.DOWNLOADING, DownloadState.TAGGING -> {
                         Text(
                             text = "${item.progress.toInt()}%",
                             color = palette.primary,
-                            fontSize = 10.5.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -227,20 +221,12 @@ fun TrackCardItem(
                             imageVector = Icons.Default.ErrorOutline,
                             contentDescription = "Error",
                             tint = palette.error,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                    DownloadState.IDLE -> {
-                        Text(
-                            text = "PAUSED",
-                            color = palette.textSecondary,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
+                            modifier = Modifier.size(13.dp)
                         )
                     }
                     else -> {
                         Text(
-                            text = "QUEUED",
+                            text = if (item.state == DownloadState.IDLE) "||" else "···",
                             color = palette.textSecondary,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
@@ -250,23 +236,22 @@ fun TrackCardItem(
             }
         }
 
-        // Animated Progress Bar when downloading
+        // Slim Progress Bar
         AnimatedVisibility(
             visible = item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING,
-            enter = fadeIn(),
-            exit = fadeOut()
+            enter = fadeIn(animationSpec = tween(200)),
+            exit = fadeOut(animationSpec = tween(200))
         ) {
-            Column(modifier = Modifier.padding(top = 10.dp)) {
-                LinearProgressIndicator(
-                    progress = animatedProgress,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.5.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = palette.primary,
-                    trackColor = palette.surfaceVariant
-                )
-            }
+            LinearProgressIndicator(
+                progress = animatedProgress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+                color = palette.primary,
+                trackColor = palette.surfaceVariant
+            )
         }
     }
 }

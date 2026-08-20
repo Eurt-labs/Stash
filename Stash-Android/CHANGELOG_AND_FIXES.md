@@ -2,6 +2,24 @@
 
 ---
 
+### 📌 [ANDROID-FIX-020] Layout Overflow, URL Validation, Animation Smoothness & Margins
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/TrackCardItem.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/parser/LinkParser.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/SearchInputBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+- **Severity**: Critical UI Fix & Input Validation
+
+#### 1. Issues Fixed
+- **TrackCardItem Layout Overflow**: Status badge ("100%", "Remove") was overlapping text and clipping. Reduced artwork to 44dp, badge to 13dp icons, text to 13sp, inner padding to 12dp, and outer margin to 16dp/4dp for clean breathing room.
+- **LinkParser Invalid URL Crash**: File paths like `"C:\Users\..."` were being passed to yt-dlp as URLs. Added strict rejection of backslash paths, local paths, and non-URL text. Only HTTP/HTTPS URLs with valid domains or clean 2-120 char query strings are accepted.
+- **PASTE Chip Auto-Submit**: Tapping PASTE was immediately submitting clipboard content (even garbage). Changed to paste-into-field only — user must press Go to submit.
+- **Animation Smoothness**: Replaced snappy `spring(stiffness=450f)` with smoother `spring(stiffness=300-320f, dampingRatio=0.80f)` across BottomNavBar bubble, item scale, and progress bar for buttery 120Hz rendering.
+- **Margin Consistency**: Standardized horizontal padding to 16dp on cards, 18dp on sections, and 4dp vertical gaps for proper breathing space.
+
+---
+
 ### 📌 [ANDROID-FEAT-016] Optical Background Refraction, Swipe-to-Dismiss & Library Separation
 - **Date**: 2026-08-20
 - **Files Modified**: 
