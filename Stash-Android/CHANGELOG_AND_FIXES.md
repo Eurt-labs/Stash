@@ -2,6 +2,29 @@
 
 ---
 
+### 📌 [ANDROID-FIX-005] AAPT2 Resource Linking Fix for Vector Mipmap Launcher Icons
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/res/drawable/ic_launcher_background.xml`, `Stash-Android/app/src/main/res/drawable/ic_launcher_foreground.xml`, `Stash-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`, `Stash-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+- **Severity**: Critical (AAPT2 Resource Linking)
+
+#### 1. Problem Description & Symptoms
+- Build failed during `:app:processDebugResources`:
+  ```text
+  Aapt2Exception: Android resource linking failed
+  ERROR: AndroidManifest.xml:16:5: AAPT: error: resource mipmap/ic_launcher not found
+  ```
+
+#### 2. Technical Root Cause Analysis
+- `AndroidManifest.xml` referenced `@mipmap/ic_launcher` and `@mipmap/ic_launcher_round`, but the vector launcher drawables were missing in the resource tree.
+
+#### 3. Exact Solution & Code Implementation
+- Converted Stash's vector branding (`icon.svg`) into:
+  - `res/drawable/ic_launcher_background.xml`: Deep dark background (`#0b0d13`).
+  - `res/drawable/ic_launcher_foreground.xml`: Vector music note + download arrow matching Stash logo.
+  - `res/mipmap-anydpi-v26/ic_launcher.xml` and `ic_launcher_round.xml`: Adaptive icons for modern Android 8.0 - 16 devices.
+
+---
+
 ### 📌 [ANDROID-FIX-004] youtubedl-android Maven Central Coordinates Migration
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/build.gradle.kts`, `Stash-Android/app/src/main/AndroidManifest.xml`, `Stash-Android/app/proguard-rules.pro`
