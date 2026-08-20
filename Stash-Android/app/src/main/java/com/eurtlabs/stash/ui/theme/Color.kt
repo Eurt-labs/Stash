@@ -3,6 +3,15 @@ package com.eurtlabs.stash.ui.theme
 import androidx.compose.ui.graphics.Color
 import com.eurtlabs.stash.data.model.ColorTheme
 
+val TextPrimary = Color(0xFFFFFFFF)
+val TextSecondary = Color(0xFFA1A1AA)
+val BackgroundDark = Color(0xFF000000)
+val SurfaceDark = Color(0xFF0E0E0E)
+val SurfaceCard = Color(0xFF18181B)
+val BorderSubtle = Color(0xFF27272A)
+val GreenSuccess = Color(0xFF10B981)
+val RedError = Color(0xFFEF4444)
+
 data class ThemePalette(
     val primary: Color,
     val onPrimary: Color,

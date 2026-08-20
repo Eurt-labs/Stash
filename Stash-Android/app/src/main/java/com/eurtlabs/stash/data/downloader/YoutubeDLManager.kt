@@ -31,32 +31,26 @@ object YoutubeDLManager {
 
     suspend fun extractMetadata(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
         try {
-            val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(url)
+            val request = YoutubeDLRequest(url).apply {
+                addOption("--no-warnings")
+                addOption("--socket-timeout", "20")
+            }
+            val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
             listOf(videoInfoToTrackInfo(videoInfo, url))
         } catch (e: Exception) {
-            Log.w(TAG, "Fast metadata getInfo failed for $url, attempting request fallback", e)
-            try {
-                val request = YoutubeDLRequest(url).apply {
-                    addOption("--no-warnings")
-                    addOption("--socket-timeout", "20")
-                }
-                val videoInfo = YoutubeDL.getInstance().getInfo(request)
-                listOf(videoInfoToTrackInfo(videoInfo, url))
-            } catch (fallbackEx: Exception) {
-                Log.e(TAG, "Complete metadata extraction failed for $url", fallbackEx)
-                // Fallback basic track info so user can still proceed with download
-                val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
-                listOf(
-                    TrackInfo(
-                        id = UUID.randomUUID().toString(),
-                        title = "Media Download",
-                        artists = listOf("YouTube"),
-                        durationMs = 0L,
-                        sourceUrl = url,
-                        safeFileName = safeName
-                    )
+            Log.e(TAG, "Metadata extraction failed for $url", e)
+            // Fallback basic track info so user can still proceed with download
+            val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
+            listOf(
+                TrackInfo(
+                    id = UUID.randomUUID().toString(),
+                    title = "Media Download",
+                    artists = listOf("YouTube"),
+                    durationMs = 0L,
+                    sourceUrl = url,
+                    safeFileName = safeName
                 )
-            }
+            )
         }
     }
 
