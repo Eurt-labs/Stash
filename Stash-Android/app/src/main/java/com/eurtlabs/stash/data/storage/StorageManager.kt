@@ -67,10 +67,10 @@ object StorageManager {
 
     private fun getPathFromUri(context: Context, uri: Uri): String {
         return try {
-            val doc = DocumentFile.fromTreeUri(context, uri)
-            doc?.name ?: uri.path ?: "Selected Folder"
+            val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+            doc?.name ?: uri.lastPathSegment?.substringAfterLast(":") ?: "Custom Folder"
         } catch (e: Exception) {
-            uri.path ?: "Custom Folder"
+            uri.lastPathSegment?.substringAfterLast(":") ?: "Custom Folder"
         }
     }
 }

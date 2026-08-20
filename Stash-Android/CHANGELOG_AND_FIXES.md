@@ -2,6 +2,22 @@
 
 ---
 
+### 📌 [ANDROID-FIX-011] DocumentFile Dependency & URI Segment Path Resolution
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/build.gradle.kts`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/storage/StorageManager.kt`
+- **Severity**: Build Resolution & Storage Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` threw `Unresolved reference: documentfile` in `StorageManager.kt`.
+
+#### 2. Root Cause & Solution
+- Added explicit dependency `implementation("androidx.documentfile:documentfile:1.0.1")` in `app/build.gradle.kts`.
+- Enhanced `StorageManager.kt` with a fallback using `uri.lastPathSegment?.substringAfterLast(":")` to guarantee clean folder display names on Android 10 through Android 16.
+
+---
+
 ### 📌 [ANDROID-FEAT-004] Liquid Glass Sliding Bubble Navigation Bar Effect
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
