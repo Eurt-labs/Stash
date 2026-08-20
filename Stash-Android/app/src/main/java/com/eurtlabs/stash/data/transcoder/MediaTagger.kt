@@ -4,7 +4,6 @@ import android.content.Context
 import android.media.MediaScannerConnection
 import android.util.Log
 import com.eurtlabs.stash.data.model.TrackInfo
-import com.yausername.youtubedl_android.ffmpeg.FFmpeg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

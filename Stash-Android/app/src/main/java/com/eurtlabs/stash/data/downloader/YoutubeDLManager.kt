@@ -8,7 +8,6 @@ import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.Platform
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDLOption
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import com.yausername.youtubedl_android.mapper.VideoInfo
 import kotlinx.coroutines.Dispatchers

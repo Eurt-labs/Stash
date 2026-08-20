@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
 import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.ffmpeg.FFmpeg
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,10 +42,9 @@ class StashApplication : Application() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 YoutubeDL.getInstance().init(this@StashApplication)
-                FFmpeg.getInstance().init(this@StashApplication)
-                Log.d(TAG, "YoutubeDL and FFmpeg native engines successfully initialized.")
+                Log.d(TAG, "YoutubeDL native engine successfully initialized.")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize YoutubeDL / FFmpeg engine", e)
+                Log.e(TAG, "Failed to initialize YoutubeDL engine", e)
             }
         }
     }

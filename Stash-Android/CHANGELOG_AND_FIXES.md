@@ -2,6 +2,25 @@
 
 ---
 
+### 📌 [ANDROID-FIX-006] Native youtubedl-android Engine Initialization Cleanups
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/StashApplication.kt`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/transcoder/MediaTagger.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description & Symptoms
+- `:app:compileDebugKotlin` failed with unresolved reference:
+  `StashApplication.kt: Unresolved reference: ffmpeg`
+  `StashApplication.kt: Unresolved reference: FFmpeg`
+
+#### 2. Technical Root Cause Analysis
+- `youtubedl-android` automatically wraps and initializes FFmpeg internally inside `YoutubeDL.getInstance().init(context)` without requiring or exposing a separate public `FFmpeg` class.
+
+#### 3. Exact Solution & Code Implementation
+- Removed redundant `FFmpeg` import and initialization from `StashApplication.kt`.
+- Cleaned up unused imports across `YoutubeDLManager.kt` and `MediaTagger.kt`.
+
+---
+
 ### 📌 [ANDROID-FIX-005] AAPT2 Resource Linking Fix for Vector Mipmap Launcher Icons
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/res/drawable/ic_launcher_background.xml`, `Stash-Android/app/src/main/res/drawable/ic_launcher_foreground.xml`, `Stash-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`, `Stash-Android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
