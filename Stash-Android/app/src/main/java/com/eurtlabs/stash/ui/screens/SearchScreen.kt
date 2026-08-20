@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Search
@@ -45,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -95,7 +96,7 @@ fun SearchScreen(
 
         // Filter chips (All | Songs & Music | Artists | Videos)
         item {
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -121,7 +122,7 @@ fun SearchScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         // Loading spinner when searching
@@ -334,32 +335,43 @@ private fun SearchResultCard(
                 isAdded = true
                 onDownload()
             }
-            .padding(12.dp),
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Thumbnail
+        // Thumbnail with duration overlay
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(width = 68.dp, height = 48.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(palette.surfaceVariant)
                 .border(0.5.dp, palette.border, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
-            if (!item.thumbnailUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = item.thumbnailUrl,
-                    contentDescription = "Cover",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(48.dp)
-                )
-            } else {
-                Icon(
-                    imageVector = if (item.isAudio) Icons.Default.MusicNote else Icons.Default.PlayCircleOutline,
-                    contentDescription = null,
-                    tint = palette.textSecondary,
-                    modifier = Modifier.size(24.dp)
-                )
+            val thumbUrl = item.thumbnailUrl ?: "https://i.ytimg.com/vi/${item.id}/hqdefault.jpg"
+            AsyncImage(
+                model = thumbUrl,
+                contentDescription = item.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Duration Pill on bottom-right of thumbnail
+            if (item.durationText.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(3.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.75f))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                ) {
+                    Text(
+                        text = item.durationText,
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
@@ -387,18 +399,6 @@ private fun SearchResultCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
-                if (item.durationText.isNotBlank()) {
-                    Text(
-                        text = "•",
-                        fontSize = 10.sp,
-                        color = palette.textSecondary.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        text = item.durationText,
-                        fontSize = 11.sp,
-                        color = palette.textSecondary
-                    )
-                }
             }
         }
 
@@ -413,7 +413,7 @@ private fun SearchResultCard(
                     isAdded = true
                     onDownload()
                 }
-                .padding(horizontal = 10.dp, vertical = 7.dp),
+                .padding(horizontal = 12.dp, vertical = 7.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -424,7 +424,7 @@ private fun SearchResultCard(
                     imageVector = if (isAdded) Icons.Default.DownloadDone else Icons.Default.Download,
                     contentDescription = "Download",
                     tint = if (isAdded) palette.success else palette.onPrimary,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(13.dp)
                 )
                 Text(
                     text = if (isAdded) "Added" else "Get",

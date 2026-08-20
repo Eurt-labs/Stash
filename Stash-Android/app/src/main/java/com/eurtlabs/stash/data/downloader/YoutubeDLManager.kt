@@ -6,12 +6,15 @@ import android.util.Log
 import com.eurtlabs.stash.data.model.DownloadFormat
 import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.Platform
+import com.eurtlabs.stash.data.model.SearchFilter
+import com.eurtlabs.stash.data.model.SearchResultItem
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import com.yausername.youtubedl_android.mapper.VideoInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
@@ -29,12 +32,15 @@ object YoutubeDLManager {
         return stashDir
     }
 
-    suspend fun searchMedia(query: String, filter: com.eurtlabs.stash.data.model.SearchFilter = com.eurtlabs.stash.data.model.SearchFilter.ALL): List<com.eurtlabs.stash.data.model.SearchResultItem> = withContext(Dispatchers.IO) {
+    suspend fun searchMedia(
+        query: String,
+        filter: SearchFilter = SearchFilter.ALL
+    ): List<SearchResultItem> = withContext(Dispatchers.IO) {
         val searchPrefix = when (filter) {
-            com.eurtlabs.stash.data.model.SearchFilter.MUSIC -> "ytsearch10:$query music"
-            com.eurtlabs.stash.data.model.SearchFilter.ARTISTS -> "ytsearch10:$query official artist channel"
-            com.eurtlabs.stash.data.model.SearchFilter.VIDEOS -> "ytsearch10:$query"
-            com.eurtlabs.stash.data.model.SearchFilter.ALL -> "ytsearch10:$query"
+            SearchFilter.MUSIC -> "ytsearch10:$query music"
+            SearchFilter.ARTISTS -> "ytsearch10:$query official artist channel"
+            SearchFilter.VIDEOS -> "ytsearch10:$query"
+            SearchFilter.ALL -> "ytsearch10:$query"
         }
 
         try {
@@ -43,14 +49,15 @@ object YoutubeDLManager {
                 addOption("--flat-playlist")
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "15")
+                addOption("--extractor-args", "youtube:player_client=android,web")
             }
             val response = YoutubeDL.getInstance().execute(request)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
 
-            val results = mutableListOf<com.eurtlabs.stash.data.model.SearchResultItem>()
+            val results = mutableListOf<SearchResultItem>()
             for (line in jsonLines) {
                 try {
-                    val json = org.json.JSONObject(line)
+                    val json = JSONObject(line)
                     val id = json.optString("id")
                     val title = json.optString("title")
                     if (id.isNotBlank() && title.isNotBlank()) {
@@ -61,18 +68,31 @@ object YoutubeDLManager {
                             val secs = duration % 60
                             String.format("%d:%02d", mins, secs)
                         } else ""
-                        val thumbnail = json.optString("thumbnail", "")
+
+                        // Extract high-res thumbnail with reliable fallback
+                        var thumbnail = json.optString("thumbnail", "")
+                        if (thumbnail.isEmpty()) {
+                            val thumbsArray = json.optJSONArray("thumbnails")
+                            if (thumbsArray != null && thumbsArray.length() > 0) {
+                                thumbnail = thumbsArray.optJSONObject(thumbsArray.length() - 1)?.optString("url", "") ?: ""
+                            }
+                        }
+                        if (thumbnail.isEmpty() && id.isNotBlank()) {
+                            thumbnail = "https://i.ytimg.com/vi/$id/hqdefault.jpg"
+                        }
+
                         val url = json.optString("url", "https://www.youtube.com/watch?v=$id")
-                        val isAudio = filter == com.eurtlabs.stash.data.model.SearchFilter.MUSIC || filter == com.eurtlabs.stash.data.model.SearchFilter.ARTISTS
+                        val finalUrl = if (url.startsWith("http")) url else "https://www.youtube.com/watch?v=$id"
+                        val isAudio = filter == SearchFilter.MUSIC || filter == SearchFilter.ARTISTS
 
                         results.add(
-                            com.eurtlabs.stash.data.model.SearchResultItem(
+                            SearchResultItem(
                                 id = id,
                                 title = title,
                                 artist = uploader,
                                 durationText = durationStr,
                                 thumbnailUrl = thumbnail.ifEmpty { null },
-                                url = if (url.startsWith("http")) url else "https://www.youtube.com/watch?v=$id",
+                                url = finalUrl,
                                 isAudio = isAudio
                             )
                         )
@@ -93,19 +113,21 @@ object YoutubeDLManager {
             val request = YoutubeDLRequest(url).apply {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "20")
+                addOption("--extractor-args", "youtube:player_client=android,web")
             }
             val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
             listOf(videoInfoToTrackInfo(videoInfo, url))
         } catch (e: Exception) {
             Log.e(TAG, "Metadata extraction failed for $url", e)
-            // Fallback basic track info so user can still proceed with download
+            val videoId = Regex("v=([a-zA-Z0-9_-]{11})").find(url)?.groupValues?.getOrNull(1) ?: UUID.randomUUID().toString().take(11)
             val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
             listOf(
                 TrackInfo(
-                    id = UUID.randomUUID().toString(),
+                    id = videoId,
                     title = "Media Download",
                     artists = listOf("YouTube"),
                     durationMs = 0L,
+                    albumArtUrl = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg",
                     sourceUrl = url,
                     safeFileName = safeName
                 )
@@ -136,10 +158,10 @@ object YoutubeDLManager {
             addOption("--no-check-certificates")
             addOption("--no-warnings")
             addOption("--socket-timeout", "30")
-            addOption("--retries", "5")
-            addOption("--fragment-retries", "5")
+            addOption("--retries", "10")
+            addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
-            addOption("--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            addOption("--extractor-args", "youtube:player_client=android,web")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/b")
@@ -189,6 +211,7 @@ object YoutubeDLManager {
         val artist = info.uploader ?: "Unknown Artist"
         val durationMs = (info.duration * 1000L).coerceAtLeast(0L)
         val safeFileName = sanitizeFileName("$artist - $title")
+        val fallbackThumb = if (info.id != null) "https://i.ytimg.com/vi/${info.id}/hqdefault.jpg" else null
 
         val detectedPlatform = when {
             sourceUrl.contains("music.youtube.com") -> Platform.YOUTUBE_MUSIC
@@ -201,11 +224,11 @@ object YoutubeDLManager {
             title = title,
             artists = listOf(artist),
             durationMs = durationMs,
-            albumArtUrl = info.thumbnail,
+            albumArtUrl = info.thumbnail?.ifEmpty { fallbackThumb } ?: fallbackThumb,
             source = detectedPlatform,
             sourceUrl = sourceUrl,
             youtubeUrl = if (detectedPlatform != Platform.OTHER) info.webpageUrl else null,
-            safeFileName = safeFileName
+            safeFileName = safeName
         )
     }
 

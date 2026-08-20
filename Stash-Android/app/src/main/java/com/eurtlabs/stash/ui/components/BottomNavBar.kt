@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,18 +40,26 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eurtlabs.stash.data.model.NavigationTab
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun BottomNavBar(
@@ -61,6 +70,10 @@ fun BottomNavBar(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
+    val density = LocalDensity.current
+
+    var isDragging by remember { mutableStateOf(false) }
+    var dragXOffset by remember { mutableFloatStateOf(0f) }
 
     // Glassmorphic Nav Shell
     Column(
@@ -85,7 +98,7 @@ fun BottomNavBar(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
                             Color.White.copy(alpha = 0.04f),
-                            Color.White.copy(alpha = 0.22f),
+                            Color.White.copy(alpha = 0.28f),
                             Color.White.copy(alpha = 0.04f)
                         )
                     )
@@ -96,49 +109,98 @@ fun BottomNavBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 6.dp)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { offset ->
+                            isDragging = true
+                            dragXOffset = offset.x
+                        },
+                        onDragEnd = {
+                            isDragging = false
+                            val totalWidthPx = size.width.toFloat()
+                            val tabWidthPx = totalWidthPx / NavigationTab.values().size
+                            val selectedIndex = (dragXOffset / tabWidthPx).toInt().coerceIn(0, NavigationTab.values().size - 1)
+                            onTabSelected(NavigationTab.values()[selectedIndex])
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            dragXOffset = (dragXOffset + dragAmount).coerceIn(0f, size.width.toFloat())
+                            val totalWidthPx = size.width.toFloat()
+                            val tabWidthPx = totalWidthPx / NavigationTab.values().size
+                            val targetIndex = (dragXOffset / tabWidthPx).toInt().coerceIn(0, NavigationTab.values().size - 1)
+                            if (targetIndex != currentTab.ordinal) {
+                                onTabSelected(NavigationTab.values()[targetIndex])
+                            }
+                        }
+                    )
+                }
         ) {
             val totalWidth = maxWidth
             val tabCount = NavigationTab.values().size
             val tabWidth = totalWidth / tabCount
-            val bubbleWidth = 64.dp
+            val bubbleWidth = if (isDragging) 70.dp else 64.dp
             val bubbleHeight = 32.dp
+
+            val targetBubbleOffset = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2
 
             // Liquid Sliding Glass Bubble indicator with spring physics
             val bubbleOffset by animateDpAsState(
-                targetValue = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2,
+                targetValue = targetBubbleOffset,
                 animationSpec = spring(
-                    dampingRatio = 0.72f,
-                    stiffness = 380f
+                    dampingRatio = 0.68f,
+                    stiffness = if (isDragging) 800f else 360f
                 ),
                 label = "liquidBubbleOffset"
             )
 
-            // Liquid Glass Bubble Layer
+            val liquidScaleX by animateFloatAsState(
+                targetValue = if (isDragging) 1.12f else 1.0f,
+                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                label = "liquidScaleX"
+            )
+
+            // REAL LIQUID GLASS BUBBLE (Multi-layer Refraction & Specular Caustic Lens)
             Box(
                 modifier = Modifier
                     .offset(x = bubbleOffset, y = 2.dp)
                     .width(bubbleWidth)
                     .height(bubbleHeight)
+                    .scale(scaleX = liquidScaleX, scaleY = 1.0f)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.20f),
-                                Color.White.copy(alpha = 0.07f)
+                                Color.White.copy(alpha = 0.28f),
+                                Color.White.copy(alpha = 0.06f),
+                                Color.White.copy(alpha = 0.18f)
                             )
                         )
                     )
                     .border(
-                        width = 1.dp,
+                        width = 1.2.dp,
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.45f),
-                                Color.White.copy(alpha = 0.08f)
+                                Color.White.copy(alpha = 0.65f),
+                                Color.White.copy(alpha = 0.12f)
                             )
                         ),
                         shape = RoundedCornerShape(16.dp)
                     )
-            )
+            ) {
+                // Inner Specular Liquid Light Dome
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .fillMaxWidth(0.7f)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.White.copy(alpha = 0.50f))
+                )
+            }
 
             // Tab Items Row
             Row(
@@ -169,7 +231,7 @@ fun BottomNavBar(
                     )
 
                     val itemScale by animateFloatAsState(
-                        targetValue = if (isSelected) 1.06f else 0.95f,
+                        targetValue = if (isSelected) 1.08f else 0.94f,
                         animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f),
                         label = "itemScale"
                     )

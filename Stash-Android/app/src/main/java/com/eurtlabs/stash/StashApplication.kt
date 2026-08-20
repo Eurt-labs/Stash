@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
+import com.yausername.youtubedl_android.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 
 class StashApplication : Application() {
@@ -38,9 +39,10 @@ class StashApplication : Application() {
     private fun initNativeEngines() {
         try {
             YoutubeDL.getInstance().init(this)
-            Log.d(TAG, "YoutubeDL native engine successfully initialized at startup.")
+            FFmpeg.getInstance().init(this)
+            Log.d(TAG, "YoutubeDL and FFmpeg native engines successfully initialized at startup.")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize YoutubeDL engine", e)
+            Log.e(TAG, "Failed to initialize YoutubeDL / FFmpeg engines", e)
         }
     }
 }

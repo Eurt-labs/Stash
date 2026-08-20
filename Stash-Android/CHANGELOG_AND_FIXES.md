@@ -2,6 +2,31 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-005] Real Liquid Glass Refraction, Draggable Bubble & YouTube Stream Resolution
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/StashApplication.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SearchScreen.kt`
+- **Severity**: Core Engine & Visual Interaction Polish
+
+#### 1. User Requests Addressed
+- **Download Failure Fix (`ERROR: [youtube] ...`)**: YouTube client bot detection bypass and bundled `FFmpeg` initialization.
+- **Search Cover Thumbnails**: YouTube Music / Video search cards were not rendering thumbnails due to null JSON property paths.
+- **Search UI Polish**: Redesigned search cards with 16:9 thumbnail previews and duration badge overlays.
+- **Draggable Liquid Glass Navigation Bar**: Implemented gesture-draggable liquid bubble with optical specular caustic refraction.
+
+#### 2. Technical Implementation
+- **FFmpeg Initialization in `StashApplication.kt`**: Synchronously called `FFmpeg.getInstance().init(this)` alongside `YoutubeDL.getInstance().init(this)` to ensure native audio transcoders are ready.
+- **Extractor Client Engine**: Added `--extractor-args "youtube:player_client=android,web"` and stripped artificial desktop user-agents to ensure direct streaming without bot blocks.
+- **Guaranteed Thumbnail Fallback**: Configured `https://i.ytimg.com/vi/$id/hqdefault.jpg` fallback so Coil renders every single album/video thumbnail.
+- **Draggable Liquid Glass Bubble**:
+  - Added `pointerInput` with `detectHorizontalDragGestures` enabling smooth horizontal dragging across the navbar with surface tension stretch (`scaleX = 1.12f`).
+  - Added specular light dome (`Brush.verticalGradient(listOf(Color.White.copy(0.65f), Color.White.copy(0.12f)))`) for authentic liquid glass optics.
+
+---
+
 ### 📌 [ANDROID-FIX-011] DocumentFile Dependency & URI Segment Path Resolution
 - **Date**: 2026-08-20
 - **Files Modified**: 
