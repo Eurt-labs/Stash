@@ -26,7 +26,7 @@ export class DownloadEngine {
       '--socket-timeout', '30',
       '--ignore-errors',
       '--no-abort-on-error',
-      '--extractor-args', 'youtube:player_client=android,web'
+      '--extractor-args', 'youtube:player_client=web_creator,default'
     ]
     
     if (flatPlaylist) {
@@ -111,7 +111,7 @@ export class DownloadEngine {
       '--newline',
       '--no-playlist',
       '--geo-bypass',
-      '--extractor-args', 'youtube:player_client=android,web',
+      '--extractor-args', 'youtube:player_client=web_creator,default',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     ]
 

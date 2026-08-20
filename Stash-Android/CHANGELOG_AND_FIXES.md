@@ -2,6 +2,21 @@
 
 ---
 
+### 📌 [BUG-028] SABR Missing URL Audio Format Error
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts
+- **Severity**: High
+
+#### 1. Problem Description & Observed Symptoms
+After deploying the Android Player Client fix, certain music videos immediately threw a new crash during extraction: ERROR: [youtube] <id>: Requested format is not available.
+
+#### 2. Technical Root Cause Analysis
+Because we forced the yt-dlp engine to emulate the Android App (player_client=android), YouTube selectively subjected those requests to their "SABR-only streaming experiment". The Android API does not return raw stream URLs for SABR streams unless a Proof of Origin (po_token) is provided. This caused yt-dlp to skip all audio formats because they were "missing a URL", leaving only a single video-only format (which caused the a/b format filter to crash).
+
+#### 3. Exact Solution & Implementation Details
+Replaced youtube:player_client=android,web with youtube:player_client=web_creator,default. The web_creator API endpoint bypasses both the Bot Detection sign-in wall *and* avoids the SABR-only streaming experiment, gracefully falling back to standard m4a and webm audio endpoints.
+
+---
 ### 📌 [BUG-027] YouTube "Please sign in" Bot Block Bypass
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt
