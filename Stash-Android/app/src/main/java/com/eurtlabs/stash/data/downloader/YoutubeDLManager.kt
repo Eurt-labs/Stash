@@ -53,7 +53,7 @@ object YoutubeDLManager {
         format: DownloadFormat,
         outputDir: File,
         processId: String,
-        onProgress: (progress: Float, speed: String, eta: String) => Unit
+        onProgress: (progress: Float, speed: String, eta: String) -> Unit
     ): File = withContext(Dispatchers.IO) {
         val safeName = trackInfo.safeFileName
         val destinationTemplate = "${outputDir.absolutePath}/$safeName.%(ext)s"
@@ -107,7 +107,7 @@ object YoutubeDLManager {
 
     private fun videoInfoToTrackInfo(info: VideoInfo, sourceUrl: String): TrackInfo {
         val title = info.title ?: "Unknown Title"
-        val artist = info.uploader ?: info.artist ?: "Unknown Artist"
+        val artist = info.uploader ?: "Unknown Artist"
         val durationMs = (info.duration * 1000L).coerceAtLeast(0L)
         val safeFileName = sanitizeFileName("$artist - $title")
 

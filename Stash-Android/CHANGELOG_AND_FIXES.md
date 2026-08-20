@@ -2,6 +2,26 @@
 
 ---
 
+### 📌 [ANDROID-FIX-007] Function Signature Syntax & VideoInfo Property Resolution
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description & Symptoms
+- `:app:compileDebugKotlin` threw 2 errors in `YoutubeDLManager.kt`:
+  - `Expecting '->' to specify return type of a function type :56`
+  - `Unresolved reference: artist :110`
+
+#### 2. Technical Root Cause Analysis
+- Kotlin higher-order function types use `->` syntax (`(Float, String, String) -> Unit`) instead of TypeScript's `=>`.
+- `com.yausername.youtubedl_android.mapper.VideoInfo` exposes channel/uploader via `info.uploader`.
+
+#### 3. Exact Solution & Code Implementation
+- Changed callback parameter to `onProgress: (progress: Float, speed: String, eta: String) -> Unit`.
+- Updated metadata mapping to `val artist = info.uploader ?: "Unknown Artist"`.
+
+---
+
 ### 📌 [ANDROID-FIX-006] Native youtubedl-android Engine Initialization Cleanups
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/StashApplication.kt`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`, `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/transcoder/MediaTagger.kt`
