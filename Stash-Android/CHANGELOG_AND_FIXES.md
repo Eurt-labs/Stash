@@ -2,6 +2,25 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-007] Diagnostics Exporter, Engine Updater, Runtime Permissions & Navbar Polish
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/BottomNavBar.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/LogManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+  - `Stash-Android/app/src/main/AndroidManifest.xml`
+- **Severity**: Core Stability, Permissions & UI Polish
+
+#### 1. Problems & User Requests Addressed
+- **Navbar Bubble Artifact & Stickiness**: Removed the horizontal line bar from inside the bubble and eliminated gesture drag lag for silky-smooth tab navigation.
+- **Storage & Notification Permissions**: App now proactively requests `POST_NOTIFICATIONS`, `READ_MEDIA_AUDIO`, `READ_MEDIA_VIDEO`, and external storage permissions on startup.
+- **Diagnostics & Log Export**: Added a dedicated system diagnostics card in Settings with **"Export Diagnostic Logs"** (via Android Share Sheet) and **"Update Core Engine (yt-dlp)"**.
+- **YouTube Extractor Fix**: Updated `--extractor-args "youtube:player_client=tv,web_safari,android"` to prevent bot challenges on YouTube.
+
+---
+
 ### 📌 [ANDROID-FIX-013] safeFileName Identifier Resolution in YoutubeDLManager
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`

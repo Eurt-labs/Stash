@@ -32,6 +32,20 @@ object YoutubeDLManager {
         return stashDir
     }
 
+    suspend fun updateEngine(context: Context): String = withContext(Dispatchers.IO) {
+        try {
+            LogManager.append(TAG, "Checking for yt-dlp core engine update...")
+            val status = YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE)
+            val msg = "Engine update finished: status=${status?.name ?: "OK"}"
+            LogManager.append(TAG, msg)
+            msg
+        } catch (e: Exception) {
+            val errMsg = "Engine update error: ${e.localizedMessage}"
+            LogManager.append(TAG, errMsg)
+            errMsg
+        }
+    }
+
     suspend fun searchMedia(
         query: String,
         filter: SearchFilter = SearchFilter.ALL
@@ -43,13 +57,15 @@ object YoutubeDLManager {
             SearchFilter.ALL -> "ytsearch15:$query"
         }
 
+        LogManager.append(TAG, "Searching media: filter=${filter.name}, prefix=$searchPrefix")
+
         try {
             val request = YoutubeDLRequest(searchPrefix).apply {
                 addOption("--dump-json")
                 addOption("--flat-playlist")
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "15")
-                addOption("--extractor-args", "youtube:player_client=android,web")
+                addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
             }
             val response = YoutubeDL.getInstance().execute(request, null, null)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
@@ -69,7 +85,6 @@ object YoutubeDLManager {
                             String.format("%d:%02d", mins, secs)
                         } else ""
 
-                        // Extract high-res thumbnail with reliable fallback
                         var thumbnail = json.optString("thumbnail", "")
                         if (thumbnail.isEmpty()) {
                             val thumbsArray = json.optJSONArray("thumbnails")
@@ -98,27 +113,29 @@ object YoutubeDLManager {
                         )
                     }
                 } catch (je: Exception) {
-                    // Ignore line parse exception
+                    // Ignore individual line parse exception
                 }
             }
+            LogManager.append(TAG, "Search completed: found ${results.size} items for '$query'")
             results
         } catch (e: Exception) {
-            Log.e(TAG, "Search failed for query: $query", e)
+            LogManager.append(TAG, "Search failed for '$query': ${e.localizedMessage}")
             emptyList()
         }
     }
 
     suspend fun extractMetadata(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
+        LogManager.append(TAG, "Extracting metadata for URL: $url")
         try {
             val request = YoutubeDLRequest(url).apply {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "20")
-                addOption("--extractor-args", "youtube:player_client=android,web")
+                addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
             }
             val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
             listOf(videoInfoToTrackInfo(videoInfo, url))
         } catch (e: Exception) {
-            Log.e(TAG, "Metadata extraction failed for $url", e)
+            LogManager.append(TAG, "Metadata extraction failed for $url: ${e.localizedMessage}")
             val videoId = Regex("v=([a-zA-Z0-9_-]{11})").find(url)?.groupValues?.getOrNull(1) ?: UUID.randomUUID().toString().take(11)
             val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
             listOf(
@@ -152,6 +169,8 @@ object YoutubeDLManager {
         val destinationTemplate = "${outputDir.absolutePath}/$safeName.%(ext)s"
         val targetUrl = trackInfo.youtubeUrl ?: trackInfo.sourceUrl
 
+        LogManager.append(TAG, "Starting download: targetUrl=$targetUrl, format=${format.name}, quality=${quality.label}")
+
         val request = YoutubeDLRequest(targetUrl).apply {
             addOption("-o", destinationTemplate)
             addOption("--no-mtime")
@@ -161,7 +180,7 @@ object YoutubeDLManager {
             addOption("--retries", "10")
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
-            addOption("--extractor-args", "youtube:player_client=android,web")
+            addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/b")
@@ -179,14 +198,16 @@ object YoutubeDLManager {
                 val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
                 val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
                 val speedStr = speedMatch?.value ?: ""
+                if (line != null && line.isNotBlank()) {
+                    LogManager.append(TAG, "[yt-dlp] $line")
+                }
                 onProgress(progress, speedStr, etaStr)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Download execution failed for $targetUrl", e)
+            LogManager.append(TAG, "Download execution failed for $targetUrl: ${e.message}")
             throw e
         }
 
-        // Locate output file with extension fallback
         val possibleExtensions = listOf(format.ext, "mp3", "m4a", "opus", "flac", "wav", "mp4", "mkv", "webm")
         var outputFile: File? = null
         for (ext in possibleExtensions) {
@@ -203,6 +224,7 @@ object YoutubeDLManager {
             }?.maxByOrNull { it.lastModified() }
         }
 
+        LogManager.append(TAG, "Download completed. File: ${outputFile?.absolutePath}")
         outputFile ?: throw IllegalStateException("Downloaded media file was not found on disk")
     }
 

@@ -6,6 +6,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -405,6 +407,110 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Section: Diagnostics, Engine & Logs
+            SettingsSectionHeader(
+                icon = androidx.compose.material.icons.filled.Speed,
+                title = "Engine & Diagnostics",
+                subtitle = "Core yt-dlp & FFmpeg runtime status and logs"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val context = androidx.compose.ui.platform.LocalContext.current
+            var updateStatus by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+            var isUpdating by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(palette.surface)
+                    .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Export Logs Action
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(palette.surfaceVariant)
+                        .clickable {
+                            com.eurtlabs.stash.data.downloader.LogManager.exportLogs(context)
+                        }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Export Diagnostic Logs",
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.5.sp
+                        )
+                        Text(
+                            text = "Generate and share full engine debug & error logs",
+                            color = palette.textSecondary,
+                            fontSize = 11.5.sp
+                        )
+                    }
+                    Text(
+                        text = "Export 📤",
+                        color = palette.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
+
+                // Update Engine Action
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(palette.surfaceVariant)
+                        .clickable {
+                            if (!isUpdating) {
+                                isUpdating = true
+                                updateStatus = "Updating engine..."
+                                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                    val result = com.eurtlabs.stash.data.downloader.YoutubeDLManager.updateEngine(context)
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        updateStatus = result
+                                        isUpdating = false
+                                    }
+                                }
+                            }
+                        }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Update Core Engine (yt-dlp)",
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.5.sp
+                        )
+                        Text(
+                            text = updateStatus ?: "Fetch latest binary updates from official release channel",
+                            color = if (updateStatus != null) palette.primary else palette.textSecondary,
+                            fontSize = 11.5.sp
+                        )
+                    }
+                    Text(
+                        text = if (isUpdating) "..." else "Update ↻",
+                        color = palette.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
                 }
             }
 
