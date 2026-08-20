@@ -33,7 +33,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -418,7 +418,7 @@ fun SettingsScreen(
 
             // Section: Diagnostics, Engine & Logs
             SettingsSectionHeader(
-                icon = Icons.Default.Tune,
+                icon = Icons.Filled.Tune,
                 title = "Engine & Diagnostics",
                 subtitle = "Core yt-dlp & FFmpeg runtime status and logs"
             )
