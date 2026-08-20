@@ -2,6 +2,13 @@ package com.eurtlabs.stash.data.model
 
 import java.util.UUID
 
+enum class NavigationTab(val label: String) {
+    QUEUE("Queue"),
+    SEARCH("Search"),
+    LIBRARY("Library"),
+    SETTINGS("Settings")
+}
+
 enum class Platform {
     YOUTUBE,
     YOUTUBE_MUSIC,
@@ -45,20 +52,14 @@ enum class DownloadState {
     CANCELLED
 }
 
-enum class ColorTheme(val displayName: String, val category: String) {
-    INDIGO("Indigo", "Core"),
-    EMERALD("Emerald", "Core"),
-    SUNSET("Sunset", "Core"),
-    SAPPHIRE("Sapphire", "Core"),
-    AMBER("Amber", "Core"),
-    CRIMSON("Crimson", "Core"),
-    OLED("OLED Midnight", "Core"),
-    WEEKND("The Weeknd", "Artist"),
-    TAYLOR("Taylor Swift", "Artist"),
-    BILLIE("Billie Eilish", "Artist"),
-    DAFTPUNK("Daft Punk", "Artist"),
-    TRAVIS("Travis Scott", "Artist"),
-    LANA("Lana Del Rey", "Artist")
+enum class ColorTheme(val displayName: String, val subtitle: String) {
+    OBSIDIAN("Obsidian OLED", "Pure Pitch Black & Sharp White"),
+    TITANIUM("Titanium Slate", "Refined Monochrome Silver"),
+    GRAPHITE("Graphite Carbon", "Industrial Matte Charcoal"),
+    NORD("Nord Frost", "Subtle Arctic Slate"),
+    SAGE("Sage Minimal", "Muted Botanical Stone"),
+    ESPRESSO("Warm Espresso", "Architectural Mocha & Champagne"),
+    MIDNIGHT("Midnight Navy", "Deep Studio Obsidian")
 }
 
 data class TrackInfo(
@@ -114,5 +115,5 @@ data class StashSettings(
     val outputDir: String = "",
     val quality: DownloadQuality = DownloadQuality.HIGH,
     val format: DownloadFormat = DownloadFormat.MP3,
-    val theme: ColorTheme = ColorTheme.INDIGO
+    val theme: ColorTheme = ColorTheme.OBSIDIAN
 )
