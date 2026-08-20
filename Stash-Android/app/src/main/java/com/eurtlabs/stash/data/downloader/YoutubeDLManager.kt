@@ -65,7 +65,8 @@ object YoutubeDLManager {
                 addOption("--flat-playlist")
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "15")
-                addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
+                addOption("--force-ipv4")
+                addOption("--extractor-args", "youtube:player_client=android,web,mweb")
             }
             val response = YoutubeDL.getInstance().execute(request, null, null)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
@@ -130,7 +131,8 @@ object YoutubeDLManager {
             val request = YoutubeDLRequest(url).apply {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "20")
-                addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
+                addOption("--force-ipv4")
+                addOption("--extractor-args", "youtube:player_client=android,web,mweb")
             }
             val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
             listOf(videoInfoToTrackInfo(videoInfo, url))
@@ -180,7 +182,8 @@ object YoutubeDLManager {
             addOption("--retries", "10")
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
-            addOption("--extractor-args", "youtube:player_client=tv,web_safari,android")
+            addOption("--force-ipv4")
+            addOption("--extractor-args", "youtube:player_client=android,web,mweb")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/b")

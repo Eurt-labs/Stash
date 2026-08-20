@@ -217,7 +217,7 @@ class MainActivity : ComponentActivity() {
                                             onSelectTheme = { viewModel.updateTheme(it) },
                                             onSelectFormat = { viewModel.updateFormat(it) },
                                             onSelectQuality = { viewModel.updateQuality(it) },
-                                            onChangeStorage = { folderPickerLauncher.launch(null) }
+                                            onChangeStorage = { viewModel.openStorageDialog() }
                                         )
                                     }
                                 }

@@ -3,6 +3,7 @@ package com.eurtlabs.stash.data.downloader
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.core.content.FileProvider
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,19 +42,35 @@ object LogManager {
                     "Android Version: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})\n\n" +
                     getFullLog()
 
-            val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_TEXT, logText)
-                putExtra(Intent.EXTRA_TITLE, "Stash Diagnostics Log")
-                type = "text/plain"
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            val logDir = File(context.cacheDir, "logs")
+            if (!logDir.exists()) {
+                logDir.mkdirs()
             }
-            val shareIntent = Intent.createChooser(sendIntent, "Export Stash Diagnostic Logs").apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            val logFile = File(logDir, "stash_diagnostic_${System.currentTimeMillis()}.txt")
+            logFile.writeText(logText, Charsets.UTF_8)
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                logFile
+            )
+
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, logText)
+                putExtra(Intent.EXTRA_TITLE, logFile.name)
+                type = "text/plain"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+
+            val shareIntent = Intent.createChooser(sendIntent, "Export Stash Diagnostic Logs (.txt)").apply {
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
             context.startActivity(shareIntent)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to share logs", e)
+            Log.e(TAG, "Failed to share logs file", e)
         }
     }
 }

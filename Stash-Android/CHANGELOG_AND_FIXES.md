@@ -2,6 +2,27 @@
 
 ---
 
+### 📌 [ANDROID-FIX-015] YouTube Reload Page Workaround, .txt Diagnostic File Export & Storage Dialog
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/LogManager.kt`
+  - `Stash-Android/app/src/main/res/xml/file_paths.xml`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: Core Engine Fix & Diagnostics Polish
+
+#### 1. Problem Diagnosed from Live User Logs
+- User provided log snippet:
+  `ERROR: [youtube] 4NRXx6U8ABQ: The page needs to be reloaded.`
+- Root Cause: Deprecated `tv` player API in `--extractor-args` was returning reload page anti-bot challenge on YouTube servers.
+
+#### 2. Technical Solution
+- **Extractor Client Engine**: Replaced with `--extractor-args "youtube:player_client=android,web,mweb"` and added `--force-ipv4` for guaranteed direct stream delivery on mobile networks.
+- **Physical .txt Diagnostic File Export**: Updated `LogManager.kt` to write a UTF-8 `.txt` file into cache and share it as an actual file attachment via `FileProvider` (`content://`).
+- **Storage Dialog Triggering**: Wired `SettingsScreen.kt` "Change" action to `viewModel.openStorageDialog()` so users can switch between Default folder and SAF custom folder anytime.
+
+---
+
 ### 📌 [ANDROID-FIX-014] Compose Runtime Imports & Icons Resolution in SettingsScreen
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
