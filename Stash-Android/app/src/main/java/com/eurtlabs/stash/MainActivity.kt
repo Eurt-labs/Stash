@@ -133,6 +133,7 @@ class MainActivity : ComponentActivity() {
                                     NavigationTab.SETTINGS -> {
                                         SettingsScreen(
                                             settings = settings,
+                                            onSelectMediaType = { viewModel.updateMediaType(it) },
                                             onSelectTheme = { viewModel.updateTheme(it) },
                                             onSelectFormat = { viewModel.updateFormat(it) },
                                             onSelectQuality = { viewModel.updateQuality(it) }

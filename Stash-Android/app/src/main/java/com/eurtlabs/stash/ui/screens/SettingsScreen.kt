@@ -1,7 +1,11 @@
 package com.eurtlabs.stash.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,10 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.eurtlabs.stash.data.model.ColorTheme
 import com.eurtlabs.stash.data.model.DownloadFormat
 import com.eurtlabs.stash.data.model.DownloadQuality
+import com.eurtlabs.stash.data.model.MediaType
 import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 import com.eurtlabs.stash.ui.theme.getThemePalette
@@ -51,6 +56,7 @@ import com.eurtlabs.stash.ui.theme.getThemePalette
 @Composable
 fun SettingsScreen(
     settings: StashSettings,
+    onSelectMediaType: (MediaType) -> Unit,
     onSelectTheme: (ColorTheme) -> Unit,
     onSelectFormat: (DownloadFormat) -> Unit,
     onSelectQuality: (DownloadQuality) -> Unit,
@@ -58,16 +64,95 @@ fun SettingsScreen(
 ) {
     val palette = LocalStashPalette.current
 
+    val currentMediaType = settings.mediaType
+    val currentFormat = settings.format
+    val currentQuality = settings.quality
+
+    val availableFormats = if (currentMediaType == MediaType.AUDIO) {
+        DownloadFormat.values().filter { it.isAudioOnly }
+    } else {
+        DownloadFormat.values().filter { !it.isAudioOnly }
+    }
+
+    val availableQualities = if (currentMediaType == MediaType.AUDIO) {
+        DownloadQuality.values().filter { it.isAudioOnly }
+    } else {
+        DownloadQuality.values().filter { !it.isAudioOnly }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        // Section: Output Format
+        // Section: Media Mode Toggle (Music / Video)
+        item {
+            Text(
+                text = "DOWNLOAD MODE",
+                color = palette.textSecondary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(palette.surface)
+                    .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                MediaType.values().forEach { mode ->
+                    val isSelected = currentMediaType == mode
+                    val modeBg by animateColorAsState(
+                        targetValue = if (isSelected) palette.primary else Color.Transparent,
+                        animationSpec = spring(),
+                        label = "modeBg"
+                    )
+                    val modeTextColor by animateColorAsState(
+                        targetValue = if (isSelected) palette.onPrimary else palette.textSecondary,
+                        animationSpec = spring(),
+                        label = "modeTextColor"
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(modeBg)
+                            .clickable { onSelectMediaType(mode) }
+                            .padding(vertical = 11.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (mode == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
+                            contentDescription = null,
+                            tint = modeTextColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = mode.label,
+                            color = modeTextColor,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // Section: Dynamic Output Formats (Audio / Video)
         item {
             SettingsSectionHeader(
-                icon = Icons.Default.MusicNote,
-                title = "Output Format",
-                subtitle = "Choose audio transcoding or full video format"
+                icon = if (currentMediaType == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
+                title = if (currentMediaType == MediaType.AUDIO) "Audio Codec / Container" else "Video Container Format",
+                subtitle = if (currentMediaType == MediaType.AUDIO) "Choose lossless or compressed audio output" else "Choose video format"
             )
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -75,8 +160,8 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(DownloadFormat.values()) { format ->
-                    val isSelected = settings.format == format
+                items(availableFormats) { format ->
+                    val isSelected = currentFormat == format
                     val bg by animateColorAsState(
                         targetValue = if (isSelected) palette.primary else palette.surface,
                         animationSpec = spring(),
@@ -94,28 +179,15 @@ fun SettingsScreen(
                             .background(bg)
                             .border(1.dp, if (isSelected) palette.primary else palette.border, RoundedCornerShape(12.dp))
                             .clickable { onSelectFormat(format) }
-                            .padding(horizontal = 18.dp, vertical = 11.dp),
+                            .padding(horizontal = 20.dp, vertical = 11.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = format.name,
-                                color = textColor,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 13.sp
-                            )
-                            if (!format.isAudioOnly) {
-                                Text(
-                                    text = "VIDEO",
-                                    color = if (isSelected) textColor.copy(alpha = 0.7f) else palette.textSecondary,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Text(
+                            text = format.label,
+                            color = textColor,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 13.5.sp
+                        )
                     }
                 }
             }
@@ -123,12 +195,12 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Quality / Bitrate
+        // Section: Dynamic Quality / Bitrate / Resolution
         item {
             SettingsSectionHeader(
                 icon = Icons.Default.Speed,
-                title = "Bitrate & Quality",
-                subtitle = "Target stream resolution and audio compression"
+                title = if (currentMediaType == MediaType.AUDIO) "Audio Bitrate & Compression" else "Video Resolution Quality",
+                subtitle = if (currentMediaType == MediaType.AUDIO) "Target bitrate for downloaded music" else "Target resolution for downloaded video stream"
             )
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -136,8 +208,8 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                DownloadQuality.values().forEach { quality ->
-                    val isSelected = settings.quality == quality
+                availableQualities.forEach { quality ->
+                    val isSelected = currentQuality == quality
 
                     Row(
                         modifier = Modifier
@@ -186,11 +258,11 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Monochromatic Color Theme
+        // Section: Monochromatic Theme Engine
         item {
             SettingsSectionHeader(
                 icon = Icons.Default.Palette,
-                title = "Monochromatic Theme",
+                title = "Monochromatic Color Theme",
                 subtitle = "Curated minimalist & high-contrast palettes"
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -222,14 +294,14 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Theme preview dual-circle
+                            // Dual Circle Preview
                             Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
                                 Box(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
                                         .background(themePalette.background)
-                                        .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                                        .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
                                 )
                                 Box(
                                     modifier = Modifier
@@ -277,12 +349,12 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Storage & Engine Information
+        // Section: Destination & Engine
         item {
             SettingsSectionHeader(
                 icon = Icons.Default.Folder,
-                title = "Storage Location",
-                subtitle = "Default destination folder on your device"
+                title = "Download Storage",
+                subtitle = "App storage directory on your phone"
             )
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -312,7 +384,7 @@ fun SettingsScreen(
                             fontSize = 13.sp
                         )
                         Text(
-                            text = settings.outputDir.ifEmpty { "/storage/emulated/0/Music/Stash" },
+                            text = settings.outputDir.ifEmpty { "Android/data/com.eurtlabs.stash/files/Music/Stash" },
                             color = palette.textSecondary,
                             fontSize = 11.sp
                         )
@@ -322,7 +394,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // App Engine footer
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,

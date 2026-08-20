@@ -9,6 +9,11 @@ enum class NavigationTab(val label: String) {
     SETTINGS("Settings")
 }
 
+enum class MediaType(val label: String) {
+    AUDIO("Music & Audio"),
+    VIDEO("Video")
+}
+
 enum class Platform {
     YOUTUBE,
     YOUTUBE_MUSIC,
@@ -22,22 +27,33 @@ enum class ContentType {
     VIDEO
 }
 
-enum class DownloadQuality(val label: String) {
-    QUALITY_4K("4K Ultra HD (2160p)"),
-    QUALITY_2K("2K QHD (1440p)"),
-    HIGH("High (320kbps / 1080p)"),
-    MID("Medium (192kbps / 720p)"),
-    LOW("Standard (128kbps / 480p)")
+enum class DownloadQuality(val label: String, val valueOption: String, val isAudioOnly: Boolean) {
+    // Audio Bitrates
+    AUDIO_320K("320 kbps (Lossless / Ultra)", "320k", true),
+    AUDIO_256K("256 kbps (High Quality)", "256k", true),
+    AUDIO_192K("192 kbps (Medium Quality)", "192k", true),
+    AUDIO_128K("128 kbps (Standard Quality)", "128k", true),
+
+    // Video Resolutions
+    VIDEO_4K("4K Ultra HD (2160p)", "bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b", false),
+    VIDEO_2K("2K QHD (1440p)", "bv*[height<=1440]+ba/b[height<=1440]/bv*+ba/b", false),
+    VIDEO_1080P("Full HD (1080p)", "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b", false),
+    VIDEO_720P("HD (720p)", "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b", false),
+    VIDEO_480P("SD (480p)", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b", false)
 }
 
-enum class DownloadFormat(val ext: String, val isAudioOnly: Boolean) {
-    AUTO("mp3", true),
-    MP3("mp3", true),
-    AAC("m4a", true),
-    FLAC("flac", true),
-    OPUS("opus", true),
-    WAV("wav", true),
-    MP4("mp4", false)
+enum class DownloadFormat(val ext: String, val isAudioOnly: Boolean, val label: String) {
+    // Audio formats
+    MP3("mp3", true, "MP3"),
+    AAC("m4a", true, "AAC"),
+    FLAC("flac", true, "FLAC"),
+    OPUS("opus", true, "OPUS"),
+    WAV("wav", true, "WAV"),
+
+    // Video formats
+    MP4("mp4", false, "MP4"),
+    MKV("mkv", false, "MKV"),
+    WEBM("webm", false, "WEBM")
 }
 
 enum class DownloadState {
@@ -89,7 +105,7 @@ data class DownloadItem(
     val id: String = UUID.randomUUID().toString(),
     val batchId: String,
     val trackInfo: TrackInfo,
-    val quality: DownloadQuality = DownloadQuality.HIGH,
+    val quality: DownloadQuality = DownloadQuality.AUDIO_320K,
     val format: DownloadFormat = DownloadFormat.MP3,
     val state: DownloadState = DownloadState.QUEUED,
     val progress: Float = 0f,
@@ -105,7 +121,7 @@ data class DownloadBatch(
     val name: String,
     val items: List<DownloadItem>,
     val outputDir: String,
-    val quality: DownloadQuality = DownloadQuality.HIGH,
+    val quality: DownloadQuality = DownloadQuality.AUDIO_320K,
     val format: DownloadFormat = DownloadFormat.MP3,
     val createdAt: Long = System.currentTimeMillis(),
     val isCompleted: Boolean = false
@@ -113,7 +129,16 @@ data class DownloadBatch(
 
 data class StashSettings(
     val outputDir: String = "",
-    val quality: DownloadQuality = DownloadQuality.HIGH,
-    val format: DownloadFormat = DownloadFormat.MP3,
+    val mediaType: MediaType = MediaType.AUDIO,
+    val audioFormat: DownloadFormat = DownloadFormat.MP3,
+    val audioQuality: DownloadQuality = DownloadQuality.AUDIO_320K,
+    val videoFormat: DownloadFormat = DownloadFormat.MP4,
+    val videoQuality: DownloadQuality = DownloadQuality.VIDEO_1080P,
     val theme: ColorTheme = ColorTheme.OBSIDIAN
-)
+) {
+    val format: DownloadFormat
+        get() = if (mediaType == MediaType.AUDIO) audioFormat else videoFormat
+
+    val quality: DownloadQuality
+        get() = if (mediaType == MediaType.AUDIO) audioQuality else videoQuality
+}

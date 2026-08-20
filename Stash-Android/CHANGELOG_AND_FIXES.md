@@ -2,6 +2,40 @@
 
 ---
 
+### 📌 [ANDROID-FIX-008] Robust Download Execution Algorithm & Dynamic Music/Video Matrix
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/data/model/Models.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/viewmodel/DownloadViewModel.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/components/SettingsBottomSheet.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: Critical (Core Download Engine & Dynamic UX)
+
+#### 1. Problems Addressed
+- Downloads were stalling or failing because `getInfo` had redundant `--dump-json` options that conflicted with the native wrapper's internal arguments.
+- Android public storage path lacked guaranteed POSIX write access on Android 10-16.
+- Removed ambiguous `AUTO` format option.
+- Formats and qualities were static and not dynamically responding to whether the user wants Music/Audio or Video.
+
+#### 2. Technical Solution & Implementation
+- **Robust Download Engine in `YoutubeDLManager.kt`**:
+  - Uses `context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)` for 100% reliable, zero-permission disk I/O on Android 10-16.
+  - Simplified `getInfo(url)` and added fallback metadata extraction.
+  - Implemented speed/ETA regex parser and file extension fallback detector.
+- **Dynamic Music vs Video Mode**:
+  - When **Music & Audio** is active:
+    - Formats: `MP3`, `AAC`, `FLAC`, `OPUS`, `WAV`
+    - Bitrates: `320 kbps (Lossless / Ultra)`, `256 kbps (High Quality)`, `192 kbps (Medium Quality)`, `128 kbps (Standard Quality)`
+  - When **Video** is active:
+    - Formats: `MP4`, `MKV`, `WEBM`
+    - Resolutions: `4K Ultra HD (2160p)`, `2K QHD (1440p)`, `Full HD (1080p)`, `HD (720p)`, `SD (480p)`
+- **Dynamic Settings & BottomSheet**:
+  - Live animated switching between audio/video format and quality lists.
+
+---
+
 ### 📌 [ANDROID-FEAT-002] WhatsApp-Style Bottom Navigation & Monochromatic Design Overhaul
 - **Date**: 2026-08-20
 - **Files Modified/Created**: 

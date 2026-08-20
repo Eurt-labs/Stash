@@ -13,14 +13,16 @@ import com.yausername.youtubedl_android.mapper.VideoInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.UUID
 
 object YoutubeDLManager {
 
     private const val TAG = "YoutubeDLManager"
 
     fun getDefaultOutputDir(context: Context): File {
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val stashDir = File(musicDir, "Stash")
+        val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+            ?: File(context.filesDir, "Music")
+        val stashDir = File(baseDir, "Stash")
         if (!stashDir.exists()) {
             stashDir.mkdirs()
         }
@@ -28,21 +30,33 @@ object YoutubeDLManager {
     }
 
     suspend fun extractMetadata(url: String): List<TrackInfo> = withContext(Dispatchers.IO) {
-        val request = YoutubeDLRequest(url).apply {
-            addOption("--dump-json")
-            addOption("--no-download")
-            addOption("--no-warnings")
-            addOption("--no-check-certificates")
-            addOption("--socket-timeout", 30)
-            addOption("--ignore-errors")
-        }
-
         try {
-            val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(request)
+            val videoInfo: VideoInfo = YoutubeDL.getInstance().getInfo(url)
             listOf(videoInfoToTrackInfo(videoInfo, url))
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to extract metadata for $url", e)
-            throw e
+            Log.w(TAG, "Fast metadata getInfo failed for $url, attempting request fallback", e)
+            try {
+                val request = YoutubeDLRequest(url).apply {
+                    addOption("--no-warnings")
+                    addOption("--socket-timeout", "20")
+                }
+                val videoInfo = YoutubeDL.getInstance().getInfo(request)
+                listOf(videoInfoToTrackInfo(videoInfo, url))
+            } catch (fallbackEx: Exception) {
+                Log.e(TAG, "Complete metadata extraction failed for $url", fallbackEx)
+                // Fallback basic track info so user can still proceed with download
+                val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
+                listOf(
+                    TrackInfo(
+                        id = UUID.randomUUID().toString(),
+                        title = "Media Download",
+                        artists = listOf("YouTube"),
+                        durationMs = 0L,
+                        sourceUrl = url,
+                        safeFileName = safeName
+                    )
+                )
+            }
         }
     }
 
@@ -55,54 +69,65 @@ object YoutubeDLManager {
         processId: String,
         onProgress: (progress: Float, speed: String, eta: String) -> Unit
     ): File = withContext(Dispatchers.IO) {
-        val safeName = trackInfo.safeFileName
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
+        }
+
+        val safeName = trackInfo.safeFileName.ifBlank { "Track_${System.currentTimeMillis()}" }
         val destinationTemplate = "${outputDir.absolutePath}/$safeName.%(ext)s"
         val targetUrl = trackInfo.youtubeUrl ?: trackInfo.sourceUrl
 
         val request = YoutubeDLRequest(targetUrl).apply {
             addOption("-o", destinationTemplate)
+            addOption("--no-mtime")
             addOption("--no-check-certificates")
             addOption("--no-warnings")
-            addOption("--socket-timeout", 30)
-            addOption("--retries", 5)
-            addOption("--fragment-retries", 5)
+            addOption("--socket-timeout", "30")
+            addOption("--retries", "5")
+            addOption("--fragment-retries", "5")
             addOption("--geo-bypass")
-            addOption("--user-agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
+            addOption("--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
             if (format.isAudioOnly) {
                 addOption("-x")
                 addOption("--audio-format", format.ext)
-                val bitrate = when (quality) {
-                    DownloadQuality.QUALITY_4K, DownloadQuality.QUALITY_2K, DownloadQuality.HIGH -> "320k"
-                    DownloadQuality.MID -> "192k"
-                    DownloadQuality.LOW -> "128k"
-                }
-                addOption("--audio-quality", bitrate)
+                addOption("--audio-quality", quality.valueOption)
             } else {
-                when (quality) {
-                    DownloadQuality.LOW -> addOption("-f", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b")
-                    DownloadQuality.MID -> addOption("-f", "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b")
-                    DownloadQuality.HIGH -> addOption("-f", "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b")
-                    DownloadQuality.QUALITY_2K -> addOption("-f", "bv*[height<=1440]+ba/b[height<=1440]/bv*+ba/b")
-                    DownloadQuality.QUALITY_4K -> addOption("-f", "bv*+ba/b")
-                }
-                addOption("--merge-output-format", "mp4")
+                addOption("-f", quality.valueOption)
+                addOption("--merge-output-format", format.ext)
             }
         }
 
-        val response = YoutubeDL.getInstance().execute(request, processId) { progress, etaInSeconds, line ->
-            val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
-            onProgress(progress, "", etaStr)
+        try {
+            YoutubeDL.getInstance().execute(request, processId) { progress, etaInSeconds, line ->
+                val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
+                val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
+                val speedStr = speedMatch?.value ?: ""
+                onProgress(progress, speedStr, etaStr)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Download execution failed for $targetUrl", e)
+            throw e
         }
 
-        val outputFile = File(outputDir, "$safeName.${format.ext}")
-        if (outputFile.exists()) {
-            outputFile
-        } else {
-            // Find matched file if extension slightly differs
-            outputDir.listFiles { file -> file.nameWithoutExtension == safeName }?.firstOrNull()
-                ?: throw IllegalStateException("Download completed but output file was not found")
+        // Locate output file with extension fallback
+        val possibleExtensions = listOf(format.ext, "mp3", "m4a", "opus", "flac", "wav", "mp4", "mkv", "webm")
+        var outputFile: File? = null
+        for (ext in possibleExtensions) {
+            val testFile = File(outputDir, "$safeName.$ext")
+            if (testFile.exists() && testFile.length() > 0L) {
+                outputFile = testFile
+                break
+            }
         }
+
+        if (outputFile == null) {
+            outputFile = outputDir.listFiles()?.filter {
+                it.isFile && it.length() > 0L && (it.name.contains(safeName) || it.nameWithoutExtension == safeName)
+            }?.maxByOrNull { it.lastModified() }
+        }
+
+        outputFile ?: throw IllegalStateException("Downloaded media file was not found on disk")
     }
 
     private fun videoInfoToTrackInfo(info: VideoInfo, sourceUrl: String): TrackInfo {
@@ -134,6 +159,6 @@ object YoutubeDLManager {
         return input.replace(Regex("[\\\\/:*?\"<>|]"), "_")
             .replace(Regex("\\s+"), " ")
             .trim()
-            .take(120)
+            .take(100)
     }
 }

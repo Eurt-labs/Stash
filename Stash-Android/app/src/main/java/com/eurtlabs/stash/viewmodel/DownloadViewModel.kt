@@ -11,6 +11,7 @@ import com.eurtlabs.stash.data.model.DownloadFormat
 import com.eurtlabs.stash.data.model.DownloadItem
 import com.eurtlabs.stash.data.model.DownloadQuality
 import com.eurtlabs.stash.data.model.DownloadState
+import com.eurtlabs.stash.data.model.MediaType
 import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.eurtlabs.stash.data.parser.LinkParser
@@ -38,9 +39,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private val _settings = MutableStateFlow(
         StashSettings(
             outputDir = YoutubeDLManager.getDefaultOutputDir(application).absolutePath,
-            quality = DownloadQuality.HIGH,
-            format = DownloadFormat.MP3,
-            theme = ColorTheme.WEEKND
+            mediaType = MediaType.AUDIO,
+            audioFormat = DownloadFormat.MP3,
+            audioQuality = DownloadQuality.AUDIO_320K,
+            videoFormat = DownloadFormat.MP4,
+            videoQuality = DownloadQuality.VIDEO_1080P,
+            theme = ColorTheme.OBSIDIAN
         )
     )
     val settings: StateFlow<StashSettings> = _settings.asStateFlow()
@@ -49,19 +53,37 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         _settings.value = _settings.value.copy(theme = theme)
     }
 
-    fun updateQuality(quality: DownloadQuality) {
-        _settings.value = _settings.value.copy(quality = quality)
+    fun updateMediaType(mediaType: MediaType) {
+        _settings.value = _settings.value.copy(mediaType = mediaType)
     }
 
     fun updateFormat(format: DownloadFormat) {
-        _settings.value = _settings.value.copy(format = format)
+        if (format.isAudioOnly) {
+            _settings.value = _settings.value.copy(
+                mediaType = MediaType.AUDIO,
+                audioFormat = format
+            )
+        } else {
+            _settings.value = _settings.value.copy(
+                mediaType = MediaType.VIDEO,
+                videoFormat = format
+            )
+        }
+    }
+
+    fun updateQuality(quality: DownloadQuality) {
+        if (quality.isAudioOnly) {
+            _settings.value = _settings.value.copy(audioQuality = quality)
+        } else {
+            _settings.value = _settings.value.copy(videoQuality = quality)
+        }
     }
 
     fun parseAndEnqueue(input: String) {
         val parsed = LinkParser.parse(input) ?: return
         viewModelScope.launch(Dispatchers.IO) {
             _isFetching.value = true
-            _fetchingMessage.value = "Analyzing link..."
+            _fetchingMessage.value = "Analyzing media link..."
 
             try {
                 val tracks = YoutubeDLManager.extractMetadata(parsed.originalUrl)
@@ -82,6 +104,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
     private fun enqueueBatch(name: String, tracks: List<TrackInfo>) {
         val currentSettings = _settings.value
+        val currentFormat = currentSettings.format
+        val currentQuality = currentSettings.quality
         val batchId = UUID.randomUUID().toString()
 
         val items = tracks.map { track ->
@@ -89,8 +113,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                 id = UUID.randomUUID().toString(),
                 batchId = batchId,
                 trackInfo = track,
-                quality = currentSettings.quality,
-                format = currentSettings.format,
+                quality = currentQuality,
+                format = currentFormat,
                 state = DownloadState.QUEUED
             )
         }
@@ -100,8 +124,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             name = name,
             items = items,
             outputDir = currentSettings.outputDir,
-            quality = currentSettings.quality,
-            format = currentSettings.format
+            quality = currentQuality,
+            format = currentFormat
         )
 
         _batches.value = listOf(batch) + _batches.value
@@ -111,7 +135,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private fun processQueue() {
         viewModelScope.launch(Dispatchers.IO) {
             val context = getApplication<Application>()
-            val outputDir = File(_settings.value.outputDir)
+            val outputDir = YoutubeDLManager.getDefaultOutputDir(context)
 
             val currentBatches = _batches.value
             for (batch in currentBatches) {
@@ -129,7 +153,14 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                                 outputDir = outputDir,
                                 processId = item.id
                             ) { progress, speed, eta ->
-                                updateItemState(item.id, DownloadState.DOWNLOADING, progress, "Downloading: ${progress.toInt()}%")
+                                val speedText = if (speed.isNotBlank()) " • $speed" else ""
+                                val etaText = if (eta.isNotBlank()) " (ETA: $eta)" else ""
+                                updateItemState(
+                                    item.id,
+                                    DownloadState.DOWNLOADING,
+                                    progress,
+                                    "Downloading: ${progress.toInt()}%$speedText$etaText"
+                                )
                                 DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
                             }
 

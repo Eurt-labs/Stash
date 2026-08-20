@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.eurtlabs.stash.data.model.ColorTheme
 import com.eurtlabs.stash.data.model.DownloadFormat
 import com.eurtlabs.stash.data.model.DownloadQuality
+import com.eurtlabs.stash.data.model.MediaType
 import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 import com.eurtlabs.stash.ui.theme.getThemePalette
@@ -43,11 +44,28 @@ import com.eurtlabs.stash.ui.theme.getThemePalette
 fun SettingsBottomSheet(
     settings: StashSettings,
     onDismiss: () -> Unit,
+    onSelectMediaType: (MediaType) -> Unit,
     onSelectTheme: (ColorTheme) -> Unit,
     onSelectFormat: (DownloadFormat) -> Unit,
     onSelectQuality: (DownloadQuality) -> Unit
 ) {
     val palette = LocalStashPalette.current
+
+    val currentMediaType = settings.mediaType
+    val currentFormat = settings.format
+    val currentQuality = settings.quality
+
+    val availableFormats = if (currentMediaType == MediaType.AUDIO) {
+        DownloadFormat.values().filter { it.isAudioOnly }
+    } else {
+        DownloadFormat.values().filter { !it.isAudioOnly }
+    }
+
+    val availableQualities = if (currentMediaType == MediaType.AUDIO) {
+        DownloadQuality.values().filter { it.isAudioOnly }
+    } else {
+        DownloadQuality.values().filter { !it.isAudioOnly }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -66,22 +84,51 @@ fun SettingsBottomSheet(
                 fontSize = 18.sp
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 1. Output Format
+            // Mode Selector
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(palette.surfaceVariant)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                MediaType.values().forEach { mode ->
+                    val isSelected = currentMediaType == mode
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) palette.primary else Color.Transparent)
+                            .clickable { onSelectMediaType(mode) }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = mode.label,
+                            color = if (isSelected) palette.onPrimary else palette.textSecondary,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Formats
             Text(
-                text = "Output Format",
+                text = if (currentMediaType == MediaType.AUDIO) "Audio Codec" else "Video Format",
                 color = palette.textSecondary,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(DownloadFormat.values()) { format ->
-                    val isSelected = settings.format == format
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(availableFormats) { format ->
+                    val isSelected = currentFormat == format
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
@@ -92,7 +139,7 @@ fun SettingsBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = format.name,
+                            text = format.label,
                             color = if (isSelected) palette.onPrimary else palette.textPrimary,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 13.sp
@@ -101,19 +148,19 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. Bitrate Quality
+            // Qualities
             Text(
-                text = "Bitrate / Resolution",
+                text = if (currentMediaType == MediaType.AUDIO) "Bitrate" else "Resolution",
                 color = palette.textSecondary,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                DownloadQuality.values().forEach { quality ->
-                    val isSelected = settings.quality == quality
+                availableQualities.forEach { quality ->
+                    val isSelected = currentQuality == quality
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -121,7 +168,7 @@ fun SettingsBottomSheet(
                             .background(if (isSelected) palette.primary.copy(alpha = 0.15f) else palette.surfaceVariant)
                             .border(1.dp, if (isSelected) palette.primary else palette.border, RoundedCornerShape(10.dp))
                             .clickable { onSelectQuality(quality) }
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 14.dp, vertical = 9.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -129,7 +176,7 @@ fun SettingsBottomSheet(
                             text = quality.label,
                             color = if (isSelected) palette.primary else palette.textPrimary,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp
+                            fontSize = 12.5.sp
                         )
                         if (isSelected) {
                             Icon(
@@ -144,42 +191,6 @@ fun SettingsBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
-            // 3. Monochromatic Themes
-            Text(
-                text = "Color Palette",
-                color = palette.textSecondary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(ColorTheme.values()) { theme ->
-                    val themePalette = getThemePalette(theme)
-                    val isSelected = settings.theme == theme
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { onSelectTheme(theme) }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(themePalette.background)
-                                .border(2.dp, if (isSelected) palette.primary else palette.border, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = theme.displayName.substringBefore(" "),
-                            color = if (isSelected) palette.textPrimary else palette.textSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
