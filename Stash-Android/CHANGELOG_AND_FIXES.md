@@ -2,6 +2,24 @@
 
 ---
 
+### 📌 [BUG-030] Severe Error 152 IP Block & Robust Audio Fallback
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts
+- **Severity**: Critical
+
+#### 1. Problem Description & Observed Symptoms
+The web_embedded and web_creator clients failed with ERROR: [youtube] <id>: This video is unavailable. Error code: 152 - 18 Watch video on YouTube on certain mobile connections. This error indicates a total, aggressive IP-based shadowban on web traffic by YouTube, rejecting all anonymous requests without a logged-in PO Token. When this happens, yt-dlp aborts extraction instantly and downloads fail.
+
+#### 2. Technical Root Cause Analysis
+The 	v API endpoints are heavily whitelisted by YouTube because Smart TVs lack the ability to quickly solve captchas or provide PO Tokens. However, the 	v client only provides video formats with embedded audio (specifically format 18, which is 360p video + 44k AAC audio). It does not provide udio only (a) formats. If we force yt-dlp to request a/b, and the web clients are banned, yt-dlp will fail to download audio because the 	v fallback doesn't have a.
+
+#### 3. Exact Solution & Implementation Details
+1. **Client Reordering:** Altered the extractor cascade to: youtube:player_client=tv,web_embedded,web_creator,default. Placing 	v first guarantees that the metadata API successfully connects without triggering Error 152. 
+2. **Robust Audio Format Selector:** Changed the audio downloader string from a/b to a/18/b. 
+   - Now, if the IP is fully banned and YouTube deletes all a streams, yt-dlp safely falls back to downloading format 18 (which the 	v client supplies). 
+   - Once format 18 is downloaded, FFmpeg automatically rips the AAC stream from the video container and converts it flawlessly to FLAC/MP3/WAV!
+
+---
 ### 📌 [BUG-029] Web Creator Sign-In Bypass Failure
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts

@@ -26,7 +26,7 @@ export class DownloadEngine {
       '--socket-timeout', '30',
       '--ignore-errors',
       '--no-abort-on-error',
-      '--extractor-args', 'youtube:player_client=web_embedded,web_creator,default'
+      '--extractor-args', 'youtube:player_client=tv,web_embedded,web_creator,default'
     ]
     
     if (flatPlaylist) {
@@ -115,7 +115,7 @@ export class DownloadEngine {
       '--newline',
       '--no-playlist',
       '--geo-bypass',
-      '--extractor-args', 'youtube:player_client=web_embedded,web_creator,default',
+      '--extractor-args', 'youtube:player_client=tv,web_embedded,web_creator,default',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     ]
 
@@ -141,7 +141,7 @@ export class DownloadEngine {
       args.push('--merge-output-format', 'mp4')
     } else {
       // Audio: fetch best audio stream without forced early conversion; ConversionEngine handles 320k transcode in Phase 3
-      args.push('-f', 'ba/b')
+      args.push('-f', 'ba/18/b')
     }
 
     args.push(url)
