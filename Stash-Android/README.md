@@ -8,27 +8,42 @@ High-performance native Android media downloader powered by **Jetpack Compose (M
 
 ```text
 Stash-Android/
-├── app/
-│   ├── build.gradle.kts                        # Gradle build config (Compose, youtubedl-android, Coil)
-│   ├── proguard-rules.pro                      # JNI & NDK reflection rules
-│   └── src/main/
-│       ├── AndroidManifest.xml                 # Foreground Service, Post Notifications, SEND intent
-│       ├── res/                                # XML resources & Material theme tokens
-│       └── java/com/eurtlabs/stash/
-│           ├── StashApplication.kt             # Native YoutubeDL / FFmpeg engine bootstrap
-│           ├── MainActivity.kt                 # Single Activity with incoming link share handler
-│           ├── data/
-│           │   ├── model/Models.kt             # TrackInfo, DownloadItem, DownloadBatch, Enums
-│           │   ├── parser/LinkParser.kt        # URL regex parser for YouTube, Music & Search
-│           │   ├── downloader/YoutubeDLManager.kt # youtubedl-android process execution
-│           │   └── transcoder/MediaTagger.kt   # ID3 tagging & MediaStore notification
-│           ├── service/
-│           │   └── DownloadForegroundService.kt# Android Foreground Service for persistent downloads
-│           ├── viewmodel/
-│           │   └── DownloadViewModel.kt        # StateFlow UI state management
-│           └── ui/
-│               ├── theme/                      # Color palettes (Weeknd, OLED, Sunset, etc.)
-│               └── components/                 # Jetpack Compose UI (TopBar, SearchBar, TrackCards)
+├── settings.gradle.kts                         # JitPack & MavenCentral repository configuration
+├── build.gradle.kts                            # Root build configuration
+├── gradle.properties                           # JVM args & AndroidX configurations
+├── README.md                                   # Getting started & build guide
+└── app/
+    ├── build.gradle.kts                        # Compose BOM, youtubedl-android, Coil, Coroutines
+    ├── proguard-rules.pro                      # JNI & reflection rules for yt-dlp NDK
+    └── src/main/
+        ├── AndroidManifest.xml                 # Foreground Service, Post Notifications, SEND Intent
+        ├── res/
+        │   ├── values/strings.xml              # String resources
+        │   ├── values/themes.xml               # Window & Status bar themes
+        │   └── xml/data_extraction_rules.xml   # Backup configuration
+        └── java/com/eurtlabs/stash/
+            ├── StashApplication.kt             # Native YoutubeDL / FFmpeg engine bootstrap
+            ├── MainActivity.kt                 # Single Activity with incoming link share handler
+            ├── data/
+            │   ├── model/Models.kt             # TrackInfo, DownloadItem, DownloadBatch, Enums
+            │   ├── parser/LinkParser.kt        # URL regex parser for YouTube, Music & Search
+            │   ├── downloader/YoutubeDLManager.kt # youtubedl-android process execution
+            │   └── transcoder/MediaTagger.kt   # ID3 tagging & MediaStore notification
+            ├── service/
+            │   └── DownloadForegroundService.kt# Android Foreground Service for persistent downloads
+            ├── viewmodel/
+            │   └── DownloadViewModel.kt        # StateFlow UI state management
+            └── ui/
+                ├── theme/
+                │   ├── Color.kt                # Stash curated palette (Weeknd, OLED, Sunset, etc.)
+                │   ├── Type.kt                 # Typography definitions
+                │   └── Theme.kt                # Jetpack Compose Theme wrapper
+                └── components/
+                    ├── TopBar.kt               # Header with branding and settings trigger
+                    ├── SearchInputBar.kt       # Dynamic input bar with paste & analyze trigger
+                    ├── TrackCardItem.kt        # Coil image loader, live progress indicator, status chips
+                    ├── BatchQueueList.kt       # LazyColumn queue container
+                    └── SettingsBottomSheet.kt  # Material3 bottom sheet for theme, format, and bitrate
 ```
 
 ---
