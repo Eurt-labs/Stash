@@ -2,6 +2,22 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-015] Compact WebGL Liquid Glass & Sleek Cloud Pills
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: UX Optimization & WebGL Liquid Glass Refinement
+
+#### 1. User Requests Addressed
+- **Reduced Bulky Card Sizes & Elevated UX**:
+  - Transformed oversized, bulky rectangular format and quality selectors into **compact, sleek horizontal Cloud Liquid Glass Pills** (height: 38dp, width: ~80-100dp) with single-row layout and active checkmark badges.
+- **WebGL Refracted Meniscus Shader Aesthetic**:
+  - Implemented multi-stop specular top meniscus gradients (`Color.White.copy(0.65f)` to `0.15f`) and smooth 120fps spring physics on selected Cloud Capsules.
+  - Compacted the **Download Mode Selector** (Music & Audio vs Video) into a 38dp cloud track with floating liquid pill slider.
+  - Reduced vertical spacing and refined typography across storage and diagnostic cards.
+
+---
+
 ### 📌 [ANDROID-FEAT-014] Frosted Background Refraction & Cloud Pill Glass Selectors
 - **Date**: 2026-08-20
 - **Files Modified**: 
