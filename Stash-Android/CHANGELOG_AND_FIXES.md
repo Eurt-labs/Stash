@@ -2,6 +2,23 @@
 
 ---
 
+### 📌 [ANDROID-FIX-016] Enum Property Name Alignments in SettingsScreen
+- **Date**: 2026-08-20
+- **Files Modified**: `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+- **Severity**: Compilation Fix
+
+#### 1. Problem Description
+- `:app:compileDebugKotlin` failed with:
+  `SettingsScreen.kt: Unresolved reference: description :355`
+  `SettingsScreen.kt: Unresolved reference: label :424`
+
+#### 2. Root Cause & Solution
+- In `Models.kt`, `DownloadQuality` defines `label` and `valueOption` (no separate `description`).
+- `ColorTheme` defines `displayName` and `subtitle` (not `label`).
+- Aligned `SettingsScreen.kt` references to `theme.displayName` and removed the redundant quality description row.
+
+---
+
 ### 📌 [ANDROID-FEAT-008] FLAC Lossless Rules, Full Liquid Glass UI, Draggable Nav & Auto-Paste
 - **Date**: 2026-08-20
 - **Files Modified**: 

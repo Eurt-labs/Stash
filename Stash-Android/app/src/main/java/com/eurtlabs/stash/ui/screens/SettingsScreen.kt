@@ -351,11 +351,6 @@ fun SettingsScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.5.sp
                                 )
-                                Text(
-                                    text = quality.description,
-                                    color = palette.textSecondary,
-                                    fontSize = 11.5.sp
-                                )
                             }
 
                             if (isSelected) {
@@ -421,7 +416,7 @@ fun SettingsScreen(
                                     .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
                             )
                             Text(
-                                text = theme.label,
+                                text = theme.displayName,
                                 color = themePal.textPrimary,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
