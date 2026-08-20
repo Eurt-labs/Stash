@@ -2,6 +2,19 @@
 
 ---
 
+### 📌 [ANDROID-FEAT-009] Horizontal Format & Quality Selectors + 120 Hz Hardware Display Optimizer
+- **Date**: 2026-08-20
+- **Files Modified**: 
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt`
+  - `Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt`
+- **Severity**: UI Polish & 120fps Rendering Performance
+
+#### 1. User Requests Addressed
+- **Horizontal Format & Quality Selectors**: Replaced tall vertical lists with sleek, horizontal scrolling liquid-glass cards for both Codec / Format and Bitrate / Resolution selectors.
+- **120 Hz Fluid Display Compatibility**: Added window hardware display mode request in `MainActivity.kt` targeting the device's maximum supported refresh rate (`120 Hz`) on Android 15 & 16 (API 35/36).
+
+---
+
 ### 📌 [ANDROID-FIX-017] Android 16 KB Page Alignment & JNI Packaging Resolution
 - **Date**: 2026-08-20
 - **Files Modified**: `Stash-Android/app/build.gradle.kts`

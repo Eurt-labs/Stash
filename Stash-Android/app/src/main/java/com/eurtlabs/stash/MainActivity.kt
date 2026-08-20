@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        enableHighRefreshRate()
         requestAppPermissions()
         handleIncomingIntent(intent)
 
@@ -306,6 +307,30 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             // Ignore clipboard access exceptions
+        }
+    }
+
+    private fun enableHighRefreshRate() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val currentDisplay = display
+                val maxMode = currentDisplay?.supportedModes?.maxByOrNull { it.refreshRate }
+                if (maxMode != null) {
+                    window.attributes = window.attributes.apply {
+                        preferredDisplayModeId = maxMode.modeId
+                    }
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val currentDisplay = windowManager.defaultDisplay
+                val maxMode = currentDisplay?.supportedModes?.maxByOrNull { it.refreshRate }
+                if (maxMode != null) {
+                    window.attributes = window.attributes.apply {
+                        preferredDisplayModeId = maxMode.modeId
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore display mode setting error
         }
     }
 

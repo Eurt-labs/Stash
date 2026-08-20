@@ -170,7 +170,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Section: Format Selection
+        // Section: Horizontal Format Selection
         item {
             SettingsSectionHeader(
                 icon = if (currentMediaType == MediaType.AUDIO) Icons.Default.MusicNote else Icons.Default.VideoLibrary,
@@ -179,40 +179,42 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                availableFormats.forEach { format ->
+                items(availableFormats) { format ->
                     val isSelected = currentFormat == format
 
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .width(105.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.20f), palette.primary.copy(alpha = 0.08f))
-                                    else listOf(palette.surface.copy(alpha = 0.90f), palette.surface.copy(alpha = 0.60f))
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.25f), palette.primary.copy(alpha = 0.10f))
+                                    else listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
                                 )
                             )
                             .border(
-                                width = 1.dp,
+                                width = if (isSelected) 1.5.dp else 1.dp,
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.60f), palette.primary.copy(alpha = 0.20f))
-                                    else listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
+                                    if (isSelected) listOf(palette.primary.copy(alpha = 0.8f), palette.primary.copy(alpha = 0.3f))
+                                    else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.05f))
                                 ),
                                 shape = RoundedCornerShape(14.dp)
                             )
                             .clickable { onSelectFormat(format) }
-                            .padding(horizontal = 16.dp, vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 10.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
                                     text = format.ext.uppercase(),
@@ -220,36 +222,37 @@ fun SettingsScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
                                 )
-                                if (format == DownloadFormat.FLAC || format == DownloadFormat.WAV) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(palette.primary.copy(alpha = 0.15f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = "LOSSLESS",
-                                            color = palette.primary,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Black
-                                        )
-                                    }
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = palette.primary,
+                                        modifier = Modifier.size(13.dp)
+                                    )
                                 }
                             }
-                            Text(
-                                text = format.label,
-                                color = palette.textSecondary,
-                                fontSize = 11.5.sp
-                            )
-                        }
-
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = palette.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            if (format == DownloadFormat.FLAC || format == DownloadFormat.WAV) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(palette.primary.copy(alpha = 0.2f))
+                                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "LOSSLESS",
+                                        color = palette.primary,
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = format.label,
+                                    color = palette.textSecondary,
+                                    fontSize = 10.5.sp,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
@@ -299,7 +302,7 @@ fun SettingsScreen(
                         )
                         Column {
                             Text(
-                                text = "Lossless Audio Active (${currentFormat.ext.uppercase()})",
+                                text = "Lossless Studio Audio Active (${currentFormat.ext.uppercase()})",
                                 color = palette.textPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.5.sp
@@ -313,52 +316,67 @@ fun SettingsScreen(
                     }
                 }
             } else {
-                // Lossy Bitrates or Video Resolutions
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                // Horizontal Lossy Bitrates or Video Resolutions
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    availableQualities.forEach { quality ->
+                    items(availableQualities) { quality ->
                         val isSelected = currentQuality == quality
 
-                        Row(
+                        val shortLabel = quality.label.substringBefore(" (")
+                        val subLabel = if (quality.label.contains("(")) "(" + quality.label.substringAfter("(") else quality.valueOption
+
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .width(120.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.20f), palette.primary.copy(alpha = 0.08f))
-                                        else listOf(palette.surface.copy(alpha = 0.90f), palette.surface.copy(alpha = 0.60f))
+                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.25f), palette.primary.copy(alpha = 0.10f))
+                                        else listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
                                     )
                                 )
                                 .border(
-                                    width = 1.dp,
+                                    width = if (isSelected) 1.5.dp else 1.dp,
                                     brush = Brush.verticalGradient(
-                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.60f), palette.primary.copy(alpha = 0.20f))
-                                        else listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
+                                        if (isSelected) listOf(palette.primary.copy(alpha = 0.8f), palette.primary.copy(alpha = 0.3f))
+                                        else listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.05f))
                                     ),
                                     shape = RoundedCornerShape(14.dp)
                                 )
                                 .clickable { onSelectQuality(quality) }
-                                .padding(horizontal = 16.dp, vertical = 13.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(horizontal = 10.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = shortLabel,
+                                        color = if (isSelected) palette.primary else palette.textPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp
+                                    )
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = palette.primary,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                }
                                 Text(
-                                    text = quality.label,
-                                    color = if (isSelected) palette.primary else palette.textPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.5.sp
-                                )
-                            }
-
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Selected",
-                                    tint = palette.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    text = subLabel,
+                                    color = palette.textSecondary,
+                                    fontSize = 10.sp,
+                                    maxLines = 1
                                 )
                             }
                         }
