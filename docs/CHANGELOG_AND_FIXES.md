@@ -32,6 +32,53 @@ How was it fixed? Include before-and-after code diffs or mathematical formulas.
 `
 
 ---
+### 📌 [MAINTENANCE] Pre-Emptive Bug Sweep & Crash Prevention
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/.../SettingsScreen.kt, LibraryScreen.kt, TrackActionModalSheet.kt, BottomNavBar.kt, src/main/features/downloader/StashOrchestrator.ts, DownloadEngine.ts
+- **Severity**: Medium
+
+#### 1. Problem Description & Observed Symptoms
+Conducted a pre-emptive codebase sweep to identify silent failures and potential hard crashes (like NullPointerExceptions on Android and Unhandled Promise Rejections on Desktop). 
+
+#### 2. Exact Solution & Implementation Details
+1. **Android (Kotlin):** Removed multiple unsafe force-unwraps (!!) across UI components (e.g. ile!! in TrackActionModalSheet, dragXOffset!! in settings sliders) and replaced them with safe calls (?.let) or Elvis operators (?: 0f) to prevent random UI crashes during recomposition.
+2. **Desktop (TypeScript):** Wrapped synchronous file system operations (s.mkdirSync) in try-catch blocks within StashOrchestrator.ts and DownloadEngine.ts. If the OS denies permission or the path is invalid, it now safely catches the error and rejects the Promise instead of causing an unhandled fatal process crash.
+
+---
+# 📘 Stash Downloader — Master Engineering Changelog, Architecture Guide & Technical Fixes Log
+
+> **Repository**: [https://github.com/Eurt-labs/Stash](https://github.com/Eurt-labs/Stash)  
+> **Application Version**: 2.0.0  
+> **Platform**: Electron + React 18 + TypeScript + Vite + Native Binaries (yt-dlp & FFmpeg)  
+> **Design System**: Liquid Glass Architecture (Ultra-Translucent Frosted Acrylic, Hardware-Accelerated 60fps Canvas Shaders, Dynamic Theming Engine)
+
+---
+
+## 🧭 How to Use and Maintain This Document
+
+This document serves as the **single source of truth** for architectural decisions, historical bug investigations, root-cause analyses, code fixes, and development workflows for Stash Media Downloader.
+
+### 📝 Template for Logging Future Challenges & Fixes
+When resolving new issues or adding features, append an entry following this exact schema:
+
+`markdown
+### [ISSUE-XXX] Short Descriptive Title of Challenge or Feature
+- **Date**: YYYY-MM-DD
+- **Target Files**: path/to/file1.ts, path/to/file2.css
+- **Git Commit**: <commit-hash>
+- **Severity**: Low | Medium | High | Critical
+
+#### 1. Problem Description & Observed Symptoms
+What happened? What error messages or visual defects appeared in the UI or console?
+
+#### 2. Technical Root Cause Analysis
+Why did it happen? Detail the underlying JavaScript, Electron, CSS specificity, Chromium rendering, or binary execution mechanism.
+
+#### 3. Exact Solution & Implementation Details
+How was it fixed? Include before-and-after code diffs or mathematical formulas.
+`
+
+---
 ### 📌 [BUG-028] SABR Missing URL Audio Format Error
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts

@@ -337,13 +337,15 @@ fun TrackActionModalSheet(
                                 color = palette.primary,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
-                                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file!!)
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    file?.let { validFile ->
+                                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", validFile)
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(intent, "Play Media"))
+                                        onDismiss()
                                     }
-                                    context.startActivity(Intent.createChooser(intent, "Play Media"))
-                                    onDismiss()
                                 }
                             )
 
@@ -353,14 +355,16 @@ fun TrackActionModalSheet(
                                 color = palette.textPrimary,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
-                                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file!!)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        type = if (item.format.isAudioOnly) "audio/*" else "video/*"
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    file?.let { validFile ->
+                                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", validFile)
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            type = if (item.format.isAudioOnly) "audio/*" else "video/*"
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Share Track"))
+                                        onDismiss()
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share Track"))
-                                    onDismiss()
                                 }
                             )
                         }

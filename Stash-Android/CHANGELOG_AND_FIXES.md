@@ -2,6 +2,19 @@
 
 ---
 
+### 📌 [MAINTENANCE] Pre-Emptive Bug Sweep & Crash Prevention
+- **Date**: 2026-08-20
+- **Target Files**: Stash-Android/.../SettingsScreen.kt, LibraryScreen.kt, TrackActionModalSheet.kt, BottomNavBar.kt, src/main/features/downloader/StashOrchestrator.ts, DownloadEngine.ts
+- **Severity**: Medium
+
+#### 1. Problem Description & Observed Symptoms
+Conducted a pre-emptive codebase sweep to identify silent failures and potential hard crashes (like NullPointerExceptions on Android and Unhandled Promise Rejections on Desktop). 
+
+#### 2. Exact Solution & Implementation Details
+1. **Android (Kotlin):** Removed multiple unsafe force-unwraps (!!) across UI components (e.g. ile!! in TrackActionModalSheet, dragXOffset!! in settings sliders) and replaced them with safe calls (?.let) or Elvis operators (?: 0f) to prevent random UI crashes during recomposition.
+2. **Desktop (TypeScript):** Wrapped synchronous file system operations (s.mkdirSync) in try-catch blocks within StashOrchestrator.ts and DownloadEngine.ts. If the OS denies permission or the path is invalid, it now safely catches the error and rejects the Promise instead of causing an unhandled fatal process crash.
+
+---
 ### 📌 [BUG-028] SABR Missing URL Audio Format Error
 - **Date**: 2026-08-20
 - **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts

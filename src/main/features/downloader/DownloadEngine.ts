@@ -94,8 +94,12 @@ export class DownloadEngine {
     const ytDlpPath = DependencyResolver.resolveExecutable('yt-dlp')
     const ffmpegPath = DependencyResolver.resolveExecutable('ffmpeg')
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true })
+    try {
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true })
+      }
+    } catch (err: any) {
+      return Promise.reject(new Error(`Failed to create output directory: ${err.message}`))
     }
 
     const outputTemplate = path.join(outputDir, `${trackInfo.safeFileName}.%(ext)s`)

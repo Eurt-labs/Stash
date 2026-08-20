@@ -141,7 +141,7 @@ fun BottomNavBar(
 
                 val defaultOffset = tabWidth * currentTab.ordinal + (tabWidth - bubbleWidth) / 2
                 val targetOffset = if (dragXOffset != null) {
-                    val dragDp = with(density) { dragXOffset!!.toDp() }
+                    val dragDp = with(density) { (dragXOffset ?: 0f).toDp() }
                     (dragDp - bubbleWidth / 2).coerceIn(0.dp, totalWidth - bubbleWidth)
                 } else {
                     defaultOffset

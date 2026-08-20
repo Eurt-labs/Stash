@@ -131,8 +131,13 @@ export class StashOrchestrator {
     if (tracks.length > 1) {
       const subfolderName = tracks[0]?.playlistName || tracks[0]?.artists[0] || name
       finalOutputDir = path.join(outputDir, FileManager.sanitizeFileName(subfolderName))
-      if (!fs.existsSync(finalOutputDir)) {
-        fs.mkdirSync(finalOutputDir, { recursive: true })
+      try {
+        if (!fs.existsSync(finalOutputDir)) {
+          fs.mkdirSync(finalOutputDir, { recursive: true })
+        }
+      } catch (err) {
+        console.error(`Failed to create subfolder ${finalOutputDir}:`, err)
+        finalOutputDir = outputDir // fallback
       }
     }
 

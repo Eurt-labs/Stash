@@ -80,7 +80,7 @@ fun LibraryScreen(
         .let { items ->
             when (sortModeState.value) {
                 1 -> if (sortAscendingState.value) items.sortedBy { it.trackInfo.title.lowercase() } else items.sortedByDescending { it.trackInfo.title.lowercase() }
-                2 -> if (sortAscendingState.value) items.sortedBy { java.io.File(it.finalFilePath!!).length() } else items.sortedByDescending { java.io.File(it.finalFilePath!!).length() }
+                2 -> if (sortAscendingState.value) items.sortedBy { java.io.File(it.finalFilePath ?: "").length() } else items.sortedByDescending { java.io.File(it.finalFilePath ?: "").length() }
                 else -> if (sortAscendingState.value) items else items.reversed() // Recent
             }
         }

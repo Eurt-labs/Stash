@@ -101,7 +101,7 @@ fun <T> AnimatedSelectorTab(
     
     // Find closest item for width interpolation during drag
     val closestItemEntry = if (dragXOffset != null) {
-        val dragCenter = dragXOffset!! + targetWidth / 2
+        val dragCenter = (dragXOffset ?: 0f) + targetWidth / 2
         itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }
     } else null
     val dragTargetWidth = closestItemEntry?.value?.second ?: targetWidth
@@ -249,7 +249,7 @@ fun <T> AnimatedSelectorTab(
                                                 onDragStart = { dragXOffset = animatedOffset },
                                                 onDragEnd = {
                                                     if (dragXOffset != null) {
-                                                        val dragCenter = dragXOffset!! + targetWidth / 2
+                                                        val dragCenter = (dragXOffset ?: 0f) + targetWidth / 2
                                                         val closest = itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }?.key
                                                         if (closest != null) onItemSelected(closest)
                                                     }
@@ -372,7 +372,7 @@ fun SettingsScreen(
                 val defaultTargetOffset = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth
                 
                 val targetOffset = if (modeDragXOffset != null) {
-                    val dragDp = with(density) { modeDragXOffset!!.toDp() }
+                    val dragDp = with(density) { (modeDragXOffset ?: 0f).toDp() }
                     (dragDp - halfWidth / 2).coerceIn(0.dp, halfWidth)
                 } else {
                     defaultTargetOffset
@@ -446,7 +446,7 @@ fun SettingsScreen(
                                                 onDragEnd = {
                                                     if (modeDragXOffset != null) {
                                                         val totalWidth = size.width.toFloat()
-                                                        val isRightSide = modeDragXOffset!! > totalWidth / 2
+                                                        val isRightSide = (modeDragXOffset ?: 0f) > totalWidth / 2
                                                         onSelectMediaType(if (isRightSide) MediaType.VIDEO else MediaType.AUDIO)
                                                     }
                                                     modeDragXOffset = null
