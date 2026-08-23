@@ -389,6 +389,10 @@ fun SettingsScreen(
                                 this.settings.javaScriptEnabled = true
                                 this.settings.domStorageEnabled = true
                                 this.settings.databaseEnabled = true
+                                this.settings.useWideViewPort = true
+                                this.settings.loadWithOverviewMode = true
+                                this.settings.setSupportZoom(true)
+                                this.settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
                                 webViewClient = object : WebViewClient() {
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)

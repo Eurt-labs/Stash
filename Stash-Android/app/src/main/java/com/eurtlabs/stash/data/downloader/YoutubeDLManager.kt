@@ -80,9 +80,12 @@ object YoutubeDLManager {
                 try {
                     val json = JSONObject(line)
                     val id = json.optString("id")
-                    val title = json.optString("title")
+                    var title = json.optString("title")
+                    if (title == "null" || title.isBlank()) title = "Unknown Title"
+                    
                     if (id.isNotBlank() && title.isNotBlank()) {
-                        val uploader = json.optString("uploader", json.optString("channel", "YouTube"))
+                        var uploader = json.optString("uploader", json.optString("channel", "YouTube"))
+                        if (uploader == "null" || uploader.isBlank()) uploader = "YouTube"
                         val duration = json.optLong("duration", 0L)
                         val durationStr = if (duration > 0) {
                             val mins = duration / 60
@@ -188,11 +191,16 @@ object YoutubeDLManager {
                     try {
                         val json = JSONObject(line)
                         val id = json.optString("id", "")
-                        val title = json.optString("title", "Unknown Title")
-                        val uploader = json.optString("uploader", json.optString("channel", "Unknown Artist"))
+                        var title = json.optString("title", "Unknown Title")
+                        if (title == "null" || title.isBlank()) title = "Unknown Title"
+                        
+                        var uploader = json.optString("uploader", json.optString("channel", "Unknown Artist"))
+                        if (uploader == "null" || uploader.isBlank()) uploader = "Unknown Artist"
+                        
                         val duration = json.optLong("duration", 0L) * 1000L
                         val thumb = json.optString("thumbnail", "")
-                        val playlistTitle = json.optString("playlist_title", json.optString("playlist", uploader))
+                        var playlistTitle = json.optString("playlist_title", json.optString("playlist", uploader))
+                        if (playlistTitle == "null") playlistTitle = uploader
                         
                         // yt-dlp might output just 'url' or 'webpage_url' depending on extraction
                         var trackUrl = json.optString("webpage_url", "")
@@ -258,7 +266,8 @@ object YoutubeDLManager {
         }
 
         val safeName = trackInfo.safeFileName.ifBlank { "Track_${System.currentTimeMillis()}" }
-        val destinationTemplate = "${outputDir.absolutePath}/$safeName.%(ext)s"
+        val qualityTag = sanitizeFileName(quality.label)
+        val destinationTemplate = "${outputDir.absolutePath}/$safeName [$qualityTag].%(ext)s"
         val targetUrl = trackInfo.youtubeUrl ?: trackInfo.sourceUrl
 
         LogManager.append(TAG, "Starting download: targetUrl=$targetUrl, format=${format.name}, quality=${quality.label}")
@@ -286,6 +295,12 @@ object YoutubeDLManager {
             addOption("--sleep-requests", "1")
             addOption("--min-sleep-interval", "1")
             addOption("--max-sleep-interval", "3")
+            
+            // Metadata tagging
+            addOption("--embed-metadata")
+            addOption("--embed-thumbnail")
+            addOption("--parse-metadata", "title:%(title)s")
+            addOption("--parse-metadata", "uploader:%(artist)s")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/18/b")
@@ -345,8 +360,12 @@ object YoutubeDLManager {
     }
 
     private fun videoInfoToTrackInfo(info: VideoInfo, sourceUrl: String): TrackInfo {
-        val title = info.title ?: "Unknown Title"
-        val artist = info.uploader ?: "Unknown Artist"
+        var title = info.title ?: "Unknown Title"
+        if (title == "null" || title.isBlank()) title = "Unknown Title"
+        
+        var artist = info.uploader ?: "Unknown Artist"
+        if (artist == "null" || artist.isBlank()) artist = "Unknown Artist"
+        
         val durationMs = (info.duration * 1000L).coerceAtLeast(0L)
         val safeFileName = sanitizeFileName("$artist - $title")
         val fallbackThumb = if (info.id != null) "https://i.ytimg.com/vi/${info.id}/hqdefault.jpg" else null
