@@ -3,6 +3,7 @@ import { StashOrchestrator } from '../features/downloader/StashOrchestrator'
 import { DependencyResolver } from '../features/updater/DependencyResolver'
 import { AppUpdateChecker } from '../features/updater/AppUpdateChecker'
 import { FileManager } from '../core/utils/FileManager'
+import { CookieManager } from '../features/downloader/CookieManager'
 import { DownloadQuality, DownloadFormat, TrackInfo } from '../../shared/types'
 
 export function registerIpcHandlers(orchestrator: StashOrchestrator, getMainWindow: () => BrowserWindow | null): void {
@@ -33,6 +34,11 @@ export function registerIpcHandlers(orchestrator: StashOrchestrator, getMainWind
   ipcMain.handle('stash:setOutputDir', (_e, dir: string) => orchestrator.setOutputDirectory(dir))
   ipcMain.handle('stash:setQuality', (_e, quality: DownloadQuality) => orchestrator.setQuality(quality))
   ipcMain.handle('stash:setFormat', (_e, format: DownloadFormat) => orchestrator.setFormat(format))
+
+  ipcMain.handle('stash:loginYouTube', async () => {
+    const win = getMainWindow()
+    await CookieManager.loginAndExtractCookies(win)
+  })
 
   // System & Files
   ipcMain.handle('stash:selectDirectory', async (_e, defaultPath?: string) => {

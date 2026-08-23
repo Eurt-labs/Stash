@@ -9,6 +9,9 @@ import { FileManager } from '../../core/utils/FileManager'
 export class DownloadEngine {
   private activeProcesses: Map<string, ChildProcess> = new Map()
 
+  public static deviceUserAgent: string | null = null
+  public static cookiesFile: string | null = null
+
   /**
    * Extracts metadata for tracks from YouTube / YouTube Music
    */
@@ -28,6 +31,18 @@ export class DownloadEngine {
       '--no-abort-on-error',
       '--extractor-args', 'youtube:player_client=tv,android,web_embedded'
     ]
+
+    if (DownloadEngine.deviceUserAgent) {
+      args.push('--user-agent', DownloadEngine.deviceUserAgent)
+    }
+    if (DownloadEngine.cookiesFile && fs.existsSync(DownloadEngine.cookiesFile)) {
+      args.push('--cookies', DownloadEngine.cookiesFile)
+    }
+
+    // Request Throttling to evade IP bans
+    args.push('--sleep-requests', '1')
+    args.push('--min-sleep-interval', '1')
+    args.push('--max-sleep-interval', '3')
     
     if (flatPlaylist) {
       args.push('--flat-playlist')
@@ -115,9 +130,20 @@ export class DownloadEngine {
       '--newline',
       '--no-playlist',
       '--geo-bypass',
-      '--extractor-args', 'youtube:player_client=tv,android,web_embedded',
-      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+      '--extractor-args', 'youtube:player_client=tv,android,web_embedded'
     ]
+
+    if (DownloadEngine.deviceUserAgent) {
+      args.push('--user-agent', DownloadEngine.deviceUserAgent)
+    }
+    if (DownloadEngine.cookiesFile && fs.existsSync(DownloadEngine.cookiesFile)) {
+      args.push('--cookies', DownloadEngine.cookiesFile)
+    }
+
+    // Request Throttling to evade IP bans
+    args.push('--sleep-requests', '1')
+    args.push('--min-sleep-interval', '1')
+    args.push('--max-sleep-interval', '3')
 
     // Pass ffmpeg directory location so yt-dlp can locate ffmpeg on all environments
     if (fs.existsSync(ffmpegPath)) {

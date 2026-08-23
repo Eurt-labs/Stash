@@ -1,5 +1,5 @@
 import React from 'react'
-import { Folder, FolderOpen, Sliders, Music2 } from 'lucide-react'
+import { Folder, FolderOpen, Sliders, Music2, Globe } from 'lucide-react'
 import { DownloadQuality, DownloadFormat } from '../../../shared/types'
 
 interface SettingsBarProps {
@@ -132,6 +132,24 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
           <option value="WAV">WAV Audio (.wav)</option>
           <option value="MP4">MP4 Video (.mp4)</option>
         </select>
+      </div>
+    </div>
+    <div className="controls-grid" style={{ marginTop: '10px' }}>
+      <div className="control-group">
+        <label className="control-label">
+          <Globe size={14} /> YouTube Authentication
+        </label>
+        <button 
+          className="btn btn-primary" 
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          onClick={() => {
+            if (window.stashAPI && (window.stashAPI as any).loginYouTube) {
+              (window.stashAPI as any).loginYouTube()
+            }
+          }}
+        >
+          Login & Sync Cookies
+        </button>
       </div>
     </div>
   )

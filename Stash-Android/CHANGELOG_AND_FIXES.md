@@ -1,4 +1,25 @@
-﻿# 📱 Stash Android — Changelog & Technical Fixes Archive
+# 📱 Stash Android — Changelog & Technical Fixes Archive
+
+---
+
+### 📌 [FEATURE-032] YouTube Anti-Bot Evasion & User Accounts Integration
+- **Date**: 2026-08-23
+- **Target Files**: Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/YoutubeDLManager.kt, src/main/features/downloader/DownloadEngine.ts, Stash-Android/app/src/main/java/com/eurtlabs/stash/data/downloader/CookieManager.kt, src/main/features/downloader/CookieManager.ts, Stash-Android/app/src/main/java/com/eurtlabs/stash/ui/screens/SettingsScreen.kt, src/renderer/src/components/SettingsBar.tsx, src/main/app.ts, Stash-Android/app/src/main/java/com/eurtlabs/stash/MainActivity.kt
+- **Severity**: High
+
+#### 1. Problem Description & Observed Symptoms
+YouTube aggressively blocks automated scrapers by analyzing User-Agents, request timings, and IP addresses. Mobile networks are particularly susceptible. Additionally, `yt-dlp` updates frequently break on Android due to cipher changes, and users couldn't leverage their YouTube Premium/logged-in sessions to bypass CAPTCHAs.
+
+#### 2. Technical Root Cause Analysis
+- `yt-dlp` used a static Windows Chrome User-Agent, causing instant anomaly detection on cellular networks.
+- Bots issue sequential requests with no delays, triggering YouTube's rate limiters.
+- `youtubedl-android` relies on manual library bumps to get the latest yt-dlp binaries, causing frequent breakages.
+
+#### 3. Exact Solution & Implementation Details
+1. **Dynamic User-Agents**: Integrated `WebSettings.getDefaultUserAgent(context)` (Android) and `app.userAgentFallback` (Desktop) to pass authentic hardware/OS headers to `yt-dlp`.
+2. **Native Browser Cookies**: Created `CookieManager.kt` and `CookieManager.ts` to launch WebViews/BrowserWindows for Google Login, extracting `Set-Cookie` headers into a Netscape `cookies.txt` and passing `--cookies` to yt-dlp.
+3. **Request Throttling**: Injected `--sleep-requests 1`, `--min-sleep-interval 1`, and `--max-sleep-interval 3` to enforce human-like delays during playlist parsing.
+4. **Auto-Updater**: Injected a background coroutine in `MainActivity.kt` to silently call `YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE)` on startup.
 
 ---
 

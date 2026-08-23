@@ -1,6 +1,8 @@
 import { app, BrowserWindow, shell } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { StashOrchestrator } from './features/downloader/StashOrchestrator'
+import { DownloadEngine } from './features/downloader/DownloadEngine'
 import { registerIpcHandlers } from './ipc'
 
 process.env.DIST = path.join(__dirname, '../dist')
@@ -68,6 +70,15 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(() => {
+    // Inject the native machine's User-Agent into the DownloadEngine
+    DownloadEngine.deviceUserAgent = app.userAgentFallback || `Mozilla/5.0 (${process.platform}; ${process.arch}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36`
+    
+    // Load previously saved cookies if they exist
+    const cookiesPath = path.join(app.getPath('userData'), 'youtube_cookies.txt')
+    if (fs.existsSync(cookiesPath)) {
+      DownloadEngine.cookiesFile = cookiesPath
+    }
+
     createWindow()
 
     app.on('activate', () => {

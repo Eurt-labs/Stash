@@ -22,6 +22,9 @@ object YoutubeDLManager {
 
     private const val TAG = "YoutubeDLManager"
 
+    var deviceUserAgent: String? = null
+    var cookiesFile: File? = null
+
     fun getDefaultOutputDir(context: Context): File {
         val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
             ?: File(context.filesDir, "Music")
@@ -148,6 +151,18 @@ object YoutubeDLManager {
                 addOption("--flat-playlist")
                 addOption("--dump-json")
                 addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
+                
+                deviceUserAgent?.let {
+                    addOption("--user-agent", it)
+                }
+                cookiesFile?.let {
+                    if (it.exists()) addOption("--cookies", it.absolutePath)
+                }
+                
+                // Request Throttling to evade IP bans
+                addOption("--sleep-requests", "1")
+                addOption("--min-sleep-interval", "1")
+                addOption("--max-sleep-interval", "3")
             }
             
             var lastUpdate = 0L
@@ -258,6 +273,18 @@ object YoutubeDLManager {
             addOption("--geo-bypass")
             addOption("--force-ipv4")
             addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
+
+            deviceUserAgent?.let {
+                addOption("--user-agent", it)
+            }
+            cookiesFile?.let {
+                if (it.exists()) addOption("--cookies", it.absolutePath)
+            }
+            
+            // Request Throttling to evade IP bans
+            addOption("--sleep-requests", "1")
+            addOption("--min-sleep-interval", "1")
+            addOption("--max-sleep-interval", "3")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/18/b")

@@ -57,8 +57,14 @@ import com.eurtlabs.stash.ui.screens.LibraryScreen
 import com.eurtlabs.stash.ui.screens.SearchScreen
 import com.eurtlabs.stash.ui.screens.SettingsScreen
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
+import androidx.lifecycle.lifecycleScope
 import com.eurtlabs.stash.ui.theme.StashTheme
 import com.eurtlabs.stash.viewmodel.DownloadViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import android.webkit.WebSettings
+import com.eurtlabs.stash.data.downloader.YoutubeDLManager
+import com.eurtlabs.stash.data.downloader.CookieManager
 
 class MainActivity : ComponentActivity() {
 
@@ -89,6 +95,25 @@ class MainActivity : ComponentActivity() {
         enableHighRefreshRate()
         requestAppPermissions()
         handleIncomingIntent(intent)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Fetch realistic hardware User-Agent for anti-bot evasion
+                val userAgent = WebSettings.getDefaultUserAgent(applicationContext)
+                YoutubeDLManager.deviceUserAgent = userAgent
+                
+                // Initialize cookies file if it exists from previous login
+                val cookiesFile = CookieManager.getCookiesFile(applicationContext)
+                if (cookiesFile.exists()) {
+                    YoutubeDLManager.cookiesFile = cookiesFile
+                }
+                
+                // Auto-update yt-dlp core engine from official repo in background
+                YoutubeDLManager.updateEngine(applicationContext)
+            } catch (e: Exception) {
+                // Ignore initialization errors
+            }
+        }
 
         setContent {
             val settings by viewModel.settings.collectAsState()

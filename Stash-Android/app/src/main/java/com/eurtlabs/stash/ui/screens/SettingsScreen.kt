@@ -80,6 +80,12 @@ import kotlin.math.roundToInt
 
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
+import com.eurtlabs.stash.data.downloader.CookieManager
 
 @Composable
 fun <T> AnimatedSelectorTab(
@@ -324,6 +330,76 @@ fun SettingsScreen(
                 cacheSize = if (sizeMb >= 1f) String.format("%.1f MB", sizeMb) else String.format("%d KB", sizeBytes / 1024)
             } catch (e: Exception) {
                 cacheSize = "Unknown"
+            }
+        }
+    }
+
+    var showLoginDialog by remember { mutableStateOf(false) }
+    var cookieStatus by remember { mutableStateOf("Not synced") }
+
+    LaunchedEffect(Unit) {
+        val file = CookieManager.getCookiesFile(context)
+        if (file.exists() && file.length() > 0) {
+            cookieStatus = "Synced via WebView"
+        }
+    }
+
+    if (showLoginDialog) {
+        Dialog(
+            onDismissRequest = { 
+                showLoginDialog = false 
+                CookieManager.extractCookiesToDisk(context)
+                val file = CookieManager.getCookiesFile(context)
+                cookieStatus = if (file.exists() && file.length() > 0) "Synced via WebView" else "Not synced"
+            },
+            properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = true)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                color = palette.background
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("YouTube Login", color = palette.textPrimary, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Done",
+                            color = palette.primary,
+                            modifier = Modifier.clickable {
+                                showLoginDialog = false
+                                CookieManager.extractCookiesToDisk(context)
+                                val file = CookieManager.getCookiesFile(context)
+                                cookieStatus = if (file.exists() && file.length() > 0) "Synced via WebView" else "Not synced"
+                            }
+                        )
+                    }
+                    AndroidView(
+                        factory = { ctx ->
+                            WebView(ctx).apply {
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.databaseEnabled = true
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        // Automatically extract cookies silently on every page load
+                                        CookieManager.extractCookiesToDisk(context)
+                                    }
+                                }
+                                loadUrl("https://m.youtube.com")
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -712,6 +788,80 @@ fun SettingsScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+        // Section: YouTube Account & Cookies
+        item {
+            SettingsSectionHeader(
+                icon = Icons.Filled.VideoLibrary,
+                title = "YouTube Account & Cookies",
+                subtitle = "Sync valid browser session to completely bypass CAPTCHAs & Age Restrictions"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LiquidGlassCard(
+                cornerRadius = 20.dp,
+                innerPadding = 14.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(palette.surfaceVariant)
+                            .clickable { showLoginDialog = true }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Login / Sync Browser Cookies",
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.5.sp
+                            )
+                            Text(
+                                text = "Status: $cookieStatus",
+                                color = if (cookieStatus.contains("Synced")) palette.primary else palette.textSecondary,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        Text(
+                            text = "Open WebView 🌐",
+                            color = palette.primary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp
+                        )
+                    }
+
+                    if (cookieStatus.contains("Synced")) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(palette.surfaceVariant)
+                                .clickable {
+                                    CookieManager.clearCookies(context)
+                                    cookieStatus = "Not synced"
+                                }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Clear Saved Cookies",
+                                color = Color(0xFFFF5252),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.5.sp
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(20.dp))
         }
 
