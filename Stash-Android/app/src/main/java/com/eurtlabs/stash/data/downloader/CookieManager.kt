@@ -2,7 +2,6 @@ package com.eurtlabs.stash.data.downloader
 
 import android.content.Context
 import android.util.Log
-import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.os.Handler

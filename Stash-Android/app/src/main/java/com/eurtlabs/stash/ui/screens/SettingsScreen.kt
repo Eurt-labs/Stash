@@ -40,7 +40,9 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -384,9 +386,9 @@ fun SettingsScreen(
                     AndroidView(
                         factory = { ctx ->
                             WebView(ctx).apply {
-                                settings.javaScriptEnabled = true
-                                settings.domStorageEnabled = true
-                                settings.databaseEnabled = true
+                                this.settings.javaScriptEnabled = true
+                                this.settings.domStorageEnabled = true
+                                this.settings.databaseEnabled = true
                                 webViewClient = object : WebViewClient() {
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)
@@ -789,6 +791,8 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+        }
+
         // Section: YouTube Account & Cookies
         item {
             SettingsSectionHeader(

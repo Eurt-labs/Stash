@@ -58,6 +58,7 @@ object YoutubeDLManager {
             SearchFilter.ARTISTS -> "ytsearch30:$query songs"
             SearchFilter.VIDEOS -> "ytsearch15:$query"
             SearchFilter.ALL -> "ytsearch15:$query"
+            SearchFilter.LIBRARY -> "ytsearch15:$query"
         }
 
         LogManager.append(TAG, "Searching media: filter=${filter.name}, prefix=$searchPrefix")
@@ -69,7 +70,7 @@ object YoutubeDLManager {
                 addOption("--no-warnings")
                 addOption("--socket-timeout", "15")
                 addOption("--force-ipv4")
-                addOption("--extractor-args", "youtube:player_client=tv,web_embedded,web_creator,default")
+                addOption("--extractor-args", "youtube:player_client=default")
             }
             val response = YoutubeDL.getInstance().execute(request, null, null)
             val jsonLines = response.out?.lines()?.filter { it.isNotBlank() } ?: emptyList()
@@ -150,7 +151,7 @@ object YoutubeDLManager {
                 addOption("--force-ipv4")
                 addOption("--flat-playlist")
                 addOption("--dump-json")
-                addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
+                addOption("--extractor-args", "youtube:player_client=default")
                 
                 deviceUserAgent?.let {
                     addOption("--user-agent", it)
@@ -272,7 +273,7 @@ object YoutubeDLManager {
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
             addOption("--force-ipv4")
-            addOption("--extractor-args", "youtube:player_client=tv,android,web_embedded")
+            addOption("--extractor-args", "youtube:player_client=default")
 
             deviceUserAgent?.let {
                 addOption("--user-agent", it)

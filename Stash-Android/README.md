@@ -61,3 +61,9 @@ Stash-Android/
 
 ### 3. Share Sheet Integration
 You can share any YouTube link directly from the YouTube app or browser by clicking **Share ➔ Stash**; the app automatically opens, scrapes metadata, and enqueues the download.
+
+### 4. Bypassing CAPTCHAs & Age Restrictions
+If you ever run into CAPTCHAs or age-restriction blocks, don't worry! Just pop open the `SettingsScreen`, click the `Login / Sync Browser Cookies` button, and it opens a hidden WebView. Once you log into YouTube normally, Stash securely pulls your cookies, strips out any sensitive Google ID tokens, and feeds them to the downloader so you never have to deal with manual terminal commands.
+
+### 5. Blazing Fast 4K Downloads
+We recently ditched the restricted Android/TV APIs and moved back to the default web clients. What does that mean for you? Blazing fast metadata fetching and full support for downloading raw 1080p, 1440p, and 4K streams! No more getting capped at 720p!

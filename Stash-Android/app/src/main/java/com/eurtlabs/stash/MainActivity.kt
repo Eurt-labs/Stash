@@ -58,10 +58,11 @@ import com.eurtlabs.stash.ui.screens.SearchScreen
 import com.eurtlabs.stash.ui.screens.SettingsScreen
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 import androidx.lifecycle.lifecycleScope
-import com.eurtlabs.stash.ui.theme.StashTheme
-import com.eurtlabs.stash.viewmodel.DownloadViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.eurtlabs.stash.ui.theme.StashTheme
+import com.eurtlabs.stash.viewmodel.DownloadViewModel
 import android.webkit.WebSettings
 import com.eurtlabs.stash.data.downloader.YoutubeDLManager
 import com.eurtlabs.stash.data.downloader.CookieManager

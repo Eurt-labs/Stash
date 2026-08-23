@@ -667,7 +667,7 @@ private fun LibraryActionCard(
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
-    palette: com.eurtlabs.stash.ui.theme.StashPalette
+    palette: com.eurtlabs.stash.ui.theme.ThemePalette
 ) {
     Box(
         modifier = Modifier
