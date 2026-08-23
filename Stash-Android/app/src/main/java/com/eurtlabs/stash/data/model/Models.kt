@@ -132,7 +132,8 @@ enum class SearchFilter(val label: String) {
     ALL("All"),
     MUSIC("Songs & Music"),
     ARTISTS("Artists"),
-    VIDEOS("Videos")
+    VIDEOS("Videos"),
+    LIBRARY("My Library")
 }
 
 data class SearchResultItem(

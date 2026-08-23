@@ -298,6 +298,46 @@ fun SearchScreen(
                     onDownload = { onDownloadItem(resultItem) }
                 )
             }
+        } else if (selectedFilter == SearchFilter.LIBRARY) {
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "MY LIBRARY",
+                    color = palette.textSecondary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    LibraryActionCard(
+                        title = "Watch History",
+                        subtitle = "Sync your recently watched YouTube videos",
+                        icon = Icons.Default.PlayCircleOutline,
+                        onClick = { onSearch(":ythistory") },
+                        palette = palette
+                    )
+                    LibraryActionCard(
+                        title = "Liked Videos",
+                        subtitle = "Sync your favorite YouTube videos",
+                        icon = Icons.Default.MusicNote,
+                        onClick = { onSearch(":ytfav") },
+                        palette = palette
+                    )
+                    LibraryActionCard(
+                        title = "Watch Later",
+                        subtitle = "Sync your Watch Later playlist",
+                        icon = Icons.Default.VideoLibrary,
+                        onClick = { onSearch(":ytwatchlater") },
+                        palette = palette
+                    )
+                }
+            }
         } else {
             // Default Initial State: Quick Paste, Trending Searches, and Source Overview
             item {
@@ -617,6 +657,59 @@ private fun SourceInfoRow(
                 color = palette.textSecondary,
                 fontSize = 11.5.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun LibraryActionCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    palette: com.eurtlabs.stash.ui.theme.StashPalette
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(palette.surface)
+            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(palette.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = palette.textPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = palette.textPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = subtitle,
+                    color = palette.textSecondary,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }

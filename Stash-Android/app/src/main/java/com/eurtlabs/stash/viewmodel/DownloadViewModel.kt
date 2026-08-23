@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eurtlabs.stash.data.downloader.LogManager
 import com.eurtlabs.stash.data.downloader.YoutubeDLManager
+import com.eurtlabs.stash.data.downloader.YoutubeLibraryFetcher
 import com.eurtlabs.stash.data.model.ColorTheme
 import com.eurtlabs.stash.data.model.DownloadBatch
 import com.eurtlabs.stash.data.model.DownloadFormat
@@ -158,8 +159,13 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _isSearching.value = true
             try {
-                val results = YoutubeDLManager.searchMedia(query.trim(), _searchFilter.value)
-                _searchResults.value = results
+                if (query.trim().startsWith(":yt")) {
+                    val results = YoutubeLibraryFetcher.fetchLibrary(query.trim())
+                    _searchResults.value = results
+                } else {
+                    val results = YoutubeDLManager.searchMedia(query.trim(), _searchFilter.value)
+                    _searchResults.value = results
+                }
             } catch (e: Exception) {
                 Log.e("DownloadViewModel", "Search error: ${e.message}", e)
                 _searchResults.value = emptyList()

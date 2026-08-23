@@ -107,6 +107,12 @@ class MainActivity : ComponentActivity() {
                 if (cookiesFile.exists()) {
                     YoutubeDLManager.cookiesFile = cookiesFile
                 }
+
+                // Always generate a valid organic Guest session on startup to prevent ban tracking
+                // Must be called on Main thread, so we switch context
+                withContext(Dispatchers.Main) {
+                    CookieManager.generateSilentGuestSession(this@MainActivity)
+                }
                 
                 // Auto-update yt-dlp core engine from official repo in background
                 YoutubeDLManager.updateEngine(applicationContext)

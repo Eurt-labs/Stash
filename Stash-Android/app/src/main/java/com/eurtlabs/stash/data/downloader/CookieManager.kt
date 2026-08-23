@@ -3,12 +3,21 @@ package com.eurtlabs.stash.data.downloader
 import android.content.Context
 import android.util.Log
 import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.os.Handler
+import android.os.Looper
 import java.io.File
 
 object CookieManager {
     private const val TAG = "CookieManager"
     private const val YOUTUBE_URL = "https://youtube.com"
     private const val M_YOUTUBE_URL = "https://m.youtube.com"
+
+    // Strict list of Google ID tokens that MUST NEVER be passed to yt-dlp to prevent bans
+    private val SENSITIVE_TOKENS = setOf(
+        "SAPISID", "APISID", "SSID", "HSID", "SID", "OSID", "LOGIN_INFO", "SIDCC"
+    )
 
     fun getCookiesFile(context: Context): File {
         return File(context.cacheDir, "youtube_cookies.txt")
@@ -41,6 +50,12 @@ object CookieManager {
                     val parts = pair.trim().split("=", limit = 2)
                     if (parts.size == 2) {
                         val name = parts[0]
+                        
+                        // ONLY write anonymous guest tokens to prevent ban tracking
+                        if (SENSITIVE_TOKENS.contains(name.uppercase())) {
+                            continue
+                        }
+                        
                         val value = parts[1]
                         val domain = ".youtube.com"
                         val flag = "TRUE"
@@ -75,5 +90,41 @@ object CookieManager {
         }
         YoutubeDLManager.cookiesFile = null
         LogManager.append(TAG, "Cookies cleared.")
+    }
+
+    /**
+     * Checks if the cookies file contains authentication tokens indicating a logged-in user.
+     */
+    fun isUserLoggedIn(context: Context): Boolean {
+        val file = getCookiesFile(context)
+        if (!file.exists()) return false
+        val content = file.readText()
+        return content.contains("SAPISID") || content.contains("LOGIN_INFO")
+    }
+
+    /**
+     * Silently generates a guest session by loading YouTube in a hidden WebView for 3 seconds.
+     * Must be called on the main UI thread.
+     */
+    fun generateSilentGuestSession(context: Context) {
+        try {
+            val webView = WebView(context).apply {
+                settings.javaScriptEnabled = true
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        // Wait 3 seconds for YouTube's JS to assign VISITOR_INFO1_LIVE and SOCS
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            extractCookiesToDisk(context)
+                            view?.destroy()
+                            LogManager.append(TAG, "Silent guest session generated successfully.")
+                        }, 3000)
+                    }
+                }
+            }
+            webView.loadUrl(M_YOUTUBE_URL)
+        } catch (e: Exception) {
+            LogManager.append(TAG, "Error generating silent guest session: ${e.message}")
+        }
     }
 }

@@ -1170,3 +1170,9 @@ npm run package:win
 # 4. Check git status
 git status --short
 ```
+
+### 2026-08-23: Native Library Pipeline & yt-dlp Air-Gapping
+- **Context**: The user wanted to restore the "My Library" feature without compromising the strict anonymity of yt-dlp.
+- **Feature**: Engineered YoutubeLibraryFetcher.kt, a custom Kotlin-based network pipeline. It securely fetches private Watch History and Liked Videos directly from m.youtube.com using the logged-in cookies from android.webkit.CookieManager.
+- **Feature**: Restored the LIBRARY filter and action cards to SearchScreen.
+- **Architectural Shift**: DownloadViewModel now intercepts Library queries. When a user taps to download a private history video, Stash passes only the standard public video URL to yt-dlp. yt-dlp then downloads it anonymously using its strictly enforced Guest Tokens, creating a perfect air-gap between the user's Google ID and the downloader.
