@@ -141,6 +141,13 @@ The compiled installer will be generated in the **`release/`** folder:
 - **13 Built-in Color & Artist Signature Themes**: 7 Core Palettes + 6 Artist Styles (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey) with slow-breathing animated backdrops.
 - **In-App Self-Healing Update Engine**: 1-click update tool in Settings to automatically pull the newest upstream nightly patches without reinstalling the app.
 
+## 🛡️ Android Security Architecture (Anti-Ban)
+
+Stash Android implements state-of-the-art security patterns to ensure your Google Account is **100% immune** to scraping bans from YouTube:
+
+1. **Silent Guest Sessions**: `yt-dlp` is strictly air-gapped from your Google ID. On every app launch, Stash silently spins up an invisible background browser to fetch brand new, organic anonymous "Guest" cookies from YouTube. `yt-dlp` only ever sees these randomized guest tokens.
+2. **Native Library Fetcher**: When you log in to sync your private "Watch History" or "Liked Videos", Stash fetches this data natively in Kotlin using your real cookies. However, when you tap download, Stash passes *only the public video URL* to `yt-dlp`, which downloads it using the anonymous Guest token. Your account data never touches the downloader!
+
 ---
 
 ## 📁 Project Structure
