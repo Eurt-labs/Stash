@@ -94,7 +94,7 @@ fun StorageSelectionDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Option 1: Default App Music Folder (Recommended)
+                // Option 1: Default App Music Folder
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -123,7 +123,7 @@ fun StorageSelectionDialog(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Music / Stash (Recommended)",
+                            text = "Music / Stash",
                             color = palette.textPrimary,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.5.sp

@@ -100,13 +100,16 @@ object StorageManager {
                 "audio/${sourceFile.extension}"
             }
             
-            val newFile = docFile.createFile(mimeType, sourceFile.name) ?: return false
+            val newFile = docFile.createFile(mimeType, sourceFile.nameWithoutExtension) ?: return false
             
             context.contentResolver.openOutputStream(newFile.uri)?.use { outStream ->
                 sourceFile.inputStream().use { inStream ->
                     inStream.copyTo(outStream)
                 }
             }
+            
+            // Delete original file to prevent duplicates in MediaStore
+            sourceFile.delete()
             return true
         } catch (e: Exception) {
             e.printStackTrace()
