@@ -28,7 +28,7 @@ export class DownloadEngine {
       '--socket-timeout', '30',
       '--ignore-errors',
       '--no-abort-on-error',
-      '--extractor-args', 'youtube:player_client=tv,android,web_embedded'
+      '--extractor-args', 'youtube:player_client=default'
     ]
 
     if (DownloadEngine.deviceUserAgent) {
@@ -126,7 +126,7 @@ export class DownloadEngine {
       '--newline',
       '--no-playlist',
       '--geo-bypass',
-      '--extractor-args', 'youtube:player_client=tv,android,web_embedded'
+      '--extractor-args', 'youtube:player_client=default'
     ]
 
     if (DownloadEngine.deviceUserAgent) {
