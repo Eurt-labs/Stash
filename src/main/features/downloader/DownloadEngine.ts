@@ -10,7 +10,6 @@ export class DownloadEngine {
   private activeProcesses: Map<string, ChildProcess> = new Map()
 
   public static deviceUserAgent: string | null = null
-  public static cookiesFile: string | null = null
 
   /**
    * Extracts metadata for tracks from YouTube / YouTube Music
@@ -34,9 +33,6 @@ export class DownloadEngine {
 
     if (DownloadEngine.deviceUserAgent) {
       args.push('--user-agent', DownloadEngine.deviceUserAgent)
-    }
-    if (DownloadEngine.cookiesFile && fs.existsSync(DownloadEngine.cookiesFile)) {
-      args.push('--cookies', DownloadEngine.cookiesFile)
     }
 
     // Request Throttling to evade IP bans
@@ -135,9 +131,6 @@ export class DownloadEngine {
 
     if (DownloadEngine.deviceUserAgent) {
       args.push('--user-agent', DownloadEngine.deviceUserAgent)
-    }
-    if (DownloadEngine.cookiesFile && fs.existsSync(DownloadEngine.cookiesFile)) {
-      args.push('--cookies', DownloadEngine.cookiesFile)
     }
 
     // Request Throttling to evade IP bans

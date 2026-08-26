@@ -10,7 +10,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "package:win": "npm run build && electron-builder --config config/electron-builder.json --win -c.win.signAndEditExecutable=false -c.forceCodeSigning=false"
+    "package:win": "npm run build && electron-builder --config config/electron-builder.json --win -c.forceCodeSigning=false"
   },
   "dependencies": {
     "axios": "^1.7.9",

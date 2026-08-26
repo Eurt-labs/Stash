@@ -75,10 +75,6 @@ if (!gotTheLock) {
     DownloadEngine.deviceUserAgent = app.userAgentFallback || `Mozilla/5.0 (${process.platform}; ${process.arch}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36`
     
     // Load previously saved cookies if they exist
-    const cookiesPath = path.join(app.getPath('userData'), 'youtube_cookies.txt')
-    if (fs.existsSync(cookiesPath)) {
-      DownloadEngine.cookiesFile = cookiesPath
-    }
 
     createWindow()
 

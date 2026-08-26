@@ -135,24 +135,6 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
         </select>
       </div>
     </div>
-    <div className="controls-grid" style={{ marginTop: '10px' }}>
-      <div className="control-group">
-        <label className="control-label">
-          <Globe size={14} /> YouTube Authentication
-        </label>
-        <button 
-          className="btn btn-primary" 
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-          onClick={() => {
-            if (window.stashAPI && (window.stashAPI as any).loginYouTube) {
-              (window.stashAPI as any).loginYouTube()
-            }
-          }}
-        >
-          Login & Sync Cookies
-        </button>
-      </div>
-    </div>
     </>
   )
 }

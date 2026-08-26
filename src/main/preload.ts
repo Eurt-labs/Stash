@@ -13,7 +13,6 @@ const api: StashAPI = {
   checkDependencies: () => ipcRenderer.invoke('stash:checkDependencies'),
   updateYtDlp: () => ipcRenderer.invoke('stash:updateYtDlp'),
   checkAppUpdate: () => ipcRenderer.invoke('stash:checkAppUpdate'),
-  loginYouTube: () => ipcRenderer.invoke('stash:loginYouTube'),
 
   parseAndFetchMetadata: (url: string) => ipcRenderer.invoke('stash:parseAndFetchMetadata', url),
   enqueueBatch: (name: string, tracks: TrackInfo[], quality?: DownloadQuality, format?: DownloadFormat, outputDir?: string) =>

@@ -125,7 +125,6 @@ export interface StashAPI {
   checkDependencies: () => Promise<DependencyStatus>
   updateYtDlp: () => Promise<{ success: boolean; message: string }>
   checkAppUpdate: () => Promise<AppUpdateStatus>
-  loginYouTube: () => Promise<void>
 
   // Pipeline APIs
   parseAndFetchMetadata: (url: string) => Promise<{ parsedLink: ParsedLink; tracks: TrackInfo[] }>
