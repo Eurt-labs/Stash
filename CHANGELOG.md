@@ -6,6 +6,15 @@ For detailed historical root-cause analyses and code diffs across all 24 major i
 
 ---
 
+## [2.1.0] - 2026-08-26
+
+### Highlights
+- **Cross-Platform Parity**: Unified versioning (v2.1.0) across the Electron PC app and Native Android app.
+- **UI Architecture**: Resolved critical JSX Fragment parsing errors in `SettingsBar.tsx` for stable rendering.
+- **Build Integrity**: Fixed Electron taskbar icon inheritance by hardlinking `app-resources/icon.png` to the `BrowserWindow` lifecycle.
+- **Documentation**: Overhauled `README.md` to map the new Domain-Driven Design (DDD) architecture and updated feature capabilities for Native ID3 tagging and SAF storage hooks.
+
+
 ## [2.0.0] - 2026-08-19
 
 ### Highlights

@@ -989,3 +989,16 @@ If a user selected a custom download folder (like their SD Card), the app was pr
 
 **2. UI Neutrality:**
 Removed the "(Recommended)" branding from the default storage option in the `StorageSelectionDialog`. We want to remain completely neutral and let the user decide where their files go without feeling pushed towards the internal storage.
+
+
+### [August 26, 2026] v2.1.0 Architecture Finalization & PC Build Polish
+
+The push for total cross-platform parity! We officially bumped the version to **v2.1.0** across both the Android app (`build.gradle.kts`) and the PC Electron app (`package.json`).
+
+**1. PC Build Polish:**
+- The Electron `BrowserWindow` was silently dropping our custom icon and falling back to the default Atom logo because it wasn't explicitly bound during initialization. Hardlinked it to `app-resources/icon.png` in `app.ts` so the taskbar and system tray display perfectly now.
+- Caught and resolved a nasty little React syntax error in `SettingsBar.tsx` caused by returning adjacent root elements. Wrapped them in a Fragment `<> ... </>` and the compiler is happy again.
+
+**2. Documentation Push:**
+- Gave the `README.md` a massive facelift to reflect the new Domain-Driven Design (DDD) modular structure.
+- Made sure to highlight all the cool stuff we built over the last few days (Native ID3 FFmpeg tagging, Liquid Glass UI extracted kit, and the SAF duplicate file fix).
