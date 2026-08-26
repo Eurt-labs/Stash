@@ -133,7 +133,7 @@ export interface StashAPI {
   startBatchDownload: (batchId: string) => Promise<void>
   startTrackDownload: (batchId: string, trackId: string) => Promise<void>
   cancelTrack: (batchId: string, trackId: string) => Promise<void>
-  cancelBatch: (batchId: string, trackId: string) => Promise<void>
+  cancelBatch: (batchId: string) => Promise<void>
   removeTrack: (batchId: string, trackId: string) => Promise<void>
   removeBatch: (batchId: string) => Promise<void>
   clearCompletedBatches: () => Promise<void>
