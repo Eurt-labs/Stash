@@ -8,6 +8,12 @@ For detailed historical root-cause analyses and code diffs across all 24 major i
 
 ## [2.1.0] - 2026-08-26
 
+
+### Fixes & Enhancements
+- **Download Engine (PC)**: Restored `youtube:player_client=ios,android,tv` extractor arguments to bypass YouTube web client throttling, unlocking 1080p, 2K, and 4K video downloads.
+- **Metadata (PC)**: Forced `yt-dlp` to natively embed ID3 tags and high-resolution JPEG thumbnails directly during the download phase (`--embed-metadata`, `--embed-thumbnail`).
+- **File Organization (PC)**: Implemented dynamic subfolder generation; downloading a playlist or artist library now automatically routes tracks into a dedicated subfolder within the chosen download directory.
+
 ### Highlights
 - **Cross-Platform Parity**: Unified versioning (v2.1.0) across the Electron PC app and Native Android app.
 - **UI Architecture**: Resolved critical JSX Fragment parsing errors in `SettingsBar.tsx` for stable rendering.
