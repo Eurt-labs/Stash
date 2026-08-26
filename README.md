@@ -134,10 +134,10 @@ The compiled installer will be generated in the **`release/`** folder:
   - **Formats**: MP3, AAC, FLAC (lossless), OPUS, WAV, MP4 video.
   - **Video Quality Presets**: 4K Ultra HD (2160p), 2K Quad HD (1440p), 1080p Full HD, 720p HD, 360p Compact.
   - **Audio Quality Presets**: High (320kbps), Mid (192kbps), Low (128kbps), Lossless (Bit-Perfect / Maximum).
-- **Automated Metadata & Cover Art**: Embeds ID3v2, RIFF INFO, and Vorbis comments with normalized 600x600 Baseline JPEG artwork across all formats.
+- **Automated Metadata & Cover Art**: Natively embeds ID3v2, RIFF INFO, and Vorbis comments alongside perfectly scaled Baseline JPEG artwork during the download phase to guarantee compatibility with all music players.
 - **Full Playlist Extraction & Auto-Fallback**: Instantly extracts 100% of playlist items and uses automatic search fallback for hidden or region-restricted songs.
-- **Cross-Platform Playlist Organization**: Downloads of multiple tracks (like playlists or artist pages) are automatically grouped into cleanly named subfolders within your main download directory.
-- **Micro-Animations & Liquid Glass UI**: Spring-loaded chevrons, CSS Grid playlist accordions, staggered cascading track cards, and 120Hz-optimized Liquid Glass UI on Android.
+- **Cross-Platform Playlist Organization**: Downloads of multiple tracks are automatically grouped into cleanly named subfolders within your custom download directories, fully compatible with Android SAF (Storage Access Framework) custom folders.
+- **Micro-Animations & Liquid Glass UI**: Built with a handcrafted `Liquid Glass UI` system featuring frosted squircle cards, specular meniscus highlights, and smooth physics-driven cloud capsule toggles on Android and PC.
 - **13 Built-in Color & Artist Signature Themes**: 7 Core Palettes + 6 Artist Styles (The Weeknd, Taylor Swift, Billie Eilish, Daft Punk, Travis Scott, Lana Del Rey) with slow-breathing animated backdrops.
 - **In-App Self-Healing Update Engine**: 1-click update tool in Settings to automatically pull the newest upstream nightly patches without reinstalling the app.
 
@@ -150,26 +150,29 @@ Stash Android implements state-of-the-art security patterns to ensure your Googl
 
 ---
 
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```text
 Stash/
-├── app-resources/          # Application logo and animated vector SVG assets
-├── src/
-│   ├── main/               # Electron main process
-│   │   ├── services/       # Orchestrator, LinkParser, DownloadEngine, ConversionEngine, MetadataTagger, DependencyResolver
-│   │   ├── main.ts         # Main process window and IPC handlers
-│   │   └── preload.ts      # Context bridge exposing safe IPC API
-│   ├── renderer/           # React frontend UI
-│   │   ├── src/
-│   │   │   ├── components/ # Header, SettingsBar, LinkInputBar, BatchItem, TrackCard, SettingsModal
-│   │   │   ├── index.css   # Clean handcrafted dark design system & micro-animations
-│   │   │   └── App.tsx     # Root application component
-│   │   └── index.html      # Application HTML entry point
-│   └── shared/             # Shared TypeScript types and interfaces
-├── electron-builder.json   # Windows NSIS installer packaging configuration
-├── vite.config.ts          # Vite + Electron plugin configuration
-└── package.json
+├─ app-resources/          # Application logo and animated vector SVG assets
+├─ src/
+│  ├─ main/                # Electron main process (Domain-Driven Design)
+│  │  ├─ core/             # Core utilities, constants, and error definitions
+│  │  ├─ features/         # Modular domains (downloader, metadata, parser, transcoder, updater)
+│  │  ├─ ipc/              # Centralized IPC handlers bridging to orchestrators
+│  │  ├─ app.ts            # Main process window and lifecycle
+│  │  └─ preload.ts        # Context bridge exposing safe IPC API
+│  ├─ renderer/            # React frontend UI
+│  │  ├─ src/
+│  │  │  ├─ components/    # Header, SettingsBar, LinkInputBar, BatchItem, TrackCard, SettingsModal
+│  │  │  ├─ index.css      # Clean handcrafted dark design system & micro-animations
+│  │  │  ├─ App.tsx        # Root application component
+│  │  │  └─ index.html     # Application HTML entry point
+│  ├─ shared/              # Shared TypeScript types and interfaces
+├─ Stash-Android/          # Native Android Application (Kotlin + Jetpack Compose)
+├─ config/                 # Electron builder configuration
+├─ vite.config.ts          # Vite + Electron plugin configuration
+└─ package.json
 ```
 
 ---
