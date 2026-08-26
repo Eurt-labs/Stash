@@ -1010,3 +1010,8 @@ We tackled three major logic bugs in the PC `DownloadEngine` today:
 1. **The 1080p Blockade**: YouTube recently started heavily punishing generic web traffic, capping video downloads at 720p. Since we removed the `tv` client earlier to speed up extraction, we inadvertently triggered this throttle. I restored the `youtube:player_client=ios,android,tv` spoofing to bypass the resolution restriction and bring back 4K downloads!
 2. **Missing Metadata**: The PC app was relying on the post-download Node.js tagger, which sometimes failed on complex covers. I injected the exact FFmpeg native embedding flags (`--embed-metadata`, `--embed-thumbnail`) directly into `yt-dlp` to ensure bulletproof tagging during the download stream, just like we did on Android.
 3. **Subfolder Routing**: Instead of vomiting 100 playlist tracks directly into the root download folder, the `DownloadEngine` and `StashOrchestrator` now dynamically read the `playlistName` (or `artist` name) and generate a clean subfolder for the batch!
+
+
+### [August 26, 2026] Icon Build Architecture Note
+- **Executable Icon Issue**: Found that the `config/electron-builder.json` had `"signAndEditExecutable": false` hardcoded. Removing this allows `electron-builder` to run `rcedit` to stamp the `icon.ico` directly into the generated Windows `.exe`.
+- **Note on Windows Symlinks**: The `rcedit` toolkit (winCodeSign) fails to download/extract on strict Windows environments without Administrator privileges due to restricted Symbolic Link creation. This is a known OS-level restriction, requiring Developer Mode or Admin rights during the first compilation.

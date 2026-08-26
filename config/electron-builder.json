@@ -13,8 +13,7 @@
   ],
   "win": {
     "target": ["nsis"],
-    "icon": "app-resources/icon.ico",
-    "signAndEditExecutable": false
+    "icon": "app-resources/icon.ico"
   },
   "forceCodeSigning": false,
   "nsis": {
