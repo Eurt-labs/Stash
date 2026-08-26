@@ -129,7 +129,7 @@ export class StashOrchestrator {
     // Subfolder logic for playlists or artist bulk downloads
     let finalOutputDir = outputDir
     if (tracks.length > 1) {
-      const subfolderName = tracks[0]?.playlistName || tracks[0]?.artists[0] || name
+      const subfolderName = tracks[0]?.playlistName || name
       finalOutputDir = path.join(outputDir, FileManager.sanitizeFileName(subfolderName))
       try {
         if (!fs.existsSync(finalOutputDir)) {
@@ -296,8 +296,6 @@ export class StashOrchestrator {
           let finalOutputDir = batch.outputDir
           if (track.playlistName && track.playlistName.toLowerCase() !== 'na') {
             finalOutputDir = path.join(batch.outputDir, track.playlistName)
-          } else if (track.artists.length > 0 && track.artists[0] !== 'Unknown Artist') {
-            finalOutputDir = path.join(batch.outputDir, track.artists[0])
           }
           if (!fs.existsSync(finalOutputDir)) fs.mkdirSync(finalOutputDir, { recursive: true })
           const finalPath = FileManager.moveFile(convertedPath, finalOutputDir)

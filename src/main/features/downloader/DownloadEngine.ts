@@ -108,8 +108,6 @@ export class DownloadEngine {
     let finalOutputDir = outputDir
     if (trackInfo.playlistName && trackInfo.playlistName.toLowerCase() !== 'na') {
       finalOutputDir = path.join(outputDir, trackInfo.playlistName)
-    } else if (trackInfo.artists.length > 0 && trackInfo.artists[0] !== 'Unknown Artist') {
-      finalOutputDir = path.join(outputDir, trackInfo.artists[0])
     }
 
     try {
@@ -264,7 +262,7 @@ export class DownloadEngine {
     const safeFileName = FileManager.sanitizeFileName(rawFileName)
 
     const playlistName = json.playlist_title || json.playlist || undefined
-    const finalPlaylistName = playlistName && playlistName !== 'NA' ? FileManager.sanitizeFileName(playlistName) : FileManager.sanitizeFileName(rawArtist)
+    const finalPlaylistName = playlistName && playlistName !== 'NA' ? FileManager.sanitizeFileName(playlistName) : undefined
 
     return {
       id: videoId || Math.random().toString(36).substring(2, 10),

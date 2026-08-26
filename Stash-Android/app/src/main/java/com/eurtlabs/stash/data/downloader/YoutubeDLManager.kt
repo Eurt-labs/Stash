@@ -154,7 +154,7 @@ object YoutubeDLManager {
                 addOption("--force-ipv4")
                 addOption("--flat-playlist")
                 addOption("--dump-json")
-                addOption("--extractor-args", "youtube:player_client=default")
+                addOption("--extractor-args", "youtube:player_client=ios,android,tv")
                 
                 deviceUserAgent?.let {
                     addOption("--user-agent", it)
@@ -219,7 +219,7 @@ object YoutubeDLManager {
                                     source = Platform.YOUTUBE,
                                     sourceUrl = finalUrl,
                                     safeFileName = sanitizeFileName("$uploader - $title"),
-                                    playlistName = if (playlistTitle.isNotBlank() && playlistTitle != "NA") sanitizeFileName(playlistTitle) else sanitizeFileName(uploader)
+                                    playlistName = if (playlistTitle.isNotBlank() && playlistTitle != "NA") sanitizeFileName(playlistTitle) else null
                                 )
                             )
                         }
@@ -299,8 +299,8 @@ object YoutubeDLManager {
             // Metadata tagging
             addOption("--embed-metadata")
             addOption("--embed-thumbnail")
-            addOption("--parse-metadata", "title:%(title)s")
-            addOption("--parse-metadata", "uploader:%(artist)s")
+            addOption("--convert-thumbnails", "jpg")
+            addOption("--parse-metadata", "NA:%(meta_album)s")
 
             if (format.isAudioOnly) {
                 addOption("-f", "ba/18/b")
@@ -327,7 +327,11 @@ object YoutubeDLManager {
                 
                 // Throttle UI progress updates to ~4fps (250ms) to prevent UI thread lag / jank
                 if (now - lastUpdate > 250 || progress >= 100f) {
-                    val etaStr = if (etaInSeconds > 0) "${etaInSeconds}s" else ""
+                    val etaStr = if (etaInSeconds > 0) {
+                        val minutes = etaInSeconds / 60
+                        val seconds = etaInSeconds % 60
+                        String.format("%02d:%02d", minutes, seconds)
+                    } else ""
                     val speedMatch = Regex("(\\d+(?:\\.\\d+)?(?:KiB|MiB|GiB)/s)").find(line ?: "")
                     val speedStr = speedMatch?.value ?: ""
                     onProgress(progress, speedStr, etaStr)

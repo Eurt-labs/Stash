@@ -137,7 +137,7 @@ fun TrackCardItem(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = when (item.state) {
-                                DownloadState.DOWNLOADING -> "Downloading: ${item.progress.toInt()}%"
+                                DownloadState.DOWNLOADING -> if (item.eta.isNotBlank()) "Downloading: ${item.progress.toInt()}% • ETA ${item.eta}" else "Downloading: ${item.progress.toInt()}%"
                                 DownloadState.TAGGING -> "Embedding tags..."
                                 DownloadState.FAILED -> item.errorMessage?.take(50) ?: "Error"
                                 DownloadState.CANCELLED -> "Cancelled"

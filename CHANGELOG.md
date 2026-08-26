@@ -14,6 +14,13 @@ For detailed historical root-cause analyses and code diffs across all 24 major i
 - **Metadata (PC)**: Forced `yt-dlp` to natively embed ID3 tags and high-resolution JPEG thumbnails directly during the download phase (`--embed-metadata`, `--embed-thumbnail`).
 - **File Organization (PC)**: Implemented dynamic subfolder generation; downloading a playlist or artist library now automatically routes tracks into a dedicated subfolder within the chosen download directory.
 
+
+### Fixes & Enhancements
+- **Routing (PC & Android)**: Fixed a bug where single track downloads were incorrectly falling back to the Artist name for subfolder generation. Single tracks now properly download into the root directory without creating unnecessary artist folders.
+- **UI (PC & Android)**: Added live ETA (Estimated Time of Arrival) visibility to the download progress UI.
+- **Metadata (Android)**: Implemented identical FFmpeg native metadata embedding for Android (`--parse-metadata NA:%(meta_album)s`, `--convert-thumbnails jpg`) to fix playlist tagging issues.
+- **Quality (Android)**: Unlocked high-quality streams (1080p, 4K) on Android by spoofing the iOS/Android player clients during metadata extraction to bypass YouTube throttling.
+
 ### Highlights
 - **Cross-Platform Parity**: Unified versioning (v2.1.0) across the Electron PC app and Native Android app.
 - **UI Architecture**: Resolved critical JSX Fragment parsing errors in `SettingsBar.tsx` for stable rendering.

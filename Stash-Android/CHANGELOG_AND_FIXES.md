@@ -1015,3 +1015,13 @@ We tackled three major logic bugs in the PC `DownloadEngine` today:
 ### [August 26, 2026] Icon Build Architecture Note
 - **Executable Icon Issue**: Found that the `config/electron-builder.json` had `"signAndEditExecutable": false` hardcoded. Removing this allows `electron-builder` to run `rcedit` to stamp the `icon.ico` directly into the generated Windows `.exe`.
 - **Note on Windows Symlinks**: The `rcedit` toolkit (winCodeSign) fails to download/extract on strict Windows environments without Administrator privileges due to restricted Symbolic Link creation. This is a known OS-level restriction, requiring Developer Mode or Admin rights during the first compilation.
+
+
+### [August 26, 2026] Cross-Platform Routing & ETA Sync
+
+1. **Subfolder Routing Patch**: Found that both `DownloadEngine.ts` (PC) and `YoutubeDLManager.kt` (Android) had a fallback condition where `playlistName` defaulted to the `uploader` or `artist[0]`. This caused single-track downloads to trigger the batch-subfolder logic and create artist folders. The fallback has been stripped out.
+2. **Android Quality Unlock**: Brought the Android `extractMetadata` phase up to parity with PC by injecting `youtube:player_client=ios,android,tv` to unlock high-resolution metadata fetching.
+3. **Android Tagging Fix**: Brought Android tagging up to parity by enforcing `--parse-metadata NA:%(meta_album)s` and JPEG thumbnail conversion directly in `YoutubeDLManager.kt`.
+4. **ETA UI Exposure**: 
+   - Android: Formatted `etaInSeconds` to `MM:SS` and injected it into `TrackCardItem.kt` text state.
+   - PC: Aggregated the active track`s ETA up into the `BatchItem.tsx` batch header for easier visibility.

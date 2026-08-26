@@ -41,6 +41,8 @@ export const BatchItem: React.FC<BatchItemProps> = ({
   const isWorking = batch.items.some(
     (i) => i.state === 'DOWNLOADING' || i.state === 'CONVERTING' || i.state === 'TAGGING'
   )
+  const activeItem = batch.items.find((i) => i.state === 'DOWNLOADING')
+  const batchEta = activeItem?.eta ? `ETA ${activeItem.eta}` : null
 
   return (
     <div className="batch-card">
@@ -61,6 +63,7 @@ export const BatchItem: React.FC<BatchItemProps> = ({
             <span className="count-badge">
               {completedCount} / {totalCount} Done
             </span>
+            {isWorking && batchEta && <span className="tag-pill" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>{batchEta}</span>}
             <span className="tag-pill">{batch.format}</span>
             <span className="tag-pill">{batch.quality}</span>
           </div>
