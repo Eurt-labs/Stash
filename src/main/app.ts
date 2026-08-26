@@ -14,6 +14,7 @@ const orchestrator = new StashOrchestrator()
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     title: 'Stash Downloader',
+    icon: path.join(__dirname, '../app-resources/icon.png'),
     width: 1100,
     height: 800,
     minWidth: 840,
