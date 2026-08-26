@@ -293,7 +293,14 @@ export class StashOrchestrator {
           await MetadataTagger.tagFile(convertedPath, track)
 
           // Move to user destination folder
-          const finalPath = FileManager.moveFile(convertedPath, batch.outputDir)
+          let finalOutputDir = batch.outputDir
+          if (track.playlistName && track.playlistName.toLowerCase() !== 'na') {
+            finalOutputDir = path.join(batch.outputDir, track.playlistName)
+          } else if (track.artists.length > 0 && track.artists[0] !== 'Unknown Artist') {
+            finalOutputDir = path.join(batch.outputDir, track.artists[0])
+          }
+          if (!fs.existsSync(finalOutputDir)) fs.mkdirSync(finalOutputDir, { recursive: true })
+          const finalPath = FileManager.moveFile(convertedPath, finalOutputDir)
           item.state = 'COMPLETED'
           item.statusMessage = 'Completed'
           item.progress = 100

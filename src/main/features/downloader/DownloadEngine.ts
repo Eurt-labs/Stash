@@ -28,7 +28,7 @@ export class DownloadEngine {
       '--socket-timeout', '30',
       '--ignore-errors',
       '--no-abort-on-error',
-      '--extractor-args', 'youtube:player_client=default'
+      '--extractor-args', 'youtube:player_client=ios,android,tv'
     ]
 
     if (DownloadEngine.deviceUserAgent) {
@@ -105,15 +105,22 @@ export class DownloadEngine {
     const ytDlpPath = DependencyResolver.resolveExecutable('yt-dlp')
     const ffmpegPath = DependencyResolver.resolveExecutable('ffmpeg')
 
+    let finalOutputDir = outputDir
+    if (trackInfo.playlistName && trackInfo.playlistName.toLowerCase() !== 'na') {
+      finalOutputDir = path.join(outputDir, trackInfo.playlistName)
+    } else if (trackInfo.artists.length > 0 && trackInfo.artists[0] !== 'Unknown Artist') {
+      finalOutputDir = path.join(outputDir, trackInfo.artists[0])
+    }
+
     try {
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true })
+      if (!fs.existsSync(finalOutputDir)) {
+        fs.mkdirSync(finalOutputDir, { recursive: true })
       }
     } catch (err: any) {
       return Promise.reject(new Error(`Failed to create output directory: ${err.message}`))
     }
 
-    const outputTemplate = path.join(outputDir, `${trackInfo.safeFileName}.%(ext)s`)
+    const outputTemplate = path.join(finalOutputDir, `${trackInfo.safeFileName}.%(ext)s`)
 
     const args = [
       '-o', outputTemplate,
@@ -126,7 +133,11 @@ export class DownloadEngine {
       '--newline',
       '--no-playlist',
       '--geo-bypass',
-      '--extractor-args', 'youtube:player_client=default'
+      '--embed-metadata',
+      '--embed-thumbnail',
+      '--parse-metadata', 'NA:%(meta_album)s',
+      '--convert-thumbnails', 'jpg',
+      '--extractor-args', 'youtube:player_client=ios,android,tv'
     ]
 
     if (DownloadEngine.deviceUserAgent) {
@@ -189,7 +200,7 @@ export class DownloadEngine {
       child.on('close', (code) => {
         this.activeProcesses.delete(downloadId)
         if (code === 0) {
-          const outputFile = FileManager.findOutputFile(outputDir, trackInfo.safeFileName)
+          const outputFile = FileManager.findOutputFile(finalOutputDir, trackInfo.safeFileName)
           if (outputFile) {
             resolve(outputFile)
           } else {
