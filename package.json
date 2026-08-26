@@ -1,6 +1,6 @@
 {
   "name": "stash-downloader",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "High-performance, elegant media downloader and converter built with Electron",
   "main": "dist-electron/app.js",
   "author": "eurt-labs",
