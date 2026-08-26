@@ -88,7 +88,8 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
   }
 
   return (
-    <div className="controls-grid">
+    <>
+      <div className="controls-grid">
       {/* Output Folder Picker */}
       <div className="control-group">
         <label className="control-label">
@@ -152,5 +153,6 @@ export const SettingsBar: React.FC<SettingsBarProps> = ({
         </button>
       </div>
     </div>
+    </>
   )
 }
