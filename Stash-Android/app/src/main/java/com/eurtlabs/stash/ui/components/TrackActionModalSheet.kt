@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,6 +63,7 @@ import com.eurtlabs.stash.data.model.DownloadState
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 import java.io.File
 
+@OptIn(androidx.compose.animation.ExperimentalAnimationApi::class)
 @Composable
 fun TrackActionModalSheet(
     item: DownloadItem?,
@@ -72,56 +74,61 @@ fun TrackActionModalSheet(
     onRetry: (String) -> Unit,
     onDelete: (String) -> Unit
 ) {
-    if (item == null) return
-
     val palette = LocalStashPalette.current
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    val file = item.finalFilePath?.let { File(it) }
-    val isFileAvailable = file != null && file.exists()
-
-    // Full screen overlay with deep frosted dark backdrop
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
-            .clickable(interactionSource = interactionSource, indication = null) { onDismiss() },
-        contentAlignment = Alignment.BottomCenter
+    AnimatedVisibility(
+        visible = item != null,
+        enter = fadeIn(),
+        exit = fadeOut()
     ) {
-        // Liquid Glass Modal Sheet — WebGL shader refraction aesthetic
+        val currentItem = item ?: return@AnimatedVisibility
+        val file = currentItem.finalFilePath?.let { File(it) }
+        val isFileAvailable = file != null && file.exists()
+
+        // Full screen overlay with lighter frosted dark backdrop to let blur shine through
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 16.dp)
-                .shadow(elevation = 24.dp, shape = RoundedCornerShape(30.dp), ambientColor = Color.Black, spotColor = palette.primary)
-                .clip(RoundedCornerShape(30.dp))
-                .background(
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF1F1F26),   // specular top offset (shader gradient)
-                            Color(0xFF17171C),   // frosted core
-                            Color(0xFF111115)    // bottom edge
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
+                .clickable(interactionSource = interactionSource, indication = null) { onDismiss() },
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            // Liquid Glass Modal Sheet — WebGL shader refraction aesthetic
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateEnterExit(
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = androidx.compose.animation.core.spring(
+                                dampingRatio = 0.85f,
+                                stiffness = 300f
+                            )
+                        ),
+                        exit = slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = androidx.compose.animation.core.spring(
+                                dampingRatio = 0.85f,
+                                stiffness = 300f
+                            )
                         )
                     )
-                )
-                .drawBehind {
-                    // Inner lens luminance glow (simulates shader lens distortion center brightness)
-                    drawOval(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.04f),
-                                Color.White.copy(alpha = 0.015f),
-                                Color.Transparent
-                            ),
-                            center = Offset(size.width * 0.5f, size.height * 0.2f),
-                            radius = size.width * 0.6f
-                        ),
-                        topLeft = Offset(size.width * 0.1f, 0f),
-                        size = androidx.compose.ui.geometry.Size(size.width * 0.8f, size.height * 0.5f)
+                    .wrapContentHeight()
+                    .padding(horizontal = 14.dp, vertical = 16.dp)
+                    .shadow(elevation = 24.dp, shape = RoundedCornerShape(30.dp), ambientColor = Color.Black, spotColor = palette.primary)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color(0x991F1F26),   // specular top offset, frosted
+                                Color(0x7717171C),   // frosted core
+                                Color(0x66111115)    // bottom edge
+                            )
+                        )
                     )
-                }
                 .border(
                     width = 1.dp,
                     brush = Brush.verticalGradient(
@@ -137,7 +144,7 @@ fun TrackActionModalSheet(
                 .padding(20.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Top Grab Bar with Specular Highlight
@@ -172,10 +179,10 @@ fun TrackActionModalSheet(
                             .border(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(0.40f), Color.White.copy(0.05f))), RoundedCornerShape(18.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
+                        if (!currentItem.trackInfo.albumArtUrl.isNullOrBlank()) {
                             AsyncImage(
-                                model = item.trackInfo.albumArtUrl,
-                                contentDescription = item.trackInfo.title,
+                                model = currentItem.trackInfo.albumArtUrl,
+                                contentDescription = currentItem.trackInfo.title,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -193,7 +200,7 @@ fun TrackActionModalSheet(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = item.trackInfo.title,
+                            text = currentItem.trackInfo.title,
                             color = palette.textPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
@@ -202,7 +209,7 @@ fun TrackActionModalSheet(
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = item.trackInfo.artists.joinToString(", ").ifEmpty { "Media Track" },
+                            text = currentItem.trackInfo.artists.joinToString(", ").ifEmpty { "Media Track" },
                             color = palette.textSecondary,
                             fontSize = 12.5.sp,
                             maxLines = 1,
@@ -223,7 +230,7 @@ fun TrackActionModalSheet(
                                     .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = item.format.ext.uppercase(),
+                                    text = currentItem.format.ext.uppercase(),
                                     color = palette.primary,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Black
@@ -231,7 +238,7 @@ fun TrackActionModalSheet(
                             }
 
                             Text(
-                                text = "•  ${item.quality.label.substringBefore(" ")}",
+                                text = "•  ${currentItem.quality.label.substringBefore(" ")}",
                                 color = palette.textSecondary,
                                 fontSize = 11.5.sp
                             )
@@ -240,10 +247,10 @@ fun TrackActionModalSheet(
                 }
 
                 // Progress Bar (if active download)
-                if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.TAGGING) {
+                if (currentItem.state == DownloadState.DOWNLOADING || currentItem.state == DownloadState.TAGGING) {
                     Spacer(modifier = Modifier.height(16.dp))
                     LinearProgressIndicator(
-                        progress = (item.progress / 100f).coerceIn(0f, 1f),
+                        progress = (currentItem.progress / 100f).coerceIn(0f, 1f),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(5.dp)
@@ -253,7 +260,7 @@ fun TrackActionModalSheet(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = item.statusMessage,
+                        text = currentItem.statusMessage,
                         color = palette.primary,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium
@@ -268,7 +275,7 @@ fun TrackActionModalSheet(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Active Downloading State Options: Pause / Cancel
-                    if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.FETCHING || item.state == DownloadState.QUEUED) {
+                    if (currentItem.state == DownloadState.DOWNLOADING || currentItem.state == DownloadState.FETCHING || currentItem.state == DownloadState.QUEUED) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -279,7 +286,7 @@ fun TrackActionModalSheet(
                                 color = palette.textPrimary,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
-                                    onPause(item.id)
+                                    onPause(currentItem.id)
                                     onDismiss()
                                 }
                             )
@@ -290,7 +297,7 @@ fun TrackActionModalSheet(
                                 color = palette.error,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
-                                    onCancel(item.id)
+                                    onCancel(currentItem.id)
                                     onDismiss()
                                 }
                             )
@@ -298,28 +305,28 @@ fun TrackActionModalSheet(
                     }
 
                     // Paused or Cancelled: Resume
-                    if (item.state == DownloadState.IDLE || item.state == DownloadState.CANCELLED) {
+                    if (currentItem.state == DownloadState.IDLE || currentItem.state == DownloadState.CANCELLED) {
                         LiquidCloudActionPill(
                             icon = Icons.Default.PlayArrow,
                             label = "Resume Download",
                             color = palette.primary,
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                onResume(item.id)
+                                onResume(currentItem.id)
                                 onDismiss()
                             }
                         )
                     }
 
                     // Failed: Retry
-                    if (item.state == DownloadState.FAILED) {
+                    if (currentItem.state == DownloadState.FAILED) {
                         LiquidCloudActionPill(
                             icon = Icons.Default.Refresh,
                             label = "Retry Download",
                             color = palette.primary,
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                onRetry(item.id)
+                                onRetry(currentItem.id)
                                 onDismiss()
                             }
                         )
@@ -340,7 +347,7 @@ fun TrackActionModalSheet(
                                     file?.let { validFile ->
                                         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", validFile)
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
+                                            setDataAndType(uri, if (currentItem.format.isAudioOnly) "audio/*" else "video/*")
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
                                         context.startActivity(Intent.createChooser(intent, "Play Media"))
@@ -359,7 +366,7 @@ fun TrackActionModalSheet(
                                         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", validFile)
                                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                             putExtra(Intent.EXTRA_STREAM, uri)
-                                            type = if (item.format.isAudioOnly) "audio/*" else "video/*"
+                                            type = if (currentItem.format.isAudioOnly) "audio/*" else "video/*"
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
                                         context.startActivity(Intent.createChooser(shareIntent, "Share Track"))
@@ -381,7 +388,7 @@ fun TrackActionModalSheet(
                             color = palette.textSecondary,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                val url = item.trackInfo.sourceUrl
+                                val url = currentItem.trackInfo.sourceUrl
                                 if (url.isNotBlank()) {
                                     clipboardManager.setText(AnnotatedString(url))
                                 }
@@ -395,7 +402,7 @@ fun TrackActionModalSheet(
                             color = palette.textSecondary,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                onDelete(item.id)
+                                onDelete(currentItem.id)
                                 onDismiss()
                             }
                         )
@@ -404,6 +411,7 @@ fun TrackActionModalSheet(
             }
         }
     }
+}
 }
 
 @Composable

@@ -23,6 +23,7 @@ import com.eurtlabs.stash.data.model.StashSettings
 import com.eurtlabs.stash.data.model.TrackInfo
 import com.eurtlabs.stash.data.parser.LinkParser
 import com.eurtlabs.stash.data.storage.LibraryStore
+import com.eurtlabs.stash.data.storage.SettingsStore
 import com.eurtlabs.stash.data.storage.StorageManager
 import com.eurtlabs.stash.data.transcoder.MediaTagger
 import com.eurtlabs.stash.service.DownloadForegroundService
@@ -70,12 +71,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         StashSettings(
             outputDir = StorageManager.getDisplayStoragePath(application),
             isFirstLaunchDone = !StorageManager.isFirstLaunch(application),
-            mediaType = MediaType.AUDIO,
-            audioFormat = DownloadFormat.MP3,
-            audioQuality = DownloadQuality.AUDIO_320K,
-            videoFormat = DownloadFormat.MP4,
-            videoQuality = DownloadQuality.VIDEO_1080P,
-            theme = ColorTheme.OBSIDIAN
+            mediaType = SettingsStore.loadMediaType(application),
+            audioFormat = SettingsStore.loadAudioFormat(application),
+            audioQuality = SettingsStore.loadAudioQuality(application),
+            videoFormat = SettingsStore.loadVideoFormat(application),
+            videoQuality = SettingsStore.loadVideoQuality(application),
+            theme = SettingsStore.loadTheme(application)
         )
     )
     val settings: StateFlow<StashSettings> = _settings.asStateFlow()
@@ -92,20 +93,24 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun updateTheme(theme: ColorTheme) {
+        SettingsStore.saveTheme(getApplication(), theme)
         _settings.value = _settings.value.copy(theme = theme)
     }
 
     fun updateMediaType(mediaType: MediaType) {
+        SettingsStore.saveMediaType(getApplication(), mediaType)
         _settings.value = _settings.value.copy(mediaType = mediaType)
     }
 
     fun updateFormat(format: DownloadFormat) {
         if (format.isAudioOnly) {
+            SettingsStore.saveAudioFormat(getApplication(), format)
             _settings.value = _settings.value.copy(
                 mediaType = MediaType.AUDIO,
                 audioFormat = format
             )
         } else {
+            SettingsStore.saveVideoFormat(getApplication(), format)
             _settings.value = _settings.value.copy(
                 mediaType = MediaType.VIDEO,
                 videoFormat = format
@@ -115,8 +120,10 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
     fun updateQuality(quality: DownloadQuality) {
         if (quality.isAudioOnly) {
+            SettingsStore.saveAudioQuality(getApplication(), quality)
             _settings.value = _settings.value.copy(audioQuality = quality)
         } else {
+            SettingsStore.saveVideoQuality(getApplication(), quality)
             _settings.value = _settings.value.copy(videoQuality = quality)
         }
     }
@@ -373,10 +380,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                                     val speedText = if (speed.isNotBlank()) " • $speed" else ""
                                     val etaText = if (eta.isNotBlank()) " (ETA: $eta)" else ""
                                     updateItemState(
-                                        item.id,
-                                        DownloadState.DOWNLOADING,
-                                        progress,
-                                        "Downloading: ${progress.toInt()}%$speedText$etaText"
+                                        itemId = item.id,
+                                        state = DownloadState.DOWNLOADING,
+                                        progress = progress,
+                                        speed = speedText,
+                                        eta = etaText,
+                                        statusMessage = "Downloading: ${progress.toInt()}%$speedText$etaText"
                                     )
                                     DownloadForegroundService.updateProgress(context, item.trackInfo.title, progress.toInt())
                                 }
@@ -443,6 +452,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         state: DownloadState,
         progress: Float,
         statusMessage: String,
+        speed: String = "",
+        eta: String = "",
         finalPath: String? = null,
         error: String? = null
     ) {
@@ -453,6 +464,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                         item.copy(
                             state = state,
                             progress = progress,
+                            speed = speed.ifBlank { item.speed },
+                            eta = eta.ifBlank { item.eta },
                             statusMessage = statusMessage,
                             finalFilePath = finalPath ?: item.finalFilePath,
                             errorMessage = error ?: item.errorMessage

@@ -153,8 +153,10 @@ object YoutubeDLManager {
                 addOption("--socket-timeout", "20")
                 addOption("--force-ipv4")
                 addOption("--flat-playlist")
+                addOption("--yes-playlist")
+                addOption("--ignore-errors")
                 addOption("--dump-json")
-                addOption("--extractor-args", "youtube:player_client=ios,android,tv")
+                addOption("--extractor-args", "youtube:player_client=android,web")
                 
                 deviceUserAgent?.let {
                     addOption("--user-agent", it)
@@ -189,39 +191,57 @@ object YoutubeDLManager {
             jsonOutput.lines().forEach { line ->
                 if (line.isNotBlank() && line.startsWith("{")) {
                     try {
-                        val json = JSONObject(line)
-                        val id = json.optString("id", "")
-                        var title = json.optString("title", "Unknown Title")
-                        if (title == "null" || title.isBlank()) title = "Unknown Title"
+                        val rootJson = JSONObject(line)
+                        val itemsToProcess = mutableListOf<JSONObject>()
                         
-                        var uploader = json.optString("uploader", json.optString("channel", "Unknown Artist"))
-                        if (uploader == "null" || uploader.isBlank()) uploader = "Unknown Artist"
-                        
-                        val duration = json.optLong("duration", 0L) * 1000L
-                        val thumb = json.optString("thumbnail", "")
-                        var playlistTitle = json.optString("playlist_title", json.optString("playlist", uploader))
-                        if (playlistTitle == "null") playlistTitle = uploader
-                        
-                        // yt-dlp might output just 'url' or 'webpage_url' depending on extraction
-                        var trackUrl = json.optString("webpage_url", "")
-                        if (trackUrl.isBlank()) trackUrl = json.optString("url", "")
-                        
-                        val finalUrl = if (trackUrl.startsWith("http")) trackUrl else "https://www.youtube.com/watch?v=$id"
-                        
-                        if (id.isNotBlank() && title != "Unknown Title") {
-                            tracks.add(
-                                TrackInfo(
-                                    id = id,
-                                    title = title,
-                                    artists = listOf(uploader),
-                                    durationMs = duration,
-                                    albumArtUrl = thumb.ifBlank { "https://i.ytimg.com/vi/$id/hqdefault.jpg" },
-                                    source = Platform.YOUTUBE,
-                                    sourceUrl = finalUrl,
-                                    safeFileName = sanitizeFileName("$uploader - $title"),
-                                    playlistName = if (playlistTitle.isNotBlank() && playlistTitle != "NA") sanitizeFileName(playlistTitle) else null
+                        if (rootJson.has("entries")) {
+                            val entries = rootJson.optJSONArray("entries")
+                            if (entries != null) {
+                                for (i in 0 until entries.length()) {
+                                    val entry = entries.optJSONObject(i)
+                                    if (entry != null) itemsToProcess.add(entry)
+                                }
+                            }
+                        } else {
+                            itemsToProcess.add(rootJson)
+                        }
+
+                        val playlistTitle = if (rootJson.has("entries")) {
+                            rootJson.optString("title", "Unknown Playlist")
+                        } else null
+
+                        for (json in itemsToProcess) {
+                            val id = json.optString("id", "")
+                            var title = json.optString("title", "Unknown Title")
+                            if (title == "null" || title.isBlank()) title = "Unknown Title"
+                            
+                            var uploader = json.optString("uploader", json.optString("channel", "Unknown Artist"))
+                            if (uploader == "null" || uploader.isBlank()) uploader = "Unknown Artist"
+                            
+                            val duration = json.optLong("duration", 0L) * 1000L
+                            val thumb = json.optString("thumbnail", "")
+                            
+                            // yt-dlp might output just 'url' or 'webpage_url' depending on extraction
+                            var trackUrl = json.optString("webpage_url", "")
+                            if (trackUrl.isBlank()) trackUrl = json.optString("url", "")
+                            
+                            val finalUrl = if (trackUrl.startsWith("http")) trackUrl else "https://www.youtube.com/watch?v=$id"
+                            
+                            if (id.isNotBlank() && title != "Unknown Title") {
+                                tracks.add(
+                                    TrackInfo(
+                                        id = id,
+                                        title = title,
+                                        artists = listOf(uploader),
+                                        durationMs = duration,
+                                        albumArtUrl = thumb.ifBlank { "https://i.ytimg.com/vi/$id/hqdefault.jpg" },
+                                        source = Platform.YOUTUBE,
+                                        sourceUrl = finalUrl,
+                                        safeFileName = sanitizeFileName("$uploader - $title"),
+                                        playlistName = playlistTitle ?: if (json.optString("playlist_title").isNotBlank()) sanitizeFileName(json.optString("playlist_title")) else null
+                                    )
                                 )
-                            )
+                            }
                         }
                     } catch (e: Exception) {
                         LogManager.append(TAG, "Error parsing JSON line: ${e.message}")
@@ -282,6 +302,7 @@ object YoutubeDLManager {
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
             addOption("--force-ipv4")
+            addOption("--yes-playlist")
             addOption("--extractor-args", "youtube:player_client=default")
 
             deviceUserAgent?.let {

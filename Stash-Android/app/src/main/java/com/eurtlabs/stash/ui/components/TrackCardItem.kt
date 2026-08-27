@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -59,15 +60,18 @@ fun TrackCardItem(
     LiquidGlassCard(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onClick() },
+            .clip(RoundedCornerShape(18.dp))
+            .clickable { onClick() }
+            .fillMaxWidth()
+            .wrapContentHeight(),
         cornerRadius = 18.dp,
         rimAlpha = 0.45f,
         innerPadding = 12.dp
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().wrapContentHeight()
             ) {
                 // Album Artwork
                 Box(
@@ -98,14 +102,30 @@ fun TrackCardItem(
 
                 // Title + Artist + Status
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.trackInfo.title,
-                        color = palette.textPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = item.trackInfo.title,
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (item.state == DownloadState.DOWNLOADING && item.eta.isNotBlank()) {
+                            Text(
+                                text = item.eta,
+                                color = palette.primary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Row(
@@ -137,7 +157,7 @@ fun TrackCardItem(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = when (item.state) {
-                                DownloadState.DOWNLOADING -> if (item.eta.isNotBlank()) "Downloading: ${item.progress.toInt()}% • ETA ${item.eta}" else "Downloading: ${item.progress.toInt()}%"
+                                DownloadState.DOWNLOADING -> if (item.speed.isNotBlank()) "Downloading: ${item.progress.toInt()}% • ${item.speed}" else "Downloading: ${item.progress.toInt()}%"
                                 DownloadState.TAGGING -> "Embedding tags..."
                                 DownloadState.FAILED -> item.errorMessage?.take(50) ?: "Error"
                                 DownloadState.CANCELLED -> "Cancelled"
