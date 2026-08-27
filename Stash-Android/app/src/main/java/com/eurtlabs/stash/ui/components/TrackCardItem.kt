@@ -82,11 +82,21 @@ fun TrackCardItem(
                     contentAlignment = Alignment.Center
                 ) {
                     if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
-                        AsyncImage(
+                        coil.compose.SubcomposeAsyncImage(
                             model = item.trackInfo.albumArtUrl,
                             contentDescription = "Cover",
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(44.dp)
+                            modifier = Modifier.size(44.dp),
+                            error = {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.MusicNote,
+                                        contentDescription = null,
+                                        tint = palette.textSecondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
                         )
                     } else {
                         Icon(

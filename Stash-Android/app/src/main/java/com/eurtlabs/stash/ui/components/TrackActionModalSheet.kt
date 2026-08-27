@@ -180,11 +180,21 @@ fun TrackActionModalSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         if (!currentItem.trackInfo.albumArtUrl.isNullOrBlank()) {
-                            AsyncImage(
+                            coil.compose.SubcomposeAsyncImage(
                                 model = currentItem.trackInfo.albumArtUrl,
                                 contentDescription = currentItem.trackInfo.title,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                error = {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.MusicNote,
+                                            contentDescription = null,
+                                            tint = palette.primary,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
                             )
                         } else {
                             Icon(

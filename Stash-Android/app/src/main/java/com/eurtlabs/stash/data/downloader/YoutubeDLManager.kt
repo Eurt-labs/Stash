@@ -256,6 +256,12 @@ object YoutubeDLManager {
             tracks
         } catch (e: Exception) {
             LogManager.append(TAG, "Metadata extraction failed for $url: ${e.localizedMessage}")
+            
+            val isPurePlaylist = (url.contains("list=") || url.contains("playlist")) && !url.contains("v=")
+            if (isPurePlaylist) {
+                throw Exception("Failed to extract playlist metadata. YouTube may be restricting access without cookies.")
+            }
+            
             val videoId = Regex("v=([a-zA-Z0-9_-]{11})").find(url)?.groupValues?.getOrNull(1) ?: UUID.randomUUID().toString().take(11)
             val safeName = sanitizeFileName("Stash Media - ${System.currentTimeMillis()}")
             listOf(
@@ -302,8 +308,8 @@ object YoutubeDLManager {
             addOption("--fragment-retries", "10")
             addOption("--geo-bypass")
             addOption("--force-ipv4")
-            addOption("--yes-playlist")
-            addOption("--extractor-args", "youtube:player_client=default")
+            addOption("--no-playlist")
+            addOption("--extractor-args", "youtube:player_client=android,web")
 
             deviceUserAgent?.let {
                 addOption("--user-agent", it)
