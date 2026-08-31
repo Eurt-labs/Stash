@@ -12,18 +12,22 @@ class StashApplication : Application() {
 
     companion object {
         const val CHANNEL_ID = "stash_download_channel"
+        const val PLAYBACK_CHANNEL_ID = "stash_playback_channel"
         private const val TAG = "StashApp"
     }
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        createNotificationChannels()
         initNativeEngines()
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val manager = getSystemService(NotificationManager::class.java)
+
+            // Download Channel
+            val downloadChannel = NotificationChannel(
                 CHANNEL_ID,
                 getString(R.string.download_channel_name),
                 NotificationManager.IMPORTANCE_LOW
@@ -31,8 +35,20 @@ class StashApplication : Application() {
                 description = getString(R.string.download_channel_description)
                 setShowBadge(false)
             }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            manager.createNotificationChannel(downloadChannel)
+
+            // Playback Channel (High priority for media controls, silent sound)
+            val playbackChannel = NotificationChannel(
+                PLAYBACK_CHANNEL_ID,
+                "Stash Music Playback",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Active music playback controls and artwork notification"
+                setShowBadge(false)
+                setSound(null, null)
+                enableVibration(false)
+            }
+            manager.createNotificationChannel(playbackChannel)
         }
     }
 

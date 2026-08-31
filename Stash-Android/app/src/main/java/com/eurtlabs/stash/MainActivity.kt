@@ -50,13 +50,17 @@ import com.eurtlabs.stash.data.model.DownloadState
 import com.eurtlabs.stash.data.model.NavigationTab
 import com.eurtlabs.stash.ui.components.BatchQueueList
 import com.eurtlabs.stash.ui.components.BottomNavBar
+import com.eurtlabs.stash.ui.components.FullPlayerSheet
+import com.eurtlabs.stash.ui.components.MiniPlayerBar
 import com.eurtlabs.stash.ui.components.SearchInputBar
 import com.eurtlabs.stash.ui.components.StorageSelectionDialog
 import com.eurtlabs.stash.ui.components.TopBar
+import com.eurtlabs.stash.ui.screens.DiscoverScreen
 import com.eurtlabs.stash.ui.screens.LibraryScreen
 import com.eurtlabs.stash.ui.screens.SearchScreen
 import com.eurtlabs.stash.ui.screens.SettingsScreen
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
+import com.eurtlabs.stash.ui.theme.StashTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,7 +74,7 @@ import com.eurtlabs.stash.data.downloader.CookieManager
 class MainActivity : ComponentActivity() {
 
     private val viewModel: DownloadViewModel by viewModels()
-    private var activeTabState by mutableStateOf(NavigationTab.QUEUE)
+    private var activeTabState by mutableStateOf(NavigationTab.DISCOVER)
 
     private val appPermissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -129,10 +133,15 @@ class MainActivity : ComponentActivity() {
             val isFetching by viewModel.isFetching.collectAsState()
             val fetchingMessage by viewModel.fetchingMessage.collectAsState()
 
+            val quickPicks by viewModel.quickPicks.collectAsState()
+            val trendingHits by viewModel.trendingHits.collectAsState()
+            val isDiscoverLoading by viewModel.isDiscoverLoading.collectAsState()
+            val selectedDiscoverMood by viewModel.selectedDiscoverMood.collectAsState()
             val isSearching by viewModel.isSearching.collectAsState()
             val searchResults by viewModel.searchResults.collectAsState()
             val searchFilter by viewModel.searchFilter.collectAsState()
             val showStorageDialog by viewModel.showStorageDialog.collectAsState()
+            var showFullPlayer by androidx.compose.runtime.remember { mutableStateOf(false) }
 
             val activeDownloadsCount = batches.flatMap { it.items }.count {
                 it.state == DownloadState.DOWNLOADING || it.state == DownloadState.CONVERTING || it.state == DownloadState.TAGGING
@@ -195,6 +204,9 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+                        val activeDownloadsMap by viewModel.activeDownloadsMap.collectAsState()
+                        val downloadedTrackIds by viewModel.downloadedTrackIds.collectAsState()
+
                         // Main Content with Animated Tab Transitions
                         Box(
                             modifier = Modifier
@@ -210,6 +222,40 @@ class MainActivity : ComponentActivity() {
                                 label = "TabTransition"
                             ) { tab ->
                                 when (tab) {
+                                    NavigationTab.DISCOVER -> {
+                                        DiscoverScreen(
+                                            quickPicks = quickPicks,
+                                            trendingHits = trendingHits,
+                                            isLoading = isDiscoverLoading,
+                                            selectedMood = selectedDiscoverMood,
+                                            activeDownloadsMap = activeDownloadsMap,
+                                            downloadedTrackIds = downloadedTrackIds,
+                                            onSelectMood = { viewModel.selectDiscoverMood(it) },
+                                            onPlayTrack = { track, list -> viewModel.playOnlineTrack(track, list) },
+                                            onDownloadTrack = { item ->
+                                                viewModel.enqueueTrackFromSearch(item)
+                                            }
+                                        )
+                                    }
+                                    NavigationTab.SEARCH -> {
+                                        SearchScreen(
+                                            isSearching = isSearching,
+                                            searchResults = searchResults,
+                                            selectedFilter = searchFilter,
+                                            activeDownloadsMap = activeDownloadsMap,
+                                            downloadedTrackIds = downloadedTrackIds,
+                                            onFilterChanged = { viewModel.setSearchFilter(it) },
+                                            onSearch = { query -> viewModel.performSearch(query) },
+                                            onClearSearch = { viewModel.clearSearch() },
+                                            onPlayTrack = { track, list -> viewModel.playOnlineTrack(track, list) },
+                                            onDownloadItem = { item ->
+                                                viewModel.enqueueTrackFromSearch(item)
+                                            },
+                                            onDownloadAll = { items, artistName ->
+                                                viewModel.enqueueAllSearchResults(items, artistName)
+                                            }
+                                        )
+                                    }
                                     NavigationTab.QUEUE -> {
                                         Column(modifier = Modifier.fillMaxSize()) {
                                             SearchInputBar(
@@ -228,24 +274,6 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
                                     }
-                                    NavigationTab.SEARCH -> {
-                                        SearchScreen(
-                                            isSearching = isSearching,
-                                            searchResults = searchResults,
-                                            selectedFilter = searchFilter,
-                                            onFilterChanged = { viewModel.setSearchFilter(it) },
-                                            onSearch = { query -> viewModel.performSearch(query) },
-                                            onClearSearch = { viewModel.clearSearch() },
-                                            onDownloadItem = { item ->
-                                                viewModel.enqueueTrackFromSearch(item)
-                                                activeTabState = NavigationTab.QUEUE
-                                            },
-                                            onDownloadAll = { items, artistName ->
-                                                viewModel.enqueueAllSearchResults(items, artistName)
-                                                activeTabState = NavigationTab.QUEUE
-                                            }
-                                        )
-                                    }
                                     NavigationTab.LIBRARY -> {
                                         LibraryScreen(
                                             batches = libraryBatches,
@@ -260,12 +288,22 @@ class MainActivity : ComponentActivity() {
                                             onSelectTheme = { viewModel.updateTheme(it) },
                                             onSelectFormat = { viewModel.updateFormat(it) },
                                             onSelectQuality = { viewModel.updateQuality(it) },
-                                            onChangeStorage = { viewModel.openStorageDialog() }
+                                            onChangeStorage = { viewModel.openStorageDialog() },
+                                            onToggleLoudnessNormalization = { viewModel.updateLoudnessNormalization(it) },
+                                            onToggleAutoDownloadLyrics = { viewModel.updateAutoDownloadLyrics(it) },
+                                            onToggleUltraHdArtwork = { viewModel.updateUltraHdArtwork(it) },
+                                            onSelectEqualizerPreset = { viewModel.updateEqualizerPreset(it) },
+                                            onSetBassBoostStrength = { viewModel.updateBassBoostStrength(it) }
                                         )
                                     }
                                 }
                             }
                         }
+
+                        // Floating Liquid Glass MiniPlayer Bar directly above BottomNavBar
+                        MiniPlayerBar(
+                            onExpandPlayer = { showFullPlayer = true }
+                        )
 
                         // WhatsApp-style Bottom Navigation Bar
                         BottomNavBar(
@@ -283,6 +321,33 @@ class MainActivity : ComponentActivity() {
                             onChooseDefault = { viewModel.confirmStorageDefault() },
                             onChooseCustom = { folderPickerLauncher.launch(null) },
                             onDismiss = { viewModel.dismissStorageDialog() }
+                        )
+                    }
+
+                    // Full-Screen Liquid Glass Player & Synced Lyrics Sheet
+                    if (showFullPlayer) {
+                        val activePlayerState by com.eurtlabs.stash.player.MusicPlayerManager.playerState.collectAsState()
+                        val currentTrack = activePlayerState.currentTrack
+                        val isTrackDownloaded = libraryBatches.flatMap { it.items }.any { it.trackInfo.id == currentTrack?.id && it.state == com.eurtlabs.stash.data.model.DownloadState.COMPLETED }
+                        val isTrackDownloading = batches.flatMap { it.items }.any { it.trackInfo.id == currentTrack?.id && (it.state == com.eurtlabs.stash.data.model.DownloadState.DOWNLOADING || it.state == com.eurtlabs.stash.data.model.DownloadState.QUEUED) }
+
+                        FullPlayerSheet(
+                            onDismiss = { showFullPlayer = false },
+                            onDeleteTrack = { itemId -> viewModel.deleteLibraryItem(itemId, deleteFile = true) },
+                            onDownloadTrack = { trk ->
+                                val searchItem = com.eurtlabs.stash.data.model.SearchResultItem(
+                                    id = trk.id,
+                                    title = trk.title,
+                                    artist = trk.artists.firstOrNull() ?: "Unknown",
+                                    durationText = "",
+                                    thumbnailUrl = trk.albumArtUrl,
+                                    url = trk.sourceUrl.ifBlank { "https://music.youtube.com/watch?v=${trk.id}" },
+                                    isAudio = true
+                                )
+                                viewModel.enqueueTrackFromSearch(searchItem)
+                            },
+                            isDownloaded = isTrackDownloaded,
+                            isDownloading = isTrackDownloading
                         )
                     }
                 }
