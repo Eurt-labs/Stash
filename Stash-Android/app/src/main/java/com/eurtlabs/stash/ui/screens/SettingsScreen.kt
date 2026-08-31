@@ -97,92 +97,22 @@ fun <T> AnimatedSelectorTab(
     itemContent: @Composable (T, Boolean) -> Unit
 ) {
     var itemLayouts by remember { mutableStateOf(mapOf<T, Pair<Float, Float>>()) }
-    var dragXOffset by remember { mutableStateOf<Float?>(null) }
     val scrollState = rememberScrollState()
-    var viewportWidth by remember { mutableStateOf(0f) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
     
     val selectedLayout = itemLayouts[selectedItem] ?: Pair(0f, 0f)
     val targetOffset = selectedLayout.first
     val targetWidth = selectedLayout.second
     
-    val dragTargetOffset = dragXOffset?.coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f) ?: targetOffset
-    
-    // Find closest item for width interpolation during drag
-    val closestItemEntry = if (dragXOffset != null) {
-        val dragCenter = (dragXOffset ?: 0f) + targetWidth / 2
-        itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }
-    } else null
-    val dragTargetWidth = closestItemEntry?.value?.second ?: targetWidth
-    
     val animatedOffset by animateFloatAsState(
-        targetValue = dragTargetOffset,
-        animationSpec = if (dragXOffset != null) {
-            androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
-        } else {
-            tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-        },
+        targetValue = targetOffset,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 600f),
         label = "offset"
     )
     val animatedWidth by animateFloatAsState(
-        targetValue = dragTargetWidth,
-        animationSpec = if (dragXOffset != null) {
-            androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
-        } else {
-            tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-        },
+        targetValue = if (targetWidth > 0f) targetWidth else 60f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 600f),
         label = "width"
-    )
-
-    // Calculate squish effect
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val distanceToTarget = Math.abs(animatedOffset - dragTargetOffset)
-    val isDragging = dragXOffset != null
-    val isTraveling = distanceToTarget > 2f && !isDragging
-    
-    // Continuous Auto-scroll Effect during Drag
-    androidx.compose.runtime.LaunchedEffect(isDragging, viewportWidth) {
-        if (isDragging && viewportWidth > 0f) {
-            while (true) {
-                val currentDragX = dragXOffset ?: break
-                
-                val scrollPos = scrollState.value.toFloat()
-                val visibleLeft = scrollPos
-                val visibleRight = scrollPos + viewportWidth
-                val bubbleLeft = currentDragX
-                val bubbleRight = bubbleLeft + targetWidth
-                val edgeThreshold = 80f
-                
-                var scrollDelta = 0f
-                if (bubbleRight > visibleRight - edgeThreshold) {
-                    val depth = (bubbleRight - (visibleRight - edgeThreshold)) / edgeThreshold
-                    scrollDelta = 12f * depth.coerceIn(0.1f, 1f)
-                } else if (bubbleLeft < visibleLeft + edgeThreshold) {
-                    val depth = ((visibleLeft + edgeThreshold) - bubbleLeft) / edgeThreshold
-                    scrollDelta = -12f * depth.coerceIn(0.1f, 1f)
-                }
-                
-                if (scrollDelta != 0f) {
-                    scrollState.dispatchRawDelta(scrollDelta)
-                    dragXOffset = (currentDragX + scrollDelta).coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f)
-                }
-                
-                kotlinx.coroutines.delay(16)
-            }
-        }
-    }
-    
-    val targetScaleX = if (isDragging) 1.05f else if (isTraveling) 1.15f else 1.0f
-    val targetScaleY = if (isDragging) 0.95f else if (isTraveling) 0.85f else 1.0f
-    
-    val liquidStretchX by animateFloatAsState(
-        targetValue = targetScaleX,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
-        label = "stretchX"
-    )
-    val liquidShrinkY by animateFloatAsState(
-        targetValue = targetScaleY,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
-        label = "shrinkY"
     )
 
     val palette = com.eurtlabs.stash.ui.theme.LocalStashPalette.current
@@ -190,10 +120,6 @@ fun <T> AnimatedSelectorTab(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .onGloballyPositioned { 
-                val w = it.size.width.toFloat()
-                if (viewportWidth != w) viewportWidth = w
-            }
             .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.verticalGradient(
@@ -215,7 +141,7 @@ fun <T> AnimatedSelectorTab(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box {
-                if (dragTargetWidth > 0f) {
+                if (targetWidth > 0f) {
                     LiquidGlassPill(
                         isSelected = true,
                         cornerRadius = 20.dp,
@@ -223,7 +149,6 @@ fun <T> AnimatedSelectorTab(
                             .offset { androidx.compose.ui.unit.IntOffset(animatedOffset.roundToInt(), 0) }
                             .width(with(density) { animatedWidth.toDp() })
                             .height(38.dp)
-                            .scale(scaleX = liquidStretchX, scaleY = liquidShrinkY)
                     ) { }
                 }
                 
@@ -234,15 +159,15 @@ fun <T> AnimatedSelectorTab(
                         val isSelected = selectedItem == item
                         val scale by animateFloatAsState(
                             targetValue = if (isSelected) 1.02f else 0.98f,
-                            animationSpec = tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "scale"
                         )
                         Box(
                             modifier = Modifier
                                 .onGloballyPositioned { coords -> 
-                                    val current = itemLayouts[item]
                                     val nextX = coords.positionInParent().x
                                     val nextWidth = coords.size.width.toFloat()
+                                    val current = itemLayouts[item]
                                     if (current?.first != nextX || current?.second != nextWidth) {
                                         itemLayouts = itemLayouts + (item to Pair(nextX, nextWidth))
                                     }
@@ -250,30 +175,19 @@ fun <T> AnimatedSelectorTab(
                                 .height(38.dp)
                                 .scale(scale)
                                 .clip(RoundedCornerShape(20.dp))
-                                .then(
-                                    if (isSelected) {
-                                        Modifier.pointerInput(Unit) {
-                                            detectHorizontalDragGestures(
-                                                onDragStart = { dragXOffset = animatedOffset },
-                                                onDragEnd = {
-                                                    if (dragXOffset != null) {
-                                                        val dragCenter = (dragXOffset ?: 0f) + targetWidth / 2
-                                                        val closest = itemLayouts.minByOrNull { Math.abs(it.value.first + it.value.second / 2 - dragCenter) }?.key
-                                                        if (closest != null) onItemSelected(closest)
-                                                    }
-                                                    dragXOffset = null
-                                                },
-                                                onDragCancel = { dragXOffset = null },
-                                                onHorizontalDrag = { change, dragAmount ->
-                                                    change.consume()
-                                                    val current = dragXOffset ?: animatedOffset
-                                                    dragXOffset = (current + dragAmount).coerceIn(0f, itemLayouts.values.maxOfOrNull { it.first } ?: 0f)
-                                                }
-                                            )
-                                        }
-                                    } else Modifier
+                                .background(
+                                    if (isSelected && targetWidth == 0f) {
+                                        palette.surfaceVariant
+                                    } else {
+                                        Color.Transparent
+                                    }
                                 )
-                                .clickable { onItemSelected(item) }
+                                .clickable(
+                                    interactionSource = remember(item) { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    onItemSelected(item)
+                                }
                                 .padding(horizontal = 14.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -294,6 +208,11 @@ fun SettingsScreen(
     onSelectFormat: (DownloadFormat) -> Unit,
     onSelectQuality: (DownloadQuality) -> Unit,
     onChangeStorage: () -> Unit = {},
+    onToggleLoudnessNormalization: (Boolean) -> Unit = {},
+    onToggleAutoDownloadLyrics: (Boolean) -> Unit = {},
+    onToggleUltraHdArtwork: (Boolean) -> Unit = {},
+    onSelectEqualizerPreset: (String) -> Unit = {},
+    onSetBassBoostStrength: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
@@ -426,8 +345,6 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Compact Animated Cloud Liquid Glass Mode Track
-            var modeDragXOffset by remember { mutableStateOf<Float?>(null) }
-            
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -449,44 +366,13 @@ fun SettingsScreen(
                     )
                     .padding(4.dp)
             ) {
-                val density = androidx.compose.ui.platform.LocalDensity.current
                 val halfWidth = maxWidth / 2
-                val defaultTargetOffset = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth
-                
-                val targetOffset = if (modeDragXOffset != null) {
-                    val dragDp = with(density) { (modeDragXOffset ?: 0f).toDp() }
-                    (dragDp - halfWidth / 2).coerceIn(0.dp, halfWidth)
-                } else {
-                    defaultTargetOffset
-                }
-                
+                val targetOffset = if (currentMediaType == MediaType.AUDIO) 0.dp else halfWidth
+
                 val bubbleOffset by animateDpAsState(
                     targetValue = targetOffset,
-                    animationSpec = if (modeDragXOffset != null) {
-                        androidx.compose.animation.core.spring(stiffness = 1000f, dampingRatio = 1f)
-                    } else {
-                        tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                    },
+                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 600f),
                     label = "modeBubble"
-                )
-
-                // Calculate squish effect
-                val distanceToTarget = with(density) { Math.abs(bubbleOffset.toPx() - targetOffset.toPx()) }
-                val isDragging = modeDragXOffset != null
-                val isTraveling = distanceToTarget > 2f && !isDragging
-                
-                val targetScaleX = if (isDragging) 1.05f else if (isTraveling) 1.15f else 1.0f
-                val targetScaleY = if (isDragging) 0.95f else if (isTraveling) 0.85f else 1.0f
-                
-                val liquidStretchX by animateFloatAsState(
-                    targetValue = targetScaleX,
-                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
-                    label = "stretchX"
-                )
-                val liquidShrinkY by animateFloatAsState(
-                    targetValue = targetScaleY,
-                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f),
-                    label = "shrinkY"
                 )
 
                 // Floating Cloud Capsule (LiquidGlassPill for selection thumb)
@@ -497,10 +383,7 @@ fun SettingsScreen(
                         .offset(x = bubbleOffset)
                         .width(halfWidth)
                         .height(38.dp)
-                        .scale(scaleX = liquidStretchX, scaleY = liquidShrinkY)
-                ) {
-                    // Empty body, just the glass pill
-                }
+                ) { }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -510,7 +393,7 @@ fun SettingsScreen(
                         val isSelected = currentMediaType == mode
                         val scale by animateFloatAsState(
                             targetValue = if (isSelected) 1.02f else 0.98f,
-                            animationSpec = tween(durationMillis = 250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                             label = "scale"
                         )
 
@@ -520,30 +403,12 @@ fun SettingsScreen(
                                 .height(38.dp)
                                 .scale(scale)
                                 .clip(RoundedCornerShape(20.dp))
-                                .then(
-                                    if (isSelected) {
-                                        Modifier.pointerInput(Unit) {
-                                            detectHorizontalDragGestures(
-                                                onDragStart = { modeDragXOffset = with(density) { bubbleOffset.toPx() } },
-                                                onDragEnd = {
-                                                    if (modeDragXOffset != null) {
-                                                        val totalWidth = size.width.toFloat()
-                                                        val isRightSide = (modeDragXOffset ?: 0f) > totalWidth / 2
-                                                        onSelectMediaType(if (isRightSide) MediaType.VIDEO else MediaType.AUDIO)
-                                                    }
-                                                    modeDragXOffset = null
-                                                },
-                                                onDragCancel = { modeDragXOffset = null },
-                                                onHorizontalDrag = { change, dragAmount ->
-                                                    change.consume()
-                                                    val current = modeDragXOffset ?: with(density) { bubbleOffset.toPx() }
-                                                    modeDragXOffset = (current + dragAmount).coerceIn(0f, size.width.toFloat())
-                                                }
-                                            )
-                                        }
-                                    } else Modifier
-                                )
-                                .clickable { onSelectMediaType(mode) },
+                                .clickable(
+                                    interactionSource = remember(mode) { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    onSelectMediaType(mode)
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
@@ -560,7 +425,7 @@ fun SettingsScreen(
                                     text = mode.label,
                                     color = if (isSelected) palette.textPrimary else palette.textSecondary,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 12.5.sp
+                                    fontSize = 12.sp
                                 )
                             }
                         }
@@ -794,6 +659,212 @@ fun SettingsScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        // Section: Audio Processing & Equalizer (Metrolist DSP Upgrades)
+        item {
+            SettingsSectionHeader(
+                icon = Icons.Filled.Tune,
+                title = "Audio Engine & Equalizer",
+                subtitle = "Hardware DSP, Loudness Normalization & Sound Enhancements"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LiquidGlassCard(
+                cornerRadius = 20.dp,
+                innerPadding = 14.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Loudness Normalization Switch
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(palette.surfaceVariant)
+                            .clickable { onToggleLoudnessNormalization(!settings.loudnessNormalization) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Loudness Normalization (EBU R128)",
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.5.sp
+                            )
+                            Text(
+                                text = "Eliminates volume jumps between different songs & albums",
+                                color = palette.textSecondary,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = settings.loudnessNormalization,
+                            onCheckedChange = { onToggleLoudnessNormalization(it) },
+                            colors = androidx.compose.material3.SwitchDefaults.colors(
+                                checkedThumbColor = palette.onPrimary,
+                                checkedTrackColor = palette.primary,
+                                uncheckedTrackColor = palette.surface
+                            )
+                        )
+                    }
+
+                    // Equalizer Presets
+                    Column {
+                        Text(
+                            text = "Equalizer Preset (${settings.equalizerPreset})",
+                            color = palette.textPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        val eqPresets = listOf("Flat", "Bass Boost", "Vocal Clarity", "Electronic", "Rock", "Acoustic", "Deep Lounge")
+                        AnimatedSelectorTab(
+                            items = eqPresets,
+                            selectedItem = settings.equalizerPreset,
+                            onItemSelected = { onSelectEqualizerPreset(it) }
+                        ) { preset, isSelected ->
+                            Text(
+                                text = preset,
+                                color = if (isSelected) palette.primary else palette.textPrimary,
+                                fontSize = 11.5.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Bass Boost Slider
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Bass Boost Strength",
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                text = "${settings.bassBoostStrength}%",
+                                color = palette.primary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                        androidx.compose.material3.Slider(
+                            value = settings.bassBoostStrength.toFloat(),
+                            onValueChange = { onSetBassBoostStrength(it.toInt()) },
+                            valueRange = 0f..100f,
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                thumbColor = palette.primary,
+                                activeTrackColor = palette.primary,
+                                inactiveTrackColor = palette.surface
+                            )
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        // Section: Synced Lyrics & Cover Artwork
+        item {
+            SettingsSectionHeader(
+                icon = Icons.Filled.MusicNote,
+                title = "Lyrics & High-Res Artwork",
+                subtitle = "Automatic synchronized lyrics (.lrc) & ultra HD metadata"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LiquidGlassCard(
+                cornerRadius = 20.dp,
+                innerPadding = 14.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Auto-Download Lyrics Switch
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(palette.surfaceVariant)
+                            .clickable { onToggleAutoDownloadLyrics(!settings.autoDownloadLyrics) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Auto-Download Synced Lyrics (.lrc)",
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.5.sp
+                            )
+                            Text(
+                                text = "Fetches karaoke lyrics from LRCLIB & saves companion .lrc files",
+                                color = palette.textSecondary,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = settings.autoDownloadLyrics,
+                            onCheckedChange = { onToggleAutoDownloadLyrics(it) },
+                            colors = androidx.compose.material3.SwitchDefaults.colors(
+                                checkedThumbColor = palette.onPrimary,
+                                checkedTrackColor = palette.primary,
+                                uncheckedTrackColor = palette.surface
+                            )
+                        )
+                    }
+
+                    // Ultra-HD Artwork Switch
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(palette.surfaceVariant)
+                            .clickable { onToggleUltraHdArtwork(!settings.ultraHdArtwork) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Embed Ultra-HD Cover Artwork (1080p)",
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.5.sp
+                            )
+                            Text(
+                                text = "Embeds high-resolution uncompressed album art into audio tags",
+                                color = palette.textSecondary,
+                                fontSize = 10.5.sp
+                            )
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = settings.ultraHdArtwork,
+                            onCheckedChange = { onToggleUltraHdArtwork(it) },
+                            colors = androidx.compose.material3.SwitchDefaults.colors(
+                                checkedThumbColor = palette.onPrimary,
+                                checkedTrackColor = palette.primary,
+                                uncheckedTrackColor = palette.surface
+                            )
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(20.dp))
         }
 

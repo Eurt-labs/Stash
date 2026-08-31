@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eurtlabs.stash.data.downloader.LogManager
+import com.eurtlabs.stash.data.downloader.InnerTubeMusicRepository
 import com.eurtlabs.stash.data.downloader.YoutubeDLManager
 import com.eurtlabs.stash.data.downloader.YoutubeLibraryFetcher
 import com.eurtlabs.stash.data.model.ColorTheme
@@ -54,6 +55,18 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private var fetchProcessId: String? = null
 
     // Search State
+    private val _quickPicks = MutableStateFlow<List<SearchResultItem>>(emptyList())
+    val quickPicks: StateFlow<List<SearchResultItem>> = _quickPicks.asStateFlow()
+
+    private val _trendingHits = MutableStateFlow<List<SearchResultItem>>(emptyList())
+    val trendingHits: StateFlow<List<SearchResultItem>> = _trendingHits.asStateFlow()
+
+    private val _isDiscoverLoading = MutableStateFlow(false)
+    val isDiscoverLoading: StateFlow<Boolean> = _isDiscoverLoading.asStateFlow()
+
+    private val _selectedDiscoverMood = MutableStateFlow("All")
+    val selectedDiscoverMood: StateFlow<String> = _selectedDiscoverMood.asStateFlow()
+
     private val _searchResults = MutableStateFlow<List<SearchResultItem>>(emptyList())
     val searchResults: StateFlow<List<SearchResultItem>> = _searchResults.asStateFlow()
 
@@ -76,20 +89,116 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             audioQuality = SettingsStore.loadAudioQuality(application),
             videoFormat = SettingsStore.loadVideoFormat(application),
             videoQuality = SettingsStore.loadVideoQuality(application),
-            theme = SettingsStore.loadTheme(application)
+            theme = SettingsStore.loadTheme(application),
+            loudnessNormalization = SettingsStore.loadLoudnessNormalization(application),
+            autoDownloadLyrics = SettingsStore.loadAutoDownloadLyrics(application),
+            ultraHdArtwork = SettingsStore.loadUltraHdArtwork(application),
+            equalizerPreset = SettingsStore.loadEqualizerPreset(application),
+            bassBoostStrength = SettingsStore.loadBassBoostStrength(application)
         )
     )
     val settings: StateFlow<StashSettings> = _settings.asStateFlow()
 
+    private val _activeDownloadsMap = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val activeDownloadsMap: StateFlow<Map<String, Float>> = _activeDownloadsMap.asStateFlow()
+
+    private val _downloadedTrackIds = MutableStateFlow<Set<String>>(emptySet())
+    val downloadedTrackIds: StateFlow<Set<String>> = _downloadedTrackIds.asStateFlow()
+
+    private fun refreshActiveAndDownloadedMaps() {
+        val activeMap = _queueBatches.value.flatMap { it.items }
+            .filter { it.state == DownloadState.DOWNLOADING || it.state == DownloadState.FETCHING || it.state == DownloadState.CONVERTING || it.state == DownloadState.TAGGING }
+            .associate { it.trackInfo.id to it.progress }
+        _activeDownloadsMap.value = activeMap
+
+        // Real-time disk verification: ONLY include if file actually exists on device disk!
+        val downloaded = _libraryBatches.value.flatMap { it.items }
+            .filter { it.state == DownloadState.COMPLETED && !it.finalFilePath.isNullOrBlank() && java.io.File(it.finalFilePath).exists() }
+            .map { it.trackInfo.id }
+            .toSet()
+        _downloadedTrackIds.value = downloaded
+    }
+
     init {
+        val app = getApplication<Application>()
+        // Initialize Media3 ExoPlayer & Audio FX engine
+        com.eurtlabs.stash.player.MusicPlayerManager.initialize(app)
+
         // Load persisted library records and scan disk on startup
         viewModelScope.launch(Dispatchers.IO) {
-            val app = getApplication<Application>()
             val stored = LibraryStore.loadLibrary(app)
             if (stored.isNotEmpty()) {
                 _libraryBatches.value = stored
             }
         }
+
+        loadDiscoverFeed()
+    }
+
+    fun loadDiscoverFeed() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isDiscoverLoading.value = true
+            try {
+                val picks = InnerTubeMusicRepository.getQuickPicks()
+                val trending = InnerTubeMusicRepository.getTrendingHits()
+                _quickPicks.value = picks
+                _trendingHits.value = trending
+            } catch (e: Exception) {
+                // Ignore
+            } finally {
+                _isDiscoverLoading.value = false
+            }
+        }
+    }
+
+    fun selectDiscoverMood(mood: String) {
+        _selectedDiscoverMood.value = mood
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val moodTracks = InnerTubeMusicRepository.getMoodTracks(mood)
+                if (moodTracks.isNotEmpty()) {
+                    _quickPicks.value = moodTracks.take(8)
+                    _trendingHits.value = if (moodTracks.size > 8) moodTracks.drop(8) else moodTracks
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
+    }
+
+    fun playOnlineTrack(item: SearchResultItem, allItems: List<SearchResultItem> = emptyList()) {
+        com.eurtlabs.stash.player.MusicPlayerManager.playOnlineTrack(item, allItems)
+    }
+
+    fun playLibraryItem(item: DownloadItem, allItems: List<DownloadItem> = emptyList()) {
+        com.eurtlabs.stash.player.MusicPlayerManager.playLibraryItem(item, allItems)
+    }
+
+    fun updateLoudnessNormalization(enabled: Boolean) {
+        SettingsStore.saveLoudnessNormalization(getApplication(), enabled)
+        _settings.value = _settings.value.copy(loudnessNormalization = enabled)
+    }
+
+    fun updateAutoDownloadLyrics(enabled: Boolean) {
+        SettingsStore.saveAutoDownloadLyrics(getApplication(), enabled)
+        _settings.value = _settings.value.copy(autoDownloadLyrics = enabled)
+    }
+
+    fun updateUltraHdArtwork(enabled: Boolean) {
+        SettingsStore.saveUltraHdArtwork(getApplication(), enabled)
+        _settings.value = _settings.value.copy(ultraHdArtwork = enabled)
+    }
+
+    fun updateEqualizerPreset(preset: String) {
+        SettingsStore.saveEqualizerPreset(getApplication(), preset)
+        com.eurtlabs.stash.player.MusicPlayerManager.setEqualizerPreset(preset)
+        _settings.value = _settings.value.copy(equalizerPreset = preset)
+    }
+
+    fun updateBassBoostStrength(strength: Int) {
+        SettingsStore.saveBassBoostStrength(getApplication(), strength)
+        com.eurtlabs.stash.player.MusicPlayerManager.setBassBoost(strength)
+        _settings.value = _settings.value.copy(bassBoostStrength = strength)
     }
 
     fun updateTheme(theme: ColorTheme) {
@@ -393,6 +502,25 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                                 updateItemState(item.id, DownloadState.TAGGING, 100f, "Embedding metadata...")
                                 val finalFile = MediaTagger.tagAndScan(context, downloadedFile, item.trackInfo)
 
+                                // Auto-download companion .lrc synchronized lyrics if enabled
+                                if (_settings.value.autoDownloadLyrics) {
+                                    try {
+                                        val fetchedLyrics = com.eurtlabs.stash.data.lyrics.LyricsRepository.fetchLyrics(
+                                            trackTitle = item.trackInfo.title,
+                                            artistName = item.trackInfo.artists.firstOrNull() ?: "",
+                                            durationMs = item.trackInfo.durationMs
+                                        )
+                                        if (fetchedLyrics != null && !fetchedLyrics.plainLyrics.isNullOrBlank()) {
+                                            com.eurtlabs.stash.data.lyrics.LyricsRepository.saveLrcCompanionFile(
+                                                finalFile.absolutePath,
+                                                fetchedLyrics.plainLyrics
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        // Ignore non-critical lyrics error
+                                    }
+                                }
+
                                 val completedItem = item.copy(
                                     state = DownloadState.COMPLETED,
                                     progress = 100f,
@@ -457,10 +585,12 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         finalPath: String? = null,
         error: String? = null
     ) {
+        var foundTrackId: String? = null
         _queueBatches.value = _queueBatches.value.map { batch ->
             batch.copy(
                 items = batch.items.map { item ->
                     if (item.id == itemId) {
+                        foundTrackId = item.trackInfo.id
                         item.copy(
                             state = state,
                             progress = progress,
@@ -473,6 +603,21 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                     } else item
                 }
             )
+        }
+
+        foundTrackId?.let { trackId ->
+            if (state == DownloadState.DOWNLOADING || state == DownloadState.FETCHING || state == DownloadState.CONVERTING || state == DownloadState.TAGGING) {
+                val updated = _activeDownloadsMap.value.toMutableMap()
+                updated[trackId] = progress
+                _activeDownloadsMap.value = updated
+            } else {
+                val updated = _activeDownloadsMap.value.toMutableMap()
+                updated.remove(trackId)
+                _activeDownloadsMap.value = updated
+                if (state == DownloadState.COMPLETED) {
+                    _downloadedTrackIds.value = _downloadedTrackIds.value + trackId
+                }
+            }
         }
     }
 

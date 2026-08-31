@@ -3,8 +3,9 @@ package com.eurtlabs.stash.data.model
 import java.util.UUID
 
 enum class NavigationTab(val label: String) {
-    QUEUE("Queue"),
+    DISCOVER("Discover"),
     SEARCH("Search"),
+    QUEUE("Queue"),
     LIBRARY("Library"),
     SETTINGS("Settings")
 }
@@ -146,6 +147,31 @@ data class SearchResultItem(
     val isAudio: Boolean = true
 )
 
+data class LyricLine(
+    val timestampMs: Long,
+    val text: String
+)
+
+data class LyricsResult(
+    val trackName: String,
+    val artistName: String,
+    val plainLyrics: String? = null,
+    val syncedLyrics: List<LyricLine> = emptyList(),
+    val source: String = "LRCLIB"
+)
+
+enum class PlaybackRepeatMode {
+    OFF,
+    ALL,
+    ONE
+}
+
+data class EqualizerPreset(
+    val id: String,
+    val name: String,
+    val gains: List<Int> // dB gains for standard 5-band (60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz)
+)
+
 data class StashSettings(
     val outputDir: String = "",
     val customDirUri: String? = null,
@@ -155,7 +181,13 @@ data class StashSettings(
     val audioQuality: DownloadQuality = DownloadQuality.AUDIO_320K,
     val videoFormat: DownloadFormat = DownloadFormat.MP4,
     val videoQuality: DownloadQuality = DownloadQuality.VIDEO_1080P,
-    val theme: ColorTheme = ColorTheme.OBSIDIAN
+    val theme: ColorTheme = ColorTheme.OBSIDIAN,
+    val loudnessNormalization: Boolean = true,
+    val autoDownloadLyrics: Boolean = true,
+    val ultraHdArtwork: Boolean = true,
+    val equalizerPreset: String = "Flat",
+    val bassBoostStrength: Int = 0,
+    val sleepTimerMinutes: Int = 0
 ) {
     val format: DownloadFormat
         get() = if (mediaType == MediaType.AUDIO) audioFormat else videoFormat

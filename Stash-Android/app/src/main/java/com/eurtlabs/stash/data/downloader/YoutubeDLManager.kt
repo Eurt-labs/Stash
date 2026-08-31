@@ -330,10 +330,17 @@ object YoutubeDLManager {
             addOption("--parse-metadata", "NA:%(meta_album)s")
 
             if (format.isAudioOnly) {
-                addOption("-f", "ba/18/b")
+                addOption("-f", "bestaudio/best")
                 addOption("-x")
                 addOption("--audio-format", format.ext)
-                addOption("--audio-quality", quality.valueOption)
+                val audioQualityValue = when (quality) {
+                    DownloadQuality.AUDIO_320K -> "0" // 0 is best/320k in ffmpeg
+                    DownloadQuality.AUDIO_256K -> "2"
+                    DownloadQuality.AUDIO_192K -> "4"
+                    DownloadQuality.AUDIO_128K -> "5"
+                    else -> "0"
+                }
+                addOption("--audio-quality", audioQualityValue)
             } else {
                 addOption("-f", quality.valueOption)
                 addOption("--merge-output-format", format.ext)

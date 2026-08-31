@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,16 +30,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.DownloadForOffline
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.eurtlabs.stash.data.model.SearchFilter
 import com.eurtlabs.stash.data.model.SearchResultItem
+import com.eurtlabs.stash.player.MusicPlayerManager
+import com.eurtlabs.stash.ui.components.AudioEqualizerVisualizer
 import com.eurtlabs.stash.ui.components.SearchInputBar
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
 
@@ -65,15 +63,19 @@ fun SearchScreen(
     isSearching: Boolean,
     searchResults: List<SearchResultItem>,
     selectedFilter: SearchFilter,
+    activeDownloadsMap: Map<String, Float> = emptyMap(),
+    downloadedTrackIds: Set<String> = emptySet(),
     onFilterChanged: (SearchFilter) -> Unit,
     onSearch: (String) -> Unit,
     onClearSearch: () -> Unit = {},
+    onPlayTrack: (SearchResultItem, List<SearchResultItem>) -> Unit = { _, _ -> },
     onDownloadItem: (SearchResultItem) -> Unit,
     onDownloadAll: (List<SearchResultItem>, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val palette = LocalStashPalette.current
     val context = LocalContext.current
+    val playerState by MusicPlayerManager.playerState.collectAsState()
 
     val quickSearches = listOf(
         "The Weeknd",
@@ -81,7 +83,6 @@ fun SearchScreen(
         "Coldplay",
         "Billie Eilish",
         "Taylor Swift",
-        "Travis Scott",
         "Travis Scott",
         "Eminem",
         "Lofi Hip Hop"
@@ -95,7 +96,7 @@ fun SearchScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp)
+        contentPadding = PaddingValues(top = 10.dp, bottom = 140.dp)
     ) {
         // Search bar
         item {
@@ -133,12 +134,15 @@ fun SearchScreen(
                             .border(
                                 width = if (isSelected) 1.2.dp else 1.dp,
                                 brush = Brush.verticalGradient(
-                                    if (isSelected) listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.10f))
+                                    if (isSelected) listOf(Color.White.copy(alpha = 0.50f), Color.White.copy(alpha = 0.15f))
                                     else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
                                 ),
                                 shape = RoundedCornerShape(20.dp)
                             )
-                            .clickable { onFilterChanged(filter) }
+                            .clickable(
+                                interactionSource = remember(filter) { MutableInteractionSource() },
+                                indication = null
+                            ) { onFilterChanged(filter) }
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -151,136 +155,15 @@ fun SearchScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
         }
 
-        // Loading spinner when searching
         if (isSearching) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            color = palette.primary,
-                            strokeWidth = 2.5.dp,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = if (selectedFilter == SearchFilter.ARTISTS) "Fetching full artist catalog & songs..." else "Searching YouTube Music & Videos...",
-                            color = palette.textSecondary,
-                            fontSize = 12.5.sp
-                        )
-                    }
-                }
+                com.eurtlabs.stash.ui.components.SearchResultsSkeleton()
             }
         } else if (searchResults.isNotEmpty()) {
-            // If in ARTISTS tab, show prominent Artist Header Card with "Download All" button
-            if (selectedFilter == SearchFilter.ARTISTS) {
-                val artistName = searchResults.firstOrNull()?.artist ?: "Artist Discography"
-                val artistThumb = searchResults.firstOrNull()?.thumbnailUrl ?: "https://i.ytimg.com/vi/${searchResults.firstOrNull()?.id}/hqdefault.jpg"
-
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(palette.surface)
-                            .border(1.dp, palette.border, RoundedCornerShape(20.dp))
-                            .padding(16.dp)
-                    ) {
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(54.dp)
-                                        .clip(CircleShape)
-                                        .background(palette.surfaceVariant)
-                                        .border(1.dp, palette.border, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    AsyncImage(
-                                        model = artistThumb,
-                                        contentDescription = artistName,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = artistName,
-                                            color = palette.textPrimary,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.Verified,
-                                            contentDescription = "Verified",
-                                            tint = palette.primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "Complete Songs Catalog • ${searchResults.size} Tracks",
-                                        color = palette.textSecondary,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // "Download All Songs (Batch)" Button
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(palette.primary)
-                                    .clickable { onDownloadAll(searchResults, artistName) }
-                                    .padding(vertical = 11.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DownloadForOffline,
-                                    contentDescription = null,
-                                    tint = palette.onPrimary,
-                                    modifier = Modifier.size(17.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Download All ${searchResults.size} Songs (Batch)",
-                                    color = palette.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
-
-            // Results Counter Header
+            // Results Header
             item {
                 Text(
                     text = if (selectedFilter == SearchFilter.ARTISTS) "ALL SONGS (${searchResults.size})" else "SEARCH RESULTS (${searchResults.size})",
@@ -293,191 +176,118 @@ fun SearchScreen(
             }
 
             items(items = searchResults, key = { it.id }) { resultItem ->
+                val isPlaying = playerState.currentTrack?.id == resultItem.id && playerState.isPlaying
+                val downloadProgress = activeDownloadsMap[resultItem.id]
+                val isDownloaded = downloadedTrackIds.contains(resultItem.id)
+
                 SearchResultCard(
                     item = resultItem,
+                    isPlaying = isPlaying,
+                    downloadProgress = downloadProgress,
+                    isDownloaded = isDownloaded,
+                    onPlay = { onPlayTrack(resultItem, searchResults) },
                     onDownload = { onDownloadItem(resultItem) }
                 )
             }
-        } else if (selectedFilter == SearchFilter.LIBRARY) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "MY LIBRARY",
-                    color = palette.textSecondary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    LibraryActionCard(
-                        title = "Watch History",
-                        subtitle = "Sync your recently watched YouTube videos",
-                        icon = Icons.Default.PlayCircleOutline,
-                        onClick = { onSearch(":ythistory") },
-                        palette = palette
-                    )
-                    LibraryActionCard(
-                        title = "Liked Videos",
-                        subtitle = "Sync your favorite YouTube videos",
-                        icon = Icons.Default.MusicNote,
-                        onClick = { onSearch(":ytfav") },
-                        palette = palette
-                    )
-                    LibraryActionCard(
-                        title = "Watch Later",
-                        subtitle = "Sync your Watch Later playlist",
-                        icon = Icons.Default.VideoLibrary,
-                        onClick = { onSearch(":ytwatchlater") },
-                        palette = palette
-                    )
-                }
-            }
         } else {
-            // Default Initial State: Quick Paste, Trending Searches, and Source Overview
+            // Default Initial State: Quick Paste, Trending Searches
             item {
                 // Quick Paste Action Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(palette.surface)
-                        .border(1.dp, palette.border, RoundedCornerShape(16.dp))
+                        .padding(horizontal = 18.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(palette.surfaceVariant.copy(alpha = 0.92f), palette.surface.copy(alpha = 0.70f))
+                            )
+                        )
+                        .border(
+                            1.2.dp,
+                            Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))),
+                            RoundedCornerShape(20.dp)
+                        )
                         .clickable {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
-                            if (!clip.isNullOrBlank()) {
-                                onSearch(clip)
+                            val clipData = clipboard.primaryClip
+                            if (clipData != null && clipData.itemCount > 0) {
+                                val text = clipData.getItemAt(0).text?.toString() ?: ""
+                                if (text.isNotBlank()) onSearch(text)
                             }
                         }
                         .padding(16.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(CircleShape)
-                                .background(palette.surfaceVariant),
+                                .background(palette.primary.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ContentPaste,
-                                contentDescription = "Paste",
-                                tint = palette.textPrimary,
+                                contentDescription = null,
+                                tint = palette.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column {
                             Text(
-                                text = "Paste from Clipboard",
+                                text = "Paste Link from Clipboard",
                                 color = palette.textPrimary,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp
                             )
                             Text(
-                                text = "Tap to instantly analyze copied YouTube / Music URL",
+                                text = "Instant streaming or download from YouTube link",
                                 color = palette.textSecondary,
-                                fontSize = 12.sp
+                                fontSize = 11.5.sp
                             )
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
 
+            // Quick Searches Chips
             item {
-                Spacer(modifier = Modifier.height(20.dp))
-
                 Text(
-                    text = if (selectedFilter == SearchFilter.ARTISTS) "POPULAR ARTISTS" else "POPULAR SEARCHES",
+                    text = "POPULAR SEARCHES",
                     color = palette.textSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
-
                 Spacer(modifier = Modifier.height(10.dp))
 
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    contentPadding = PaddingValues(horizontal = 18.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(quickSearches) { searchItem ->
+                    items(quickSearches) { query ->
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(palette.surface)
-                                .border(1.dp, palette.border, RoundedCornerShape(10.dp))
-                                .clickable { onSearch(searchItem) }
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(palette.surfaceVariant)
+                                .border(0.8.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(16.dp))
+                                .clickable { onSearch(query) }
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (selectedFilter == SearchFilter.ARTISTS) Icons.Default.MusicNote else Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = palette.textSecondary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = searchItem,
-                                    color = palette.textPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
+                            Text(
+                                text = query,
+                                color = palette.textPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "SUPPORTED PLATFORMS",
-                    color = palette.textSecondary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SourceInfoRow(
-                        icon = Icons.Default.MusicNote,
-                        title = "YouTube Music Tracks & Artists",
-                        subtitle = "Grab complete discographies or individual lossless tracks"
-                    )
-                    SourceInfoRow(
-                        icon = Icons.Default.PlayCircleOutline,
-                        title = "YouTube Videos & Shorts",
-                        subtitle = "Download in Full HD / 4K or pure audio stream"
-                    )
-                    SourceInfoRow(
-                        icon = Icons.Default.VideoLibrary,
-                        title = "Full Playlists & Channels",
-                        subtitle = "Parallel batch downloading for entire playlists"
-                    )
                 }
             }
         }
@@ -487,51 +297,52 @@ fun SearchScreen(
 @Composable
 private fun SearchResultCard(
     item: SearchResultItem,
+    isPlaying: Boolean,
+    downloadProgress: Float?,
+    isDownloaded: Boolean,
+    onPlay: () -> Unit,
     onDownload: () -> Unit
 ) {
     val palette = LocalStashPalette.current
-    var isAdded by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 5.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .padding(horizontal = 18.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(18.dp))
             .background(
-                brush = Brush.verticalGradient(
-                    listOf(
-                        palette.surface.copy(alpha = 0.92f),
-                        palette.surfaceVariant.copy(alpha = 0.70f)
-                    )
+                Brush.verticalGradient(
+                    if (isPlaying) {
+                        listOf(palette.primary.copy(alpha = 0.22f), palette.primary.copy(alpha = 0.08f))
+                    } else {
+                        listOf(palette.surface.copy(alpha = 0.88f), palette.surfaceVariant.copy(alpha = 0.60f))
+                    }
                 )
             )
             .border(
-                width = 1.2.dp,
+                width = if (isPlaying) 1.2.dp else 0.8.dp,
                 brush = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.05f)
-                    )
+                    if (isPlaying) listOf(palette.primary.copy(alpha = 0.7f), palette.primary.copy(alpha = 0.1f))
+                    else listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.03f))
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(18.dp)
             )
-            .clickable {
-                isAdded = true
-                onDownload()
-            }
-            .padding(12.dp),
+            .clickable(
+                interactionSource = remember(item.id) { MutableInteractionSource() },
+                indication = null
+            ) { onPlay() }
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Thumbnail with duration overlay
+        // Thumbnail with play/wave overlay
         Box(
             modifier = Modifier
-                .size(width = 68.dp, height = 48.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(palette.surfaceVariant)
-                .border(0.5.dp, palette.border, RoundedCornerShape(10.dp)),
+                .size(52.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(palette.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            val thumbUrl = item.thumbnailUrl ?: "https://i.ytimg.com/vi/${item.id}/hqdefault.jpg"
+            val thumbUrl = com.eurtlabs.stash.util.ArtworkUtils.getHighResArtworkUrl(item.thumbnailUrl, item.id)
             AsyncImage(
                 model = thumbUrl,
                 contentDescription = item.title,
@@ -539,20 +350,28 @@ private fun SearchResultCard(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Duration Pill on bottom-right of thumbnail
-            if (item.durationText.isNotBlank()) {
+            if (isPlaying) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.50f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AudioEqualizerVisualizer(tint = palette.primary)
+                }
+            } else if (item.durationText.isNotBlank()) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(3.dp)
+                        .padding(2.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .background(Color.Black.copy(alpha = 0.75f))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                        .padding(horizontal = 3.dp, vertical = 1.dp)
                 ) {
                     Text(
                         text = item.durationText,
                         color = Color.White,
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -561,155 +380,33 @@ private fun SearchResultCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
+        // Title & Artist
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.title,
-                color = palette.textPrimary,
+                color = if (isPlaying) palette.primary else palette.textPrimary,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.5.sp,
+                fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = item.artist,
-                    fontSize = 11.5.sp,
-                    color = palette.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-            }
+            Text(
+                text = item.artist,
+                fontSize = 11.5.sp,
+                color = palette.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Download Action Pill Button
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(if (isAdded) palette.success.copy(alpha = 0.15f) else palette.primary)
-                .clickable {
-                    isAdded = true
-                    onDownload()
-                }
-                .padding(horizontal = 12.dp, vertical = 7.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = if (isAdded) Icons.Default.DownloadDone else Icons.Default.Download,
-                    contentDescription = "Download",
-                    tint = if (isAdded) palette.success else palette.onPrimary,
-                    modifier = Modifier.size(13.dp)
-                )
-                Text(
-                    text = if (isAdded) "Added" else "Get",
-                    color = if (isAdded) palette.success else palette.onPrimary,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceInfoRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String
-) {
-    val palette = LocalStashPalette.current
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = palette.primary,
-            modifier = Modifier.size(20.dp)
+        // Circular Live Percentage Download Status Widget
+        com.eurtlabs.stash.ui.screens.DownloadStatusWidget(
+            progress = downloadProgress,
+            isDownloaded = isDownloaded,
+            onDownload = onDownload
         )
-        Column {
-            Text(
-                text = title,
-                color = palette.textPrimary,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp
-            )
-            Text(
-                text = subtitle,
-                color = palette.textSecondary,
-                fontSize = 11.5.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun LibraryActionCard(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    palette: com.eurtlabs.stash.ui.theme.ThemePalette
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(palette.surface)
-            .border(1.dp, palette.border, RoundedCornerShape(16.dp))
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(palette.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = palette.textPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    color = palette.textPrimary,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = subtitle,
-                    color = palette.textSecondary,
-                    fontSize = 12.sp
-                )
-            }
-        }
     }
 }

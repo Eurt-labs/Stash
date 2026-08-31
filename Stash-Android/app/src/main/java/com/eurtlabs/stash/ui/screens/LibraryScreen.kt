@@ -2,7 +2,6 @@ package com.eurtlabs.stash.ui.screens
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,24 +22,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.outlined.LibraryMusic
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,7 +56,9 @@ import coil.compose.AsyncImage
 import com.eurtlabs.stash.data.model.DownloadBatch
 import com.eurtlabs.stash.data.model.DownloadItem
 import com.eurtlabs.stash.data.model.DownloadState
+import com.eurtlabs.stash.ui.components.AudioEqualizerVisualizer
 import com.eurtlabs.stash.ui.theme.LocalStashPalette
+import com.eurtlabs.stash.util.ArtworkUtils
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,17 +72,35 @@ fun LibraryScreen(
     val palette = LocalStashPalette.current
     val context = LocalContext.current
 
-    val sortModeState = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(0) } // 0=Recent, 1=Name, 2=Size
-    val sortAscendingState = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val sortModeState = remember { mutableStateOf(0) }
+    val sortAscendingState = remember { mutableStateOf(false) }
 
-    val completedItems = batches.flatMap { it.items }.filter { it.state == DownloadState.COMPLETED && !it.finalFilePath.isNullOrBlank() }
+    var itemToDelete by remember { mutableStateOf<DownloadItem?>(null) }
+
+    val completedItems = batches.flatMap { it.items }
+        .filter { it.state == DownloadState.COMPLETED && !it.finalFilePath.isNullOrBlank() }
         .let { items ->
             when (sortModeState.value) {
                 1 -> if (sortAscendingState.value) items.sortedBy { it.trackInfo.title.lowercase() } else items.sortedByDescending { it.trackInfo.title.lowercase() }
-                2 -> if (sortAscendingState.value) items.sortedBy { java.io.File(it.finalFilePath ?: "").length() } else items.sortedByDescending { java.io.File(it.finalFilePath ?: "").length() }
-                else -> if (sortAscendingState.value) items else items.reversed() // Recent
+                2 -> if (sortAscendingState.value) items.sortedBy { File(it.finalFilePath ?: "").length() } else items.sortedByDescending { File(it.finalFilePath ?: "").length() }
+                else -> if (sortAscendingState.value) items else items.reversed()
             }
         }
+
+    if (itemToDelete != null) {
+        val target = itemToDelete!!
+        com.eurtlabs.stash.ui.components.LiquidGlassConfirmDialog(
+            title = "Delete Downloaded Song?",
+            message = "Are you sure you want to remove this track from your library and delete the audio file from device storage?",
+            confirmText = "Delete",
+            cancelText = "Cancel",
+            onConfirm = {
+                onDeleteFromDevice(target.id)
+                itemToDelete = null
+            },
+            onDismiss = { itemToDelete = null }
+        )
+    }
 
     if (completedItems.isEmpty()) {
         Box(
@@ -134,7 +151,7 @@ fun LibraryScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Completed media downloads will appear here persistently for instant playback and sharing.",
+                    text = "Completed music downloads will appear here persistently for offline listening and sharing.",
                     color = palette.textSecondary,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
@@ -146,7 +163,7 @@ fun LibraryScreen(
     } else {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 130.dp, top = 8.dp)
+            contentPadding = PaddingValues(bottom = 140.dp, top = 8.dp)
         ) {
             item {
                 Row(
@@ -171,7 +188,7 @@ fun LibraryScreen(
                         fontSize = 11.5.sp
                     )
                 }
-                
+
                 // Sort Options
                 Row(
                     modifier = Modifier
@@ -182,45 +199,50 @@ fun LibraryScreen(
                 ) {
                     listOf("Recent", "Name", "Size").forEachIndexed { index, label ->
                         val isSelected = sortModeState.value == index
-                        com.eurtlabs.stash.ui.components.LiquidGlassPill(
-                            isSelected = isSelected,
-                            cornerRadius = 16.dp,
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .clickable { 
-                                        if (sortModeState.value == index) {
-                                            sortAscendingState.value = !sortAscendingState.value
-                                        } else {
-                                            sortModeState.value = index
-                                            sortAscendingState.value = false // Default to descending for size/recent, wait!
-                                            // Actually let's just leave it false initially so Size is descending (largest first)
-                                        }
-                                    }
-                                    .padding(horizontal = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = label,
-                                        color = if (isSelected) palette.textPrimary else palette.textSecondary,
-                                        fontSize = 11.5.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                    
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
                                     if (isSelected) {
-                                        Icon(
-                                            imageVector = if (sortAscendingState.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                            contentDescription = "Sort direction",
-                                            tint = palette.textPrimary,
-                                            modifier = Modifier.size(14.dp)
-                                        )
+                                        Brush.verticalGradient(listOf(palette.primary, palette.primary.copy(alpha = 0.85f)))
+                                    } else {
+                                        Brush.verticalGradient(listOf(palette.surface, palette.surfaceVariant))
                                     }
+                                )
+                                .border(
+                                    1.dp,
+                                    if (isSelected) palette.primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.15f),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .clickable {
+                                    if (sortModeState.value == index) {
+                                        sortAscendingState.value = !sortAscendingState.value
+                                    } else {
+                                        sortModeState.value = index
+                                        sortAscendingState.value = false
+                                    }
+                                }
+                                .padding(horizontal = 14.dp, vertical = 7.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) palette.onPrimary else palette.textSecondary,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = if (sortAscendingState.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Sort direction",
+                                        tint = palette.onPrimary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
                                 }
                             }
                         }
@@ -229,87 +251,12 @@ fun LibraryScreen(
             }
 
             items(items = completedItems, key = { it.id }) { item ->
-                val dismissState = rememberSwipeToDismissBoxState(
-                    confirmValueChange = { value ->
-                        when (value) {
-                            SwipeToDismissBoxValue.EndToStart -> {
-                                onRemoveFromLibrary(item.id)
-                                true
-                            }
-                            SwipeToDismissBoxValue.StartToEnd -> {
-                                onDeleteFromDevice(item.id)
-                                true
-                            }
-                            else -> false
-                        }
-                    }
+                LibraryItemCard(
+                    item = item,
+                    allItems = completedItems,
+                    context = context,
+                    onDeleteClick = { itemToDelete = item }
                 )
-
-                SwipeToDismissBox(
-                    state = dismissState,
-                    backgroundContent = {
-                        val direction = dismissState.dismissDirection
-                        val color = if (direction == SwipeToDismissBoxValue.StartToEnd) Color(0xFFD32F2F) else Color(0xFF4CAF50)
-                        val icon = if (direction == SwipeToDismissBoxValue.StartToEnd) Icons.Default.DeleteForever else Icons.Default.DeleteOutline
-                        val text = if (direction == SwipeToDismissBoxValue.StartToEnd) "Delete File" else "Clear"
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 18.dp, vertical = 6.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        listOf(color.copy(alpha = 0.25f), color.copy(alpha = 0.35f))
-                                    )
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = color.copy(alpha = 0.40f),
-                                    shape = RoundedCornerShape(20.dp)
-                                )
-                                .padding(horizontal = 20.dp),
-                            contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                if (direction == SwipeToDismissBoxValue.StartToEnd) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = text,
-                                        tint = color,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = text,
-                                        color = color,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                } else {
-                                    Text(
-                                        text = text,
-                                        color = color,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = text,
-                                        tint = color,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ) {
-                    Box(modifier = Modifier.background(palette.background)) {
-                        LibraryItemCard(item = item, context = context)
-                    }
-                }
             }
         }
     }
@@ -318,72 +265,90 @@ fun LibraryScreen(
 @Composable
 private fun LibraryItemCard(
     item: DownloadItem,
-    context: Context
+    allItems: List<DownloadItem>,
+    context: Context,
+    onDeleteClick: () -> Unit
 ) {
     val palette = LocalStashPalette.current
+    val playerState by com.eurtlabs.stash.player.MusicPlayerManager.playerState.collectAsState()
+    val isCurrentlyPlaying = (playerState.currentItem?.id == item.id || playerState.currentTrack?.id == item.id) && playerState.isPlaying
+
     val file = item.finalFilePath?.let { File(it) }
     val fileSizeMb = if (file != null && file.exists()) {
         String.format("%.1f MB", file.length().toDouble() / (1024 * 1024))
     } else ""
+    val highResArt = ArtworkUtils.getHighResArtworkUrl(item.trackInfo.albumArtUrl, item.id)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 6.dp)
+            .padding(horizontal = 18.dp, vertical = 5.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(palette.surface.copy(alpha = 0.92f), palette.surfaceVariant.copy(alpha = 0.70f))
+                    if (isCurrentlyPlaying) {
+                        listOf(
+                            palette.primary.copy(alpha = 0.22f),
+                            palette.primary.copy(alpha = 0.08f)
+                        )
+                    } else {
+                        listOf(
+                            palette.surface.copy(alpha = 0.92f),
+                            palette.surfaceVariant.copy(alpha = 0.70f)
+                        )
+                    }
                 )
             )
             .border(
-                width = 1.2.dp,
+                width = if (isCurrentlyPlaying) 1.5.dp else 1.dp,
                 brush = Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))
+                    if (isCurrentlyPlaying) {
+                        listOf(
+                            palette.primary.copy(alpha = 0.8f),
+                            palette.primary.copy(alpha = 0.2f)
+                        )
+                    } else {
+                        listOf(
+                            Color.White.copy(alpha = 0.30f),
+                            Color.White.copy(alpha = 0.05f)
+                        )
+                    }
                 ),
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable {
-                // Open file in external player
-                if (file != null && file.exists()) {
-                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, if (item.format.isAudioOnly) "audio/*" else "video/*")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Play Media"))
-                }
+                // ALWAYS play directly inside Stash built-in Music Player! Never open external apps!
+                com.eurtlabs.stash.player.MusicPlayerManager.playLibraryItem(
+                    item = item,
+                    allItems = allItems
+                )
             }
-            .padding(12.dp),
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Album art with play icon overlay
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(50.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(palette.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            if (!item.trackInfo.albumArtUrl.isNullOrBlank()) {
+            if (highResArt.isNotBlank()) {
                 AsyncImage(
-                    model = item.trackInfo.albumArtUrl,
+                    model = highResArt,
                     contentDescription = item.trackInfo.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.28f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                if (isCurrentlyPlaying) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.50f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AudioEqualizerVisualizer(tint = palette.primary)
+                    }
                 }
             } else {
                 Icon(
@@ -397,13 +362,12 @@ private fun LibraryItemCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Title and details
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.trackInfo.title,
-                color = palette.textPrimary,
+                color = if (isCurrentlyPlaying) palette.primary else palette.textPrimary,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.5.sp,
+                fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -447,9 +411,8 @@ private fun LibraryItemCard(
             }
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
-        // Share Icon Button
         IconButton(
             onClick = {
                 if (file != null && file.exists()) {
@@ -462,13 +425,25 @@ private fun LibraryItemCard(
                     context.startActivity(Intent.createChooser(shareIntent, "Share Track"))
                 }
             },
-            modifier = Modifier.size(36.dp)
+            modifier = Modifier.size(34.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Share,
                 contentDescription = "Share",
                 tint = palette.textSecondary,
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        IconButton(
+            onClick = onDeleteClick,
+            modifier = Modifier.size(34.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.DeleteOutline,
+                contentDescription = "Delete from Device",
+                tint = palette.error.copy(alpha = 0.85f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }

@@ -97,4 +97,44 @@ object SettingsStore {
             DownloadQuality.VIDEO_1080P
         }
     }
+
+    fun saveLoudnessNormalization(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean("loudness_norm", enabled).apply()
+    }
+
+    fun loadLoudnessNormalization(context: Context): Boolean {
+        return getPrefs(context).getBoolean("loudness_norm", true)
+    }
+
+    fun saveAutoDownloadLyrics(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean("auto_lyrics", enabled).apply()
+    }
+
+    fun loadAutoDownloadLyrics(context: Context): Boolean {
+        return getPrefs(context).getBoolean("auto_lyrics", true)
+    }
+
+    fun saveUltraHdArtwork(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean("ultrahd_art", enabled).apply()
+    }
+
+    fun loadUltraHdArtwork(context: Context): Boolean {
+        return getPrefs(context).getBoolean("ultrahd_art", true)
+    }
+
+    fun saveEqualizerPreset(context: Context, preset: String) {
+        getPrefs(context).edit().putString("eq_preset", preset).apply()
+    }
+
+    fun loadEqualizerPreset(context: Context): String {
+        return getPrefs(context).getString("eq_preset", "Flat") ?: "Flat"
+    }
+
+    fun saveBassBoostStrength(context: Context, strength: Int) {
+        getPrefs(context).edit().putInt("bass_boost", strength).apply()
+    }
+
+    fun loadBassBoostStrength(context: Context): Int {
+        return getPrefs(context).getInt("bass_boost", 0)
+    }
 }

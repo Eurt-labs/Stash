@@ -79,6 +79,14 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // Media3 ExoPlayer for Integrated Audio Playback & MediaSession
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-session:1.2.1")
+    implementation("androidx.media:media:1.7.0")
+
+    // OkHttp for fast zero-tracker lyrics & metadata fetching
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     // youtubedl-android Native Engine (yt-dlp + ffmpeg compiled for Android NDK on Maven Central)
     implementation("io.github.junkfood02.youtubedl-android:library:0.17.4")
     implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.4")
